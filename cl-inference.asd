@@ -12,9 +12,10 @@
   :description "GGUF weight-file reader for cl-inference"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference" "cffi")
+  :depends-on ("cl-inference" "cl-tensor" "trivial-simd" "cffi" "babel")
   :serial t
-  :components ((:file "gguf/package")))
+  :components ((:file "gguf/package") (:file "gguf/errors") (:file "gguf/posix")
+               (:file "gguf/reader") (:file "gguf/weights")))
 
 (asdf:defsystem "cl-inference/quant"
   :description "Quantized dtypes for cl-inference"
@@ -27,7 +28,8 @@
 (asdf:defsystem "cl-inference/tests"
   :depends-on ("cl-inference" "cl-inference/gguf" "cl-inference/quant" "fiveam")
   :serial t
-  :components ((:file "tests/package") (:file "tests/systems") (:file "tests/weights"))
+  :components ((:file "tests/package") (:file "tests/systems") (:file "tests/weights")
+               (:file "tests/gguf-writer") (:file "tests/gguf"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/tests :run-tests)

@@ -1,6 +1,7 @@
 (defpackage #:cl-inference/tests
   (:use #:cl #:fiveam)
-  (:local-nicknames (#:ci #:cl-inference) (#:ct #:cl-tensor))
+  (:local-nicknames (#:ci #:cl-inference) (#:ct #:cl-tensor)
+                    (#:gguf #:cl-inference/gguf))
   (:export #:run-tests))
 
 (in-package #:cl-inference/tests)
