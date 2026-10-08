@@ -51,6 +51,7 @@ Subclass `weights`, implement the generics, and register the format.
 | `weights-tensor-info-ref` | One `tensor-info`, or NIL |
 | `weights-make-tensor` | Typed view, or signal `unsupported-weights-type` |
 | `weights-make-bytes` | `:u8` view of the raw payload |
+| `weights-architecture-name` | Architecture name the file declares, or NIL (the default); used by [`load-architecture`](architectures.md) |
 | `weights-release` | Free resources; called once |
 
 ```lisp

@@ -40,6 +40,11 @@
   (:documentation "Return a typed tensor view, or signal unsupported-weights-type."))
 (defgeneric weights-make-bytes (weights info)
   (:documentation "Return a :u8 tensor view of the raw payload."))
+(defgeneric weights-architecture-name (weights)
+  (:documentation "Return the architecture name the file declares, or NIL.")
+  (:method (weights)
+    (declare (ignore weights))
+    nil))
 (defgeneric weights-release (weights)
   (:documentation "Free format resources; called once by close-weights."))
 

@@ -3,9 +3,9 @@
   :author "George Watson"
   :license "GPL-3.0-only"
   :version "0.0.0"
-  :depends-on ("cl-tensor")
+  :depends-on ("cl-tensor" "closer-mop")
   :serial t
-  :components ((:file "package") (:file "weights"))
+  :components ((:file "package") (:file "weights") (:file "architecture"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/tests"))))
 
 (asdf:defsystem "cl-inference/gguf"
@@ -29,7 +29,7 @@
   :depends-on ("cl-inference" "cl-inference/gguf" "cl-inference/quant" "fiveam")
   :serial t
   :components ((:file "tests/package") (:file "tests/systems") (:file "tests/weights")
-               (:file "tests/gguf-writer") (:file "tests/gguf"))
+               (:file "tests/gguf-writer") (:file "tests/gguf") (:file "tests/architecture"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/tests :run-tests)

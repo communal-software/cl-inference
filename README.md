@@ -7,6 +7,7 @@ Extensible LLM inference for Common Lisp, built on [cl-tensor](https://git.sr.ht
 ## Docs
 
 - [Design](docs/design.md)
+- [Architectures](docs/architectures.md)
 - [Weights](docs/weights.md)
 - [GGUF](docs/gguf.md)
 - [Testing](docs/testing.md)

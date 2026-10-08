@@ -35,6 +35,9 @@
 (defmethod ci:weights-tensor-info-list ((weights gguf-weights)) (weights-tensors weights))
 (defmethod ci:weights-tensor-info-ref ((weights gguf-weights) name)
   (gethash name (weights-tensor-table weights)))
+(defmethod ci:weights-architecture-name ((weights gguf-weights))
+  (let ((name (gethash "general.architecture" (weights-metadata-table weights))))
+    (and (stringp name) name)))
 (defmethod ci:weights-release ((weights gguf-weights))
   (unmap-file (weights-pointer weights) (weights-size weights)))
 

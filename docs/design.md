@@ -4,13 +4,13 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
 
 | System | Purpose |
 |---|---|
-| `cl-inference` | [Weights protocol](weights.md), architectures, blocks, sessions, sampling |
+| `cl-inference` | [Weights protocol](weights.md), [architectures](architectures.md), blocks, sessions, sampling |
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
 | `cl-inference/quant` | Quantized dtypes as cl-tensor extensions |
 
-## Planned shape
+## Architectures
 
-Tensor names, metadata keys and RoPE pairing live in per-format sections of an architecture:[^arch]
+Tensor names, metadata keys and RoPE pairing live in per-format sections of an [architecture](architectures.md):
 
 ```lisp
 (define-architecture llama ()
@@ -21,5 +21,3 @@ Tensor names, metadata keys and RoPE pairing live in per-format sections of an a
 ```
 
 Kernels are pure Lisp on cl-tensor and trivial-simd; there is no inference-specific native code.
-
-[^arch]: [cl-inference #5](https://todo.sr.ht/~takeiteasy/cl-inference/5). GGUF `llama` permutes Q/K and uses adjacent-pair RoPE, HF safetensors uses rotate-half, and Qwen uses NeoX.
