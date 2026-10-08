@@ -4,7 +4,7 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
 
 | System | Purpose |
 |---|---|
-| `cl-inference` | Architectures, blocks, sessions, sampling |
+| `cl-inference` | [Weights protocol](weights.md), architectures, blocks, sessions, sampling |
 | `cl-inference/gguf` | GGUF weight-file reader |
 | `cl-inference/quant` | Quantized dtypes as cl-tensor extensions |
 

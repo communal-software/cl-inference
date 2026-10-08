@@ -5,7 +5,7 @@
   :version "0.0.0"
   :depends-on ("cl-tensor")
   :serial t
-  :components ((:file "package"))
+  :components ((:file "package") (:file "weights"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/tests"))))
 
 (asdf:defsystem "cl-inference/gguf"
@@ -27,7 +27,7 @@
 (asdf:defsystem "cl-inference/tests"
   :depends-on ("cl-inference" "cl-inference/gguf" "cl-inference/quant" "fiveam")
   :serial t
-  :components ((:file "tests/package") (:file "tests/systems"))
+  :components ((:file "tests/package") (:file "tests/systems") (:file "tests/weights"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/tests :run-tests)

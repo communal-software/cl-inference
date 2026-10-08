@@ -11,5 +11,6 @@ sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-in
 | File | Covers |
 |---|---|
 | `tests/systems.lisp` | Every subsystem package loads |
+| `tests/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 
 Full-model checks compare against a dev-only reference kept in the gitignored `reference/` directory.
