@@ -118,6 +118,22 @@ A provider is data layered under each request: a protocol, base URL, authenticat
 
 Tool parameters are typed schemas: `string`, `number`, `boolean`, `(integer lo hi)`, `(member :a :b)`, `(or null x)`, `(array-of x)`, `(map-of x)`, `(object ...)` and `any`. `schema->json-schema` renders one for a model, `json-schema->schema` reads one back, and `coerce-args` checks a model's arguments against one.
 
+## Helpers
+
+For consumers that layer their own services over the client.
+
+| Symbol | Does |
+|---|---|
+| `tool-schema` | A tool metadata plist's `:params` |
+| `param-name`, `param-type`, `param-options` | Read one `(:name type . options)` schema entry |
+| `*absent*` | Marks a parameter the caller did not supply |
+| `json-object`, `json-get` | Build and read a JSON object; `(setf json-get)` sets a key |
+| `untyped->json`, `json->arguments` | Render and read an argument plist without a schema |
+| `lisp-tool-name` | A wire tool name as a keyword |
+| `reply-prompt-tokens`, `done-reason` | Read a reply's prompt size and a result's finish reason |
+| `call-with-deadline` | Run a function on this thread, bounded by milliseconds and a `:cancel` token |
+| `header-alist` | A header plist as a lower-cased alist |
+
 ## Testing
 
 `cl-inference/client/tests` runs offline against a fake HTTP server and passes on SBCL, CCL and ECL. See [Testing](testing.md).

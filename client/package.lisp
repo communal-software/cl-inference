@@ -17,7 +17,7 @@
    #:normalize-content #:content-text #:text-block
    #:text-delta #:tool-call-delta #:done #:emit-event
    ;; cancellation
-   #:make-cancel-token #:cancel #:cancelled-p #:on-cancel
+   #:make-cancel-token #:cancel #:cancelled-p #:on-cancel #:cancel-token-p
    ;; backends
    #:backend #:backend-complete #:describe-backend #:register-backend #:find-backend
    #:backends #:protocols #:protocol-backend #:openai-backend #:ollama-backend #:scripted-backend #:make-scripted-backend #:scripted-requests
@@ -27,5 +27,9 @@
    ;; schema
    #:any #:array-of #:map-of #:object
    #:coerce-args #:validate-schema #:schema->json-schema #:json-schema->schema
+   #:param-name #:param-type #:param-options #:*absent* #:json-object #:json-get
+   ;; contract helpers
+   #:tool-schema #:untyped->json #:json->arguments #:lisp-tool-name
+   #:reply-prompt-tokens #:done-reason
    ;; transport
-   #:+default-timeout+ #:*sink-grace*))
+   #:+default-timeout+ #:*sink-grace* #:call-with-deadline #:header-alist))
