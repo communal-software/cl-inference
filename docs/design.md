@@ -7,6 +7,7 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
 | `cl-inference` | [Weights protocol](weights.md), [architectures](architectures.md), blocks, sessions, sampling |
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
 | `cl-inference/quant` | Quantized dtypes as cl-tensor extensions |
+| `cl-inference/client` | [Model client contract](client.md) and HTTP backends; no cl-tensor |
 
 ## Architectures
 

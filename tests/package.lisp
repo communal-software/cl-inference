@@ -9,4 +9,5 @@
 (def-suite :cl-inference)
 
 (defun run-tests ()
-  (run! :cl-inference))
+  (and (run! :cl-inference)
+       (uiop:symbol-call :cl-inference/client/tests :run-tests)))
