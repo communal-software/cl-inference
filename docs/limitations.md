@@ -2,12 +2,12 @@
 
 | Missing | Tracker |
 |---|---|
-| Windows and BSD file mapping | [#24](https://todo.sr.ht/~takeiteasy/cl-inference/24), [#25](https://todo.sr.ht/~takeiteasy/cl-inference/25) |
-| Block protocol and standard blocks | [#6](https://todo.sr.ht/~takeiteasy/cl-inference/6) |
-| Removing an inherited architecture entry | [#27](https://todo.sr.ht/~takeiteasy/cl-inference/27) |
-| Q8_0 and half-precision weight matmul | [#7](https://todo.sr.ht/~takeiteasy/cl-inference/7), [#8](https://todo.sr.ht/~takeiteasy/cl-inference/8) |
-| Tokenizer and chat templates | [#9](https://todo.sr.ht/~takeiteasy/cl-inference/9), [#10](https://todo.sr.ht/~takeiteasy/cl-inference/10) |
-| In-process client backend | [#29](https://todo.sr.ht/~takeiteasy/cl-inference/29) |
-| Sessions and sampling | [#11](https://todo.sr.ht/~takeiteasy/cl-inference/11), [#12](https://todo.sr.ht/~takeiteasy/cl-inference/12) |
+| Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
+| Block protocol and standard blocks | [#2](https://github.com/communal-software/cl-inference/issues/2) |
+| Removing an inherited architecture entry | [#23](https://github.com/communal-software/cl-inference/issues/23) |
+| Q8_0 and half-precision weight matmul | [#3](https://github.com/communal-software/cl-inference/issues/3), [#4](https://github.com/communal-software/cl-inference/issues/4) |
+| Tokenizer and chat templates | [#5](https://github.com/communal-software/cl-inference/issues/5), [#6](https://github.com/communal-software/cl-inference/issues/6) |
+| In-process client backend | [#24](https://github.com/communal-software/cl-inference/issues/24) |
+| Sessions and sampling | [#7](https://github.com/communal-software/cl-inference/issues/7), [#8](https://github.com/communal-software/cl-inference/issues/8) |
 
-The full roadmap is [#1](https://todo.sr.ht/~takeiteasy/cl-inference/1).
+The full roadmap is [#1](https://github.com/communal-software/cl-inference/issues/1).

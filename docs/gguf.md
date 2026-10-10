@@ -18,8 +18,8 @@ The file is mapped once, copy-on-write, and every tensor view points into the ma
 | Platform | Status |
 |---|---|
 | macOS, Linux | Supported |
-| BSD | Untested ([#25](https://todo.sr.ht/~takeiteasy/cl-inference/25)) |
-| Windows | Signals an error at load ([#24](https://todo.sr.ht/~takeiteasy/cl-inference/24)) |
+| BSD | Untested ([#21](https://github.com/communal-software/cl-inference/issues/21)) |
+| Windows | Signals an error at load ([#20](https://github.com/communal-software/cl-inference/issues/20)) |
 
 ## Tensor types
 
@@ -68,9 +68,9 @@ The file is unmapped again when any check fails.
 
 | Missing | Tracker |
 |---|---|
-| Typed Q8_0 views | [#7](https://todo.sr.ht/~takeiteasy/cl-inference/7) |
-| Q4_0, Q4_K, Q6_K views | [#18](https://todo.sr.ht/~takeiteasy/cl-inference/18) |
-| Windows and BSD mapping | [#24](https://todo.sr.ht/~takeiteasy/cl-inference/24), [#25](https://todo.sr.ht/~takeiteasy/cl-inference/25) |
+| Typed Q8_0 views | [#3](https://github.com/communal-software/cl-inference/issues/3) |
+| Q4_0, Q4_K, Q6_K views | [#14](https://github.com/communal-software/cl-inference/issues/14) |
+| Windows and BSD mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Split (multi-file) GGUF | not planned |
 
 [^mmap]: `PROT_READ|PROT_WRITE` with `MAP_PRIVATE`, because cl-tensor treats foreign views as writable. The header is parsed straight from the mapping with bounds-checked reads. The file is not read through a stream.

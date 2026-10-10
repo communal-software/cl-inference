@@ -62,4 +62,4 @@ Subclass `weights`, implement the generics, and register the format.
 
 The first 16 bytes of the file are passed to `:detect`. Formats are tried in registration order. See [GGUF](gguf.md) for the built-in format.
 
-[^views]: Views are ordinary tensors over storage the caller owns, so cl-tensor's [foreign storage rules](https://git.sr.ht/~takeiteasy/cl-tensor/tree/trunk/item/docs/design.md) apply.
+[^views]: Views are ordinary tensors over storage the caller owns, so cl-tensor's [foreign storage rules](https://github.com/communal-software/cl-tensor/blob/trunk/docs/design.md) apply.

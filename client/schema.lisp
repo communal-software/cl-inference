@@ -287,7 +287,7 @@ promise. PAIRS is newest first."
 (defun (setf json-get) (value object key)
   "Set KEY, keeping its place if OBJECT already has it."
   ;; TODO: ASSOC per key makes building an object O(n^2); index the pairs if
-  ;; objects grow to thousands of keys (#30).
+  ;; objects grow to thousands of keys (#25).
   (let ((pair (assoc key (json-object-pairs object) :test #'equal)))
     (if pair
         (setf (cdr pair) value)

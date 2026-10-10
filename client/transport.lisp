@@ -56,7 +56,7 @@ delta-seconds or an HTTP date; a date already past is 0."
 ;;; TODO: this binds an unexported usocket symbol to fall back to its legacy
 ;;; blocking connect, which does fail a refusal immediately (an unreachable
 ;;; host is still bounded by :timeout). Drop it once usocket's new connect loop
-;;; checks SO_ERROR itself (#32).
+;;; checks SO_ERROR itself (#27).
 (defmacro with-immediate-connect-refusal (&body body)
   "Run BODY -- which must make its USOCKET:SOCKET-CONNECT call directly,
 inside the same thread -- so a refused connection fails at once rather
@@ -84,7 +84,7 @@ finished does nothing.")
   "Seconds a sink has to take the closing :done once the exchange is over.")
 
 ;; TODO: one watcher thread per bounded run; a shared timer thread if
-;; completions are issued at high rates (#31).
+;; completions are issued at high rates (#26).
 (defun start-watcher (exchange seconds)
   (bt:make-thread (lambda ()
                     (unless (bt:wait-on-semaphore (exchange-ended exchange)
@@ -167,7 +167,7 @@ its thread out of FUNCTION. Cheap, and safe to call from any thread."
   (let* ((uri (puri:parse-uri url))
          (securep (eq (puri:uri-scheme uri) :https))
          ;; An interrupt landing between this call returning and the store
-         ;; below leaks the socket (#33).
+         ;; below leaks the socket (#28).
          (socket (with-immediate-connect-refusal
                    (usocket:socket-connect
                     (puri:uri-host uri) (or (puri:uri-port uri) (if securep 443 80))
