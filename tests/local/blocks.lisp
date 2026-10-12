@@ -70,6 +70,30 @@
     (is (= (f16-value (f16-bits (f16-value (f16-bits x)))) (f16-value (f16-bits x))))
     (is (= (bf16-value (bf16-bits (bf16-value (bf16-bits x)))) (bf16-value (bf16-bits x))))))
 
+(defun half-weight (rows columns dtype)
+  "A (ROWS COLUMNS) DTYPE weight of small values, and its f32 values."
+  (let* ((bits (ecase dtype (:f16 #'f16-bits) (:bf16 #'bf16-bits)))
+         (value (ecase dtype (:f16 #'f16-value) (:bf16 #'bf16-value)))
+         (raw (make-array (* rows columns) :element-type '(unsigned-byte 16)))
+         (floats (make-array (* rows columns) :element-type 'single-float)))
+    (dotimes (i (* rows columns))
+      (setf (aref raw i) (funcall bits (* 0.01f0 (- (mod (* i 37) 101) 50)))
+            (aref floats i) (funcall value (aref raw i))))
+    (values (ct:make-tensor-view raw (list rows columns) :dtype dtype)
+            (ct:make-tensor-view floats (list rows columns)))))
+
+(test linear-over-half-precision-matches-f32
+  (dolist (dtype '(:f16 :bf16))
+    (dolist (rows (list 1 7 local::+tile-rows+ (+ local::+tile-rows+ 3) (* 2 local::+tile-rows+)))
+      (multiple-value-bind (weight expected) (half-weight rows 12 dtype)
+        (dolist (count '(1 5))
+          (let ((x (ct:from-data (loop for r below count
+                                       collect (loop for c below 12
+                                                     collect (* 0.1f0 (- (mod (+ (* r 12) c) 7) 3)))))))
+            (is (rows-close-p (tensor-rows (local::linear x weight))
+                              (tensor-rows (ct:matmul x (ct:transpose expected))))
+                "~S ~D rows, ~D in" dtype rows count)))))))
+
 (test blocks-qk-norm
   (check-model "blk-qwen" :neox (spec* :qk-norm t)))
 

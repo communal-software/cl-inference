@@ -75,7 +75,7 @@ Frequency `i` is `rope-theta^(-2i/rope-dims)` divided by element `i` of the opti
 | `layer-forward architecture blocks x &key start cache` | The residual stream after one layer |
 | `bind-block block architecture weights` | Reads the block's tensors and hparams |
 | `block-tensor block architecture weights suffix` | The tensor for `<slot>.<suffix>` |
-| `linear x weight` | `x · weightᵀ`; every projection goes through it |
+| `linear x weight` | `x · weightᵀ`; every projection goes through it. Half-precision weights are multiplied in row tiles[^tiles] |
 
 ## Mods
 
@@ -92,4 +92,6 @@ Specialise `block-forward`, including with `:around`, to observe or change a blo
 
 | Missing | Tracker |
 |---|---|
-| Matmul over half-precision and quantized weights; they upcast per call | [#3](https://github.com/communal-software/cl-inference/issues/3), [#4](https://github.com/communal-software/cl-inference/issues/4) |
+| Q8_0 weight matmul | [#3](https://github.com/communal-software/cl-inference/issues/3) |
+
+[^tiles]: `linear` converts 256 weight rows at a time to an f32 scratch and multiplies each tile with BLAS, so no more than a tile is ever f32. It converts with trivial-simd's flat `convert!`, which is far faster than `astype` on file-mapped storage.

@@ -30,12 +30,37 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
     (architecture-error () default)))
 
 (defun as-f32 (tensor)
-  ;; TODO: upcasts the whole tensor on every call; multiply directly over half-precision and quantized storage (#4)
+  "TENSOR as f32; for small tensors, since it converts the whole thing."
   (if (eq (ct:tensor-dtype tensor) :f32) tensor (ct:astype tensor :f32)))
+
+(defconstant +tile-rows+ 256
+  "Weight rows converted to f32 at a time by TILED-LINEAR.")
+
+(defun tiled-linear (x weight)
+  "X · WEIGHTᵀ for a half-precision WEIGHT, converting +TILE-ROWS+ rows at a time so only a
+tile is ever f32. Uses the flat CONVERT!; ASTYPE is far slower on file-mapped storage."
+  (unless (ct:contiguous-p weight)
+    (error "Half-precision weight must be contiguous"))
+  (destructuring-bind (rows columns) (coerce (ct:tensor-shape weight) 'list)
+    (let* ((tile-rows (min +tile-rows+ rows))
+           (tile (make-array (* tile-rows columns) :element-type 'single-float))
+           (out (ct:make-tensor (list (aref (ct:tensor-shape x) 0) rows)))
+           (encoding (ct:tensor-dtype weight)))
+      (loop for start from 0 below rows by tile-rows
+            for end = (min rows (+ start tile-rows))
+            do (trivial-simd:convert! tile (ct:tensor-storage weight)
+                                      :input-encoding encoding
+                                      :input-start (+ (ct:tensor-offset weight) (* start columns))
+                                      :end (* (- end start) columns))
+               (ct:matmul! (ct:slice out :selectors (list :all (list start end)))
+                           x (ct:transpose (ct:make-tensor-view tile (list (- end start) columns)))))
+      out)))
 
 (defun linear (x weight)
   "X · WEIGHTᵀ for a WEIGHT of shape (out in). Every projection goes through here."
-  (ct:matmul x (ct:transpose (as-f32 weight))))
+  (case (ct:tensor-dtype weight)
+    ((:f16 :bf16) (tiled-linear x weight))
+    (t (ct:matmul x (ct:transpose weight)))))
 
 (defun apply-rmsnorm (x weight epsilon)
   (ct:rmsnorm x :weights (as-f32 weight) :epsilon epsilon))

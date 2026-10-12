@@ -14,8 +14,8 @@
 
 (defun case-option (case key) (getf (rest (assoc case *cases*)) key))
 
-(defparameter *greedy-horizon* 4
-  "Short, because one forward takes about a minute until half-precision matmul lands (#4).")
+(defparameter *greedy-horizon* 8
+  "The ids the oracle dumps.")
 
 ;;; llama.cpp multiplies in f16 or q8 activations; ours stay f32. Observed worst case: cosine
 ;;; 0.999992, relative error 0.0040 on 6 tokens and 0.0119 on 46.

@@ -43,7 +43,7 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 ## Acceptance
 
-`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct (F16) against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 4). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. It takes about ten minutes and skips every test when its inputs are missing.
+`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct (F16) against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. It takes about half a minute and skips every test when its inputs are missing.
 
 ```sh
 curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
@@ -56,4 +56,4 @@ sbcl --dynamic-space-size 16GB --non-interactive --eval '(require :asdf)' --eval
 
 The test checks the file against its pinned sha256. `llama-oracle.sh` builds llama.cpp[^oracle] and writes each dump to `reference/oracle/<name>/`; the chat run pins the template's date to 26 Jul 2024, as the test does. llama.cpp multiplies in f16, ours in f32, so layers match by cosine (at least 0.9999) and relative error (at most 0.02), not exactly.
 
-[^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and four greedy ids.
+[^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and up to eight greedy ids.

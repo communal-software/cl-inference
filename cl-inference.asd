@@ -28,7 +28,7 @@
   :description "In-process inference on cl-tensor, a local provider for cl-inference"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference" "cl-tensor" "closer-mop" "cl-unicode" "babel" "float-features")
+  :depends-on ("cl-inference" "cl-tensor" "trivial-simd" "closer-mop" "cl-unicode" "babel" "float-features")
   :serial t
   :components ((:file "local/package") (:file "local/weights") (:file "local/sections")
                (:file "local/architecture") (:file "local/tokenizer")
