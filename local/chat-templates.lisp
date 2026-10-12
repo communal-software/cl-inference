@@ -6,16 +6,16 @@
   (:detect "<|start_header_id|>" "Cutting Knowledge Date")
   (:message "<|start_header_id|>~a<|end_header_id|>~%~%~a<|eot_id|>")
   (:generation-prompt "<|start_header_id|>assistant<|end_header_id|>~%~%")
-  (:stop "<|eot_id|>" "<|eom_id|>"))
+  (:stop "<|eot_id|>" "<|eom_id|>" "<|end_of_text|>"))
 
 (define-chat-template chatml ()
   (:detect "<|im_start|>")
   (:message "<|im_start|>~a~%~a<|im_end|>~%")
   (:generation-prompt "<|im_start|>assistant~%")
-  (:stop "<|im_end|>"))
+  (:stop "<|im_end|>" "<|endoftext|>"))
 
 (define-chat-template qwen3-chat (chatml)
-  (:detect "<|im_start|>" "</think>"))
+  (:detect "<|im_start|>" "multi_step_tool"))
 
 (defun python-space-p (char)
   (or (space-p char) (<= #x1c (char-code char) #x1f)))

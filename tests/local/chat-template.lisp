@@ -229,7 +229,7 @@
            :template "{{ '<|start_header_id|>' }} Cutting Knowledge Date: December 2023")))
   (is (eq 'local:chatml (loaded-chat-template-class :template "{{ '<|im_start|>' }}")))
   (is (eq 'local:qwen3-chat
-          (loaded-chat-template-class :template "<|im_start|> ... </think>"))))
+          (loaded-chat-template-class :template "<|im_start|> ... multi_step_tool"))))
 
 (test chat-template-falls-back-to-the-architectures
   (is (eq 'local:chatml (loaded-chat-template-class :architecture "chatfallback")))
@@ -240,7 +240,7 @@
 (test chat-template-detection-beats-the-architectures
   (is (eq 'local:qwen3-chat
           (loaded-chat-template-class :architecture "chatfallback"
-                                      :template "<|im_start|> </think>"))))
+                                      :template "<|im_start|> multi_step_tool"))))
 
 (test chat-template-loading-signals-when-nothing-applies
   (signals local:unknown-chat-template (loaded-chat-template-class))
@@ -254,6 +254,21 @@
     (local:unknown-chat-template (condition)
       (is (equal "{{ x }}" (local:unknown-chat-template-source condition))))))
 
+;;; llama.cpp's models/templates, kept in the gitignored reference/templates directory.
+
+(test official-templates-are-detected
+  (let ((directory (fixture-path "templates/")))
+    (if (not (probe-file directory))
+        (skip "reference/templates is absent")
+        (loop for (file class) in '(("meta-llama-Llama-3.2-3B-Instruct" local:llama3-chat)
+                                    ("meta-llama-Llama-3.1-8B-Instruct" local:llama3-chat)
+                                    ("Qwen-Qwen3-0.6B" local:qwen3-chat)
+                                    ("Qwen-QwQ-32B" local:chatml))
+              for path = (fixture-path (format nil "templates/~A.jinja" file))
+              when (probe-file path)
+                do (is (eq class (class-name (local::detected-chat-template-class (fixture-text path))))
+                       "~A" file)))))
+
 (test real-vocab-fixture-declares-chatml
   (let ((path (fixture-path "ggml-vocab-qwen2.gguf")))
     (if (not (probe-file path))
@@ -264,16 +279,17 @@
 ;;; Prompts as token ids
 
 (defparameter *chat-tokens*
-  '("<|im_start|>" "<|im_end|>" "<|start_header_id|>" "<|end_header_id|>" "<|eot_id|>"))
+  '("<|im_start|>" "<|im_end|>" "<|start_header_id|>" "<|end_header_id|>" "<|eot_id|>"
+    "<|end_of_text|>" "<|endoftext|>"))
 
 (defmacro with-chat-tokenizer ((var &rest file-options) &body body)
   `(with-tokenizer (,var :tokens (append (fixture-tokens) *chat-tokens*)
-                         :types (append (fixture-types) (make-list 5 :initial-element 3))
+                         :types (append (fixture-types) (make-list 7 :initial-element 3))
                          ,@file-options)
      ,@body))
 
 ;;; Ids: 264 <s>, 265 </s>, 267 <|im_start|>, 268 <|im_end|>, 269 <|start_header_id|>,
-;;; 270 <|end_header_id|>, 271 <|eot_id|>.
+;;; 270 <|end_header_id|>, 271 <|eot_id|>, 272 <|end_of_text|>, 273 <|endoftext|>.
 
 (test encode-chat-turns-control-text-into-single-ids
   (with-chat-tokenizer (tokenizer :specials '(("bos_token_id" 264) ("eos_token_id" 265)
@@ -307,7 +323,7 @@
 (test stop-ids-join-the-templates-tokens-and-the-files-end-tokens
   (with-chat-tokenizer (tokenizer :specials '(("bos_token_id" 264) ("eos_token_id" 265)
                                               ("eot_token_id" 271)))
-    (is (equal '(271 265) (local:chat-template-stop-ids (make-instance 'local:llama3-chat)
-                                                        tokenizer)))
-    (is (equal '(268 265 271) (local:chat-template-stop-ids (make-instance 'local:chatml)
-                                                            tokenizer)))))
+    (is (equal '(271 272 265) (local:chat-template-stop-ids (make-instance 'local:llama3-chat)
+                                                            tokenizer)))
+    (is (equal '(268 273 265 271) (local:chat-template-stop-ids (make-instance 'local:chatml)
+                                                                tokenizer)))))

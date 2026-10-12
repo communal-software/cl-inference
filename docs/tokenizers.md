@@ -131,6 +131,7 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 | Files without `tokenizer.ggml.pre` | [#32](https://github.com/communal-software/cl-inference/issues/32) |
 | Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
 | Placing a child's rule before an inherited one | [#34](https://github.com/communal-software/cl-inference/issues/34) |
+| Chat templates | [chat templates](chat-templates.md#limitations) |
 
 [^regex]: The standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
 [^merges]: The llama 3 merge list does not reach every token, so merging alone encodes some words differently from llama.cpp.

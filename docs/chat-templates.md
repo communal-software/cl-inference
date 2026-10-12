@@ -31,7 +31,7 @@ A chat template turns client messages into the prompt text a model was trained o
 |---|---|---|---|
 | `llama3-chat` | `<\|start_header_id\|>` and `Cutting Knowledge Date` | Llama 3.2 Instruct | In the first user message; tool results use the `ipython` role; one call per message |
 | `chatml` | `<\|im_start\|>` | Plain `<\|im_start\|>role` turns | Rejected |
-| `qwen3-chat` | `<\|im_start\|>` and `</think>` | Qwen3 | In the system turn; calls as `<tool_call>` blocks; consecutive results share one `<tool_response>` user turn |
+| `qwen3-chat` | `<\|im_start\|>` and `multi_step_tool` | Qwen3 | In the system turn; calls as `<tool_call>` blocks; consecutive results share one `<tool_response>` user turn |
 
 `llama3-chat` and `qwen3-chat` match the official Jinja templates byte for byte.[^jinja]
 
@@ -90,7 +90,7 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 
 ## Stop ids
 
-`chat-template-stop-ids` returns the ids of the template's `:stop` tokens that the vocabulary holds, then the file's end-of-sequence, end-of-turn and end-of-message ids, without repeats. Llama 3 gives `<|eot_id|>`, `<|eom_id|>` and `<|end_of_text|>`.
+`chat-template-stop-ids` returns the ids of the template's `:stop` tokens that the vocabulary holds, then the file's end-of-sequence, end-of-turn and end-of-message ids, without repeats. `llama3-chat` names `<|eot_id|>`, `<|eom_id|>` and `<|end_of_text|>`; `chatml` names `<|im_end|>` and `<|endoftext|>`.
 
 ## Errors
 
@@ -104,7 +104,8 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 | Missing | Tracker |
 |---|---|
 | Parsing tool calls and reasoning out of a reply | [#36](https://github.com/communal-software/cl-inference/issues/36) |
+| Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder, Qwen3.5, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Message text that spells a control token encodes as that token | [#37](https://github.com/communal-software/cl-inference/issues/37) |
 | Running the file's Jinja directly | not planned |
 
-[^jinja]: The tests compare both against `meta-llama/Llama-3.2-3B-Instruct` and `Qwen/Qwen3-0.6B` as rendered by transformers, tool definitions included. `python-json` writes tool JSON the way Python's `json.dumps(ensure_ascii=False)` does, including float spelling such as `1e-05`. `chatml` omits the default system prompt that older Qwen2 templates add.
+[^jinja]: The tests compare both against `meta-llama/Llama-3.2-3B-Instruct` and `Qwen/Qwen3-0.6B` as rendered by transformers, tool definitions included. Tool JSON is written the way Python's `json.dumps(ensure_ascii=False)` does, including float spelling such as `1e-05`.
