@@ -1,10 +1,10 @@
 # Client
 
-`cl-inference/client` is one synchronous `complete` contract for chat models, with HTTP backends behind it. It depends on neither `cl-inference` nor cl-tensor, so HTTP-only consumers do not load the engine.
+`cl-inference` is one synchronous `complete` contract for chat models, with HTTP backends and the [in-process `:local` backend](design.md) behind it. The system loads no cl-tensor, so HTTP-only consumers do not load the engine.
 
 ```lisp
-(asdf:load-system :cl-inference/client)
-(use-package :cl-inference/client)
+(asdf:load-system :cl-inference)
+(use-package :cl-inference)
 
 (complete :ollama :model "llama3.2"
                   :messages '((:role :user :content "Reply with ok.")))
@@ -78,6 +78,7 @@ A turn ends with exactly one `:done`. The sink runs on the calling thread; a sin
 | `openai-backend` | `:protocol-openai` | OpenAI-compatible chat completions, SSE streaming |
 | `ollama-backend` | `:protocol-ollama` | Ollama native `/api/chat`, NDJSON streaming |
 | `scripted-backend` | not registered | Canned replies, for offline tests |
+| `local-backend` | `:local` | A model in this image; loaded by `cl-inference/local`, answers `:unavailable` until the session work lands |
 
 `describe-backend` returns a metadata plist (`:kind`, `:name`, `:summary`, ...). `(backends :kind :provider)` lists registered names.
 
@@ -136,13 +137,13 @@ For consumers that layer their own services over the client.
 
 ## Testing
 
-`cl-inference/client/tests` runs offline against a fake HTTP server and passes on SBCL, CCL and ECL. See [Testing](testing.md).
+`cl-inference/tests` runs offline against a fake HTTP server and passes on SBCL, CCL and ECL. See [Testing](testing.md).
 
 ## Limitations
 
 | Missing | Tracker |
 |---|---|
-| In-process backend over sessions | [#24](https://github.com/communal-software/cl-inference/issues/24) |
+| `:local` backend over sessions | [#24](https://github.com/communal-software/cl-inference/issues/24) |
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |

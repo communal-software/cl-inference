@@ -3,9 +3,9 @@
 `cl-inference/gguf` reads single-file little-endian GGUF v3 through the [weights protocol](weights.md). Loading the system registers the `:gguf` format; files are detected by their `GGUF` magic.
 
 ```lisp
-(asdf:load-system :cl-inference/gguf)
-(ci:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
-  (ci:weights-metadata w "general.architecture"))
+(asdf:load-system :cl-inference/gguf)   ; loads cl-inference/local
+(local:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
+  (local:weights-metadata w "general.architecture"))
 ;; => "llama", T
 ```
 

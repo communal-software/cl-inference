@@ -51,7 +51,7 @@
     table)
   "ggml type id → block geometry. Ids absent here (removed or unknown) are rejected.")
 
-(defstruct (gguf-tensor (:include ci:tensor-info)
+(defstruct (gguf-tensor (:include local:tensor-info)
                         (:constructor make-gguf-tensor (name shape format-type byte-count offset)))
   (offset 0 :type (integer 0) :read-only t))
 
@@ -155,13 +155,13 @@
       (let ((offset (gguf-tensor-offset tensor)))
         (unless (zerop (mod offset alignment))
           (gguf-fail "Tensor ~A offset ~D is not aligned to ~D"
-                     (ci:tensor-info-name tensor) offset alignment))
+                     (local:tensor-info-name tensor) offset alignment))
         (when (< offset end)
-          (gguf-fail "Tensor ~A overlaps another tensor" (ci:tensor-info-name tensor)))
-        (setf end (+ offset (ci:tensor-info-byte-count tensor)))
+          (gguf-fail "Tensor ~A overlaps another tensor" (local:tensor-info-name tensor)))
+        (setf end (+ offset (local:tensor-info-byte-count tensor)))
         (when (> (+ data-start end) size)
           (gguf-fail "Tensor ~A extends past the end of the file"
-                     (ci:tensor-info-name tensor)))))))
+                     (local:tensor-info-name tensor)))))))
 
 (defun parse-gguf (base size)
   "Parse the header at BASE. Return metadata table, metadata keys, tensors and data start."
@@ -184,9 +184,9 @@
           (push key keys)))
       (dotimes (i tensor-count)
         (let ((tensor (read-tensor-info cursor)))
-          (when (gethash (ci:tensor-info-name tensor) names)
-            (gguf-fail "Duplicate tensor ~A" (ci:tensor-info-name tensor)))
-          (setf (gethash (ci:tensor-info-name tensor) names) tensor)
+          (when (gethash (local:tensor-info-name tensor) names)
+            (gguf-fail "Duplicate tensor ~A" (local:tensor-info-name tensor)))
+          (setf (gethash (local:tensor-info-name tensor) names) tensor)
           (push tensor tensors)))
       (let* ((alignment (validate-alignment (gethash "general.alignment" metadata +default-alignment+)))
              (data-start (* alignment (ceiling (cursor-position cursor) alignment)))

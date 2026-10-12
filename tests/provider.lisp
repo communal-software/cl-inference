@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; The provider layer against the fake HTTP backend: what a declaration
 ;;; publishes, what an instance may override, where a credential comes from and

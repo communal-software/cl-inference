@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client/tests)
+(in-package #:cl-inference/tests)
 
 ;;; Offline stand-in for an HTTP backend. A sequential accept loop serving
 ;;; one request per connection and always answering Connection: close --

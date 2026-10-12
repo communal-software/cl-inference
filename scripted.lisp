@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; A backend that answers from a script, for tests that must not reach a
 ;;; network. Each call takes the next reply:

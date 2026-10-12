@@ -3,10 +3,10 @@
 Open a weight file in any registered format and read its tensors as cl-tensor views.
 
 ```lisp
-(ci:with-weights (w "model.gguf")
-  (list (ci:weights-metadata w "general.architecture")
-        (ci:weights-tensor-names w)
-        (ci:weights-tensor w "token_embd.weight")))
+(local:with-weights (w "model.gguf")
+  (list (local:weights-metadata w "general.architecture")
+        (local:weights-tensor-names w)
+        (local:weights-tensor w "token_embd.weight")))
 ```
 
 ## Functions
@@ -55,7 +55,7 @@ Subclass `weights`, implement the generics, and register the format.
 | `weights-release` | Free resources; called once |
 
 ```lisp
-(ci:register-weights-format :my-format
+(local:register-weights-format :my-format
   :detect (lambda (path header-octets) ...)
   :open   (lambda (path) (make-instance 'my-weights :format :my-format :path path)))
 ```

@@ -1,6 +1,6 @@
 (in-package #:cl-inference/gguf)
 
-(define-condition gguf-error (ci:weights-error) ())
+(define-condition gguf-error (local:weights-error) ())
 
 (defun gguf-fail (control &rest args)
-  (apply #'ci:weights-fail 'gguf-error control args))
+  (apply #'local:weights-fail 'gguf-error control args))

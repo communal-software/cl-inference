@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; A completion answers (:ok reply) or (:error reason). Reasons:
 ;;;   :timeout | :cancelled | :unavailable

@@ -1,4 +1,4 @@
-(in-package #:cl-inference/tests)
+(in-package #:cl-inference/local/tests)
 
 ;;; Test-only GGUF writer. Knobs produce the malformed files the reader must reject.
 

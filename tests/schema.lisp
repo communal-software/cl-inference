@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; The parameter schema: the closed vocabulary, coercion of the arguments a
 ;;; model supplies, and the JSON Schema rendering both directions.

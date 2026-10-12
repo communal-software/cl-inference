@@ -1,25 +1,35 @@
 (defpackage #:cl-inference
   (:use #:cl)
-  (:local-nicknames (#:ct #:cl-tensor) (#:mop #:closer-mop))
+  (:local-nicknames (#:a #:alexandria)
+                    (#:json #:com.inuoe.jzon)
+                    (#:bt #:bordeaux-threads-2))
   (:export
-   ;; weights protocol
-   #:open-weights #:close-weights #:with-weights #:register-weights-format
-   #:weights #:weights-format #:weights-path #:weights-closed-p
-   #:weights-metadata #:weights-metadata-keys #:weights-tensor-names
-   #:weights-tensor-info #:weights-tensor #:weights-tensor-bytes
-   #:tensor-info #:make-tensor-info #:tensor-info-name #:tensor-info-shape
-   #:tensor-info-format-type #:tensor-info-byte-count
-   ;; format implementers
-   #:weights-metadata-ref #:weights-metadata-key-list #:weights-tensor-info-list
-   #:weights-tensor-info-ref #:weights-make-tensor #:weights-make-bytes #:weights-release
-   #:weights-architecture-name
+   ;; calling
+   #:complete #:complete* #:check-request
+   ;; results
+   #:fail #:bad-request #:backend-error #:result-error-p #:result-error
    ;; conditions
-   #:weights-error #:weights-error-message #:weights-fail #:unknown-weights-format
-   #:weights-closed #:unsupported-weights-type
-   ;; architectures
-   #:define-architecture #:architecture #:architecture-class #:load-architecture
-   #:hparam #:architecture-format #:architecture-hparam-specs #:architecture-block-slots
-   #:architecture-block-spec #:architecture-format-option #:architecture-tensor-name
-   #:architecture-tensor
-   #:architecture-error #:architecture-error-message #:unknown-architecture
-   #:unknown-architecture-name))
+   #:completion-error #:completion-error-reason #:completion-timeout #:completion-cancelled
+   #:completion-unavailable #:completion-bad-request #:completion-backend-error
+   #:completion-backend-error-status #:completion-backend-error-detail
+   #:completion-backend-error-retry-after
+   ;; content and events
+   #:normalize-content #:content-text #:text-block
+   #:text-delta #:tool-call-delta #:done #:emit-event
+   ;; cancellation
+   #:make-cancel-token #:cancel #:cancelled-p #:on-cancel #:cancel-token-p
+   ;; backends
+   #:backend #:backend-name #:backend-complete #:describe-backend #:register-backend #:find-backend
+   #:backends #:protocols #:protocol-backend #:openai-backend #:ollama-backend #:scripted-backend #:make-scripted-backend #:scripted-requests
+   ;; providers
+   #:define-provider #:provider #:make-provider #:providers
+   #:provider-base-url #:provider-protocol #:provider-model #:provider-declaration
+   ;; schema
+   #:any #:array-of #:map-of #:object
+   #:coerce-args #:validate-schema #:schema->json-schema #:json-schema->schema
+   #:param-name #:param-type #:param-options #:*absent* #:json-object #:json-get
+   ;; contract helpers
+   #:tool-schema #:untyped->json #:json->arguments #:lisp-tool-name
+   #:reply-prompt-tokens #:done-reason
+   ;; transport
+   #:+default-timeout+ #:*sink-grace* #:call-with-deadline #:header-alist))

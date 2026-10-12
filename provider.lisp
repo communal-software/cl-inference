@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; A provider is data -- a protocol to speak, a base URL, how to authenticate,
 ;;; a model catalogue and any quirks -- layered under each request before the

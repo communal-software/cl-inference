@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; Ollama's native protocol against the fake HTTP backend: the /api/chat
 ;;; request shape, the flat reply and its counters, NDJSON streaming, and the

@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; --- Retry-After ------------------------------------------------------
 

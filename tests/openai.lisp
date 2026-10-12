@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; The OpenAI protocol against the fake HTTP backend: what it puts on the
 ;;; wire, what it makes of what comes back, the SSE vocabulary, and the line

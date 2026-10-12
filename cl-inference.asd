@@ -1,62 +1,63 @@
 (asdf:defsystem "cl-inference"
-  :description "Extensible LLM inference for Common Lisp, built on cl-tensor"
+  :description "Model client for Common Lisp: one contract for hosted and local models"
   :author "George Watson"
   :license "GPL-3.0-only"
   :version "0.0.0"
-  :depends-on ("cl-tensor" "closer-mop")
+  :depends-on ("alexandria" "bordeaux-threads" "com.inuoe.jzon" "drakma" "flexi-streams"
+               "usocket" "puri" "chunga" "cl+ssl" "uiop")
   :serial t
-  :components ((:file "package") (:file "weights") (:file "architecture"))
+  :components ((:file "package") (:file "result") (:file "cancel")
+               (:file "schema") (:file "contract") (:file "transport")
+               (:file "backend") (:file "openai") (:file "ollama")
+               (:file "provider") (:file "providers") (:file "scripted"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/tests"))))
 
-(asdf:defsystem "cl-inference/gguf"
-  :description "GGUF weight-file reader for cl-inference"
+(asdf:defsystem "cl-inference/tests"
+  :depends-on ("cl-inference" "fiveam" "usocket" "bordeaux-threads" "flexi-streams")
+  :serial t
+  :components ((:file "tests/package") (:file "tests/fake-http")
+               (:file "tests/schema") (:file "tests/transport")
+               (:file "tests/openai") (:file "tests/ollama")
+               (:file "tests/scripted") (:file "tests/provider") (:file "tests/systems"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/tests :run-tests)
+               (error "cl-inference tests failed"))))
+
+(asdf:defsystem "cl-inference/local"
+  :description "In-process inference on cl-tensor, a local provider for cl-inference"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference" "cl-tensor" "trivial-simd" "cffi" "babel")
+  :depends-on ("cl-inference" "cl-tensor" "closer-mop")
+  :serial t
+  :components ((:file "local/package") (:file "local/weights") (:file "local/architecture")
+               (:file "local/backend"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
+
+(asdf:defsystem "cl-inference/gguf"
+  :description "GGUF weight-file reader for cl-inference/local"
+  :author "George Watson"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/local" "cl-tensor" "trivial-simd" "cffi" "babel")
   :serial t
   :components ((:file "gguf/package") (:file "gguf/errors") (:file "gguf/posix")
                (:file "gguf/reader") (:file "gguf/weights")))
 
 (asdf:defsystem "cl-inference/quant"
-  :description "Quantized dtypes for cl-inference"
+  :description "Quantized dtypes for cl-inference/local"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference" "trivial-simd")
+  :depends-on ("cl-inference/local" "trivial-simd")
   :serial t
   :components ((:file "quant/package")))
 
-(asdf:defsystem "cl-inference/client"
-  :description "Model client contract and HTTP backends for cl-inference"
-  :author "George Watson"
-  :license "GPL-3.0-only"
-  :depends-on ("alexandria" "bordeaux-threads" "com.inuoe.jzon" "drakma" "flexi-streams"
-               "usocket" "puri" "chunga" "cl+ssl" "uiop")
+(asdf:defsystem "cl-inference/local/tests"
+  :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-inference/quant" "fiveam")
   :serial t
-  :components ((:file "client/package") (:file "client/result") (:file "client/cancel")
-               (:file "client/schema") (:file "client/contract") (:file "client/transport")
-               (:file "client/backend") (:file "client/openai") (:file "client/ollama")
-               (:file "client/provider") (:file "client/providers") (:file "client/scripted"))
-  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/client/tests"))))
-
-(asdf:defsystem "cl-inference/client/tests"
-  :depends-on ("cl-inference/client" "fiveam" "usocket" "bordeaux-threads" "flexi-streams")
-  :serial t
-  :components ((:file "tests/client/package") (:file "tests/client/fake-http")
-               (:file "tests/client/schema") (:file "tests/client/transport")
-               (:file "tests/client/openai") (:file "tests/client/ollama")
-               (:file "tests/client/scripted") (:file "tests/client/provider") (:file "tests/client/systems"))
+  :components ((:file "tests/local/package") (:file "tests/local/systems")
+               (:file "tests/local/weights") (:file "tests/local/gguf-writer")
+               (:file "tests/local/gguf") (:file "tests/local/architecture"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
-             (unless (uiop:symbol-call :cl-inference/client/tests :run-tests)
-               (error "cl-inference/client tests failed"))))
-
-(asdf:defsystem "cl-inference/tests"
-  :depends-on ("cl-inference" "cl-inference/gguf" "cl-inference/quant" "cl-inference/client/tests"
-               "fiveam")
-  :serial t
-  :components ((:file "tests/package") (:file "tests/systems") (:file "tests/weights")
-               (:file "tests/gguf-writer") (:file "tests/gguf") (:file "tests/architecture"))
-  :perform (asdf:test-op (op component)
-             (declare (ignore op component))
-             (unless (uiop:symbol-call :cl-inference/tests :run-tests)
-               (error "cl-inference tests failed"))))
+             (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)
+               (error "cl-inference/local tests failed"))))

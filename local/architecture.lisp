@@ -1,4 +1,4 @@
-(in-package #:cl-inference)
+(in-package #:cl-inference/local)
 
 (define-condition architecture-error (error)
   ((message :initarg :message :reader architecture-error-message))

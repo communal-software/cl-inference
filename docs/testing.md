@@ -3,34 +3,31 @@
 The suite uses FiveAM.
 
 ```sh
-sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference)'
+sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference)'        # client
+sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference/local)'  # engine
 ```
 
-`asdf:test-system` signals an error if any check fails. From a REPL, `(cl-inference/tests:run-tests)` returns true when every check passes. It runs the engine suite, then the client suite.
+`asdf:test-system` signals an error if any check fails. From a REPL, `(cl-inference/tests:run-tests)` and `(cl-inference/local/tests:run-tests)` return true when every check passes.
 
-The [client](client.md) suite loads neither the engine nor cl-tensor and passes on SBCL, CCL and ECL:
-
-```sh
-sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference/client)'
-```
+The [client](client.md) suite loads neither the engine nor cl-tensor and passes on SBCL, CCL and ECL.
 
 | File | Covers |
 |---|---|
-| `tests/systems.lisp` | Every subsystem package loads |
-| `tests/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
-| `tests/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
-| `tests/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
-| `tests/architecture.lisp` | Architecture DSL: inheritance, hparams, tensor names, loading from GGUF, malformed definitions |
+| `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
+| `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
+| `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
+| `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
+| `tests/local/architecture.lisp` | Architecture DSL: inheritance, hparams, tensor names, loading from GGUF, malformed definitions |
 
 | File | Covers |
 |---|---|
-| `tests/client/schema.lisp` | Parameter schemas: coercion, JSON Schema in both directions |
-| `tests/client/transport.lisp` | Retry-After, cancel tokens, the exchange deadline |
-| `tests/client/openai.lisp`, `ollama.lisp` | Wire request and reply, streaming, deadlines and cancellation against a fake HTTP server |
-| `tests/client/provider.lisp` | Declarations, credentials, layering, quirks |
-| `tests/client/scripted.lisp` | `complete` / `complete*` contract and the scripted backend |
-| `tests/client/systems.lisp` | The client depends on neither the engine nor cl-tensor |
-| `tests/client/fake-http.lisp` | Offline HTTP server used by the above |
+| `tests/schema.lisp` | Parameter schemas: coercion, JSON Schema in both directions |
+| `tests/transport.lisp` | Retry-After, cancel tokens, the exchange deadline |
+| `tests/openai.lisp`, `ollama.lisp` | Wire request and reply, streaming, deadlines and cancellation against a fake HTTP server |
+| `tests/provider.lisp` | Declarations, credentials, layering, quirks |
+| `tests/scripted.lisp` | `complete` / `complete*` contract and the scripted backend |
+| `tests/systems.lisp` | The client depends on neither the engine nor cl-tensor |
+| `tests/fake-http.lisp` | Offline HTTP server used by the above |
 
 Live Ollama tests are skipped unless `CL_INFERENCE_OLLAMA_URL` (the `/v1` route) or `CL_INFERENCE_OLLAMA_NATIVE_URL` is set; `CL_INFERENCE_OLLAMA_MODEL` picks the model.
 

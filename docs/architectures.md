@@ -3,7 +3,7 @@
 `define-architecture` declares a model family. A child inherits from a parent and overrides only the entries that differ.
 
 ```lisp
-(ci:define-architecture llama ()
+(local:define-architecture llama ()
   (:hparams (n-layers) (dim) (rope-theta :default 10000.0))
   (:blocks (attn attention) (mlp swiglu-mlp))
   (:format :gguf
@@ -15,7 +15,7 @@
     (:tensor attn.q "blk.~d.attn_q.weight")
     (:tensor output "output.weight" :optional t)))
 
-(ci:define-architecture qwen3 (llama)
+(local:define-architecture qwen3 (llama)
   (:blocks (attn attention :qk-norm rmsnorm))
   (:format :gguf
     (:arch "qwen3")
@@ -26,11 +26,11 @@
 Loading picks the architecture the file declares:
 
 ```lisp
-(ci:with-weights (w "qwen3.gguf")
-  (let ((arch (ci:load-architecture w)))      ; => #<QWEN3>
-    (ci:hparam arch 'n-layers)                ; from "qwen3.block_count"
-    (ci:architecture-tensor-name arch 'attn.q 3)   ; "blk.3.attn_q.weight"
-    (ci:architecture-tensor arch w 'output)))      ; a view, or NIL when absent
+(local:with-weights (w "qwen3.gguf")
+  (let ((arch (local:load-architecture w)))      ; => #<QWEN3>
+    (local:hparam arch 'n-layers)                ; from "qwen3.block_count"
+    (local:architecture-tensor-name arch 'attn.q 3)   ; "blk.3.attn_q.weight"
+    (local:architecture-tensor arch w 'output)))      ; a view, or NIL when absent
 ```
 
 ## Sections

@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; The shared transport: result shapes, Retry-After, cancel tokens and the
 ;;; exchange deadline.

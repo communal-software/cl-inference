@@ -1,6 +1,6 @@
 (in-package #:cl-inference/gguf)
 
-(defclass gguf-weights (ci:weights)
+(defclass gguf-weights (local:weights)
   ((pointer :initarg :pointer :reader weights-pointer)
    (size :initarg :size :reader weights-size)
    (data-start :initarg :data-start :reader weights-data-start)
@@ -12,7 +12,7 @@
 (defmethod initialize-instance :after ((weights gguf-weights) &key tensors &allow-other-keys)
   (let ((table (make-hash-table :test 'equal)))
     (dolist (tensor tensors)
-      (setf (gethash (ci:tensor-info-name tensor) table) tensor))
+      (setf (gethash (local:tensor-info-name tensor) table) tensor))
     (setf (slot-value weights 'tensor-table) table)))
 
 (defun open-gguf (path)
@@ -29,16 +29,16 @@
           (unless success
             (unmap-file pointer size)))))))
 
-(defmethod ci:weights-metadata-ref ((weights gguf-weights) key)
+(defmethod local:weights-metadata-ref ((weights gguf-weights) key)
   (gethash key (weights-metadata-table weights)))
-(defmethod ci:weights-metadata-key-list ((weights gguf-weights)) (weights-keys weights))
-(defmethod ci:weights-tensor-info-list ((weights gguf-weights)) (weights-tensors weights))
-(defmethod ci:weights-tensor-info-ref ((weights gguf-weights) name)
+(defmethod local:weights-metadata-key-list ((weights gguf-weights)) (weights-keys weights))
+(defmethod local:weights-tensor-info-list ((weights gguf-weights)) (weights-tensors weights))
+(defmethod local:weights-tensor-info-ref ((weights gguf-weights) name)
   (gethash name (weights-tensor-table weights)))
-(defmethod ci:weights-architecture-name ((weights gguf-weights))
+(defmethod local:weights-architecture-name ((weights gguf-weights))
   (let ((name (gethash "general.architecture" (weights-metadata-table weights))))
     (and (stringp name) name)))
-(defmethod ci:weights-release ((weights gguf-weights))
+(defmethod local:weights-release ((weights gguf-weights))
   (unmap-file (weights-pointer weights) (weights-size weights)))
 
 (defun tensor-pointer (weights tensor)
@@ -65,24 +65,24 @@ Extension systems add methods for their types.")
 (define-plain-type :i32 :s32 :s32)
 (define-plain-type :i64 :s64 :s64)
 
-(defmethod ci:weights-make-tensor ((weights gguf-weights) (info gguf-tensor))
-  (let ((type-key (ci:tensor-info-format-type info)))
+(defmethod local:weights-make-tensor ((weights gguf-weights) (info gguf-tensor))
+  (let ((type-key (local:tensor-info-format-type info)))
     (multiple-value-bind (storage dtype)
         (gguf-type-storage type-key (tensor-pointer weights info)
-                           (reduce #'* (ci:tensor-info-shape info)))
+                           (reduce #'* (local:tensor-info-shape info)))
       (unless storage
-        (error 'ci:unsupported-weights-type
+        (error 'local:unsupported-weights-type
                :message (format nil "Tensor ~A has no typed view for ggml type ~A"
-                                (ci:tensor-info-name info) type-key)
-               :tensor (ci:tensor-info-name info) :format-type type-key))
-      (ct:make-tensor-view storage (ci:tensor-info-shape info) :dtype dtype))))
+                                (local:tensor-info-name info) type-key)
+               :tensor (local:tensor-info-name info) :format-type type-key))
+      (ct:make-tensor-view storage (local:tensor-info-shape info) :dtype dtype))))
 
-(defmethod ci:weights-make-bytes ((weights gguf-weights) (info gguf-tensor))
-  (let ((count (ci:tensor-info-byte-count info)))
+(defmethod local:weights-make-bytes ((weights gguf-weights) (info gguf-tensor))
+  (let ((count (local:tensor-info-byte-count info)))
     (ct:make-tensor-view (trivial-simd:make-vector-view (tensor-pointer weights info) :u8 count)
                          (list count))))
 
-(ci:register-weights-format
+(local:register-weights-format
  :gguf
  :detect (lambda (path header)
            (declare (ignore path))

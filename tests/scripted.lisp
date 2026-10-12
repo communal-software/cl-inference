@@ -1,5 +1,5 @@
-(in-package #:cl-inference/client/tests)
-(in-suite :cl-inference/client)
+(in-package #:cl-inference/tests)
+(in-suite :cl-inference)
 
 ;;; The contract through COMPLETE and COMPLETE*, against scripted backends that
 ;;; implement it and nothing else.

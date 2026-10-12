@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; A backend answers one neutral request with one result. HTTP protocols,
 ;;; providers layered over them and in-process engines all implement

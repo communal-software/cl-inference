@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; Ollama's native chat endpoint: POST <base-url>/api/chat, with optional
 ;;; NDJSON streaming. Distinct from :PROTOCOL-OPENAI because the wire shape

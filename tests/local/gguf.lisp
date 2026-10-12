@@ -1,6 +1,6 @@
-(in-package #:cl-inference/tests)
+(in-package #:cl-inference/local/tests)
 
-(in-suite :cl-inference)
+(in-suite :cl-inference/local)
 
 (defparameter *q8-block*
   (let ((octets (make-buffer)))
@@ -22,12 +22,12 @@
 
 (defmacro with-sample ((weights &rest overrides) &body body)
   `(with-gguf-file (path (sample-gguf ,@overrides))
-     (ci:with-weights (,weights path :format :gguf)
+     (local:with-weights (,weights path :format :gguf)
        ,@body)))
 
 (defun open-bad (octets)
   (with-gguf-file (path octets)
-    (ci:open-weights path :format :gguf)))
+    (local:open-weights path :format :gguf)))
 
 (defun tensor-list (tensor)
   (loop for i below (first (coerce (ct:tensor-shape tensor) 'list))
@@ -35,8 +35,8 @@
 
 (test gguf-detected-by-magic
   (with-gguf-file (path (sample-gguf))
-    (ci:with-weights (w path)
-      (is (eq :gguf (ci:weights-format w)))
+    (local:with-weights (w path)
+      (is (eq :gguf (local:weights-format w)))
       (is (typep w 'gguf:gguf-weights)))))
 
 (test gguf-metadata-value-types
@@ -50,8 +50,8 @@
                              ("strs" 9 (:array 8 ("a" "bc")))
                              ("nested" 9 (:array 9 ((:array 4 (1)) (:array 4 (2 3)))))))))
     (with-gguf-file (path octets)
-      (ci:with-weights (w path)
-        (flet ((m (key) (ci:weights-metadata w key)))
+      (local:with-weights (w path)
+        (flet ((m (key) (local:weights-metadata w key)))
           (is (= 200 (m "u8"))) (is (= -3 (m "i8"))) (is (= 60000 (m "u16")))
           (is (= -300 (m "i16"))) (is (= 4000000000 (m "u32"))) (is (= -5 (m "i32")))
           (is (= 1.5f0 (m "f32"))) (is (eq t (m "bool"))) (is (string= "héllo" (m "str")))
@@ -62,37 +62,37 @@
           (is (typep (m "f32s") '(simple-array single-float (*))))
           (is (equalp #("a" "bc") (m "strs")))
           (is (equalp #(#(1) #(2 3)) (m "nested"))))
-        (is (equal '("u8" "i8") (subseq (ci:weights-metadata-keys w) 0 2)))))))
+        (is (equal '("u8" "i8") (subseq (local:weights-metadata-keys w) 0 2)))))))
 
 (test gguf-tensor-listing-and-shape
   (with-sample (w)
-    (is (equal '("f32" "f16" "bf16" "q8" "q4k") (ci:weights-tensor-names w)))
-    (let ((info (ci:weights-tensor-info w "f32")))
-      (is (equal '(2 3) (ci:tensor-info-shape info)))
-      (is (eq :f32 (ci:tensor-info-format-type info)))
-      (is (= 24 (ci:tensor-info-byte-count info))))
-    (is (= 34 (ci:tensor-info-byte-count (ci:weights-tensor-info w "q8"))))
-    (is (= 144 (ci:tensor-info-byte-count (ci:weights-tensor-info w "q4k"))))))
+    (is (equal '("f32" "f16" "bf16" "q8" "q4k") (local:weights-tensor-names w)))
+    (let ((info (local:weights-tensor-info w "f32")))
+      (is (equal '(2 3) (local:tensor-info-shape info)))
+      (is (eq :f32 (local:tensor-info-format-type info)))
+      (is (= 24 (local:tensor-info-byte-count info))))
+    (is (= 34 (local:tensor-info-byte-count (local:weights-tensor-info w "q8"))))
+    (is (= 144 (local:tensor-info-byte-count (local:weights-tensor-info w "q4k"))))))
 
 (test gguf-f32-view-is-row-major
   (with-sample (w)
-    (let ((tensor (ci:weights-tensor w "f32")))
+    (let ((tensor (local:weights-tensor w "f32")))
       (is (eq :f32 (ct:tensor-dtype tensor)))
       (is (= 3 (ct:tref tensor 1 0)))
       (is (= 5 (ct:tref tensor 1 2))))))
 
 (test gguf-half-precision-views
   (with-sample (w)
-    (let ((f16 (ct:astype (ci:weights-tensor w "f16") :f32))
-          (bf16 (ct:astype (ci:weights-tensor w "bf16") :f32)))
+    (let ((f16 (ct:astype (local:weights-tensor w "f16") :f32))
+          (bf16 (ct:astype (local:weights-tensor w "bf16") :f32)))
       (is (equal '(1f0 2f0) (tensor-list f16)))
       (is (equal '(1f0 2f0) (tensor-list bf16))))))
 
 (test gguf-q8-0-exposes-raw-bytes-only
   (with-sample (w)
-    (signals ci:unsupported-weights-type (ci:weights-tensor w "q8"))
-    (signals ci:unsupported-weights-type (ci:weights-tensor w "q4k"))
-    (let ((bytes (ci:weights-tensor-bytes w "q8")))
+    (signals local:unsupported-weights-type (local:weights-tensor w "q8"))
+    (signals local:unsupported-weights-type (local:weights-tensor w "q4k"))
+    (let ((bytes (local:weights-tensor-bytes w "q8")))
       (is (eq :u8 (ct:tensor-dtype bytes)))
       (is (equalp (coerce *q8-block* 'vector) (coerce (tensor-list bytes) 'vector))))))
 
@@ -101,31 +101,31 @@
     (let ((method (defmethod gguf:gguf-type-storage ((type (eql :q8_0)) pointer count)
                     (values (trivial-simd:make-vector-view pointer :u8 (* 34 (/ count 32))) :u8))))
       (unwind-protect
-           (is (eq :u8 (ct:tensor-dtype (ci:weights-tensor w "q8"))))
+           (is (eq :u8 (ct:tensor-dtype (local:weights-tensor w "q8"))))
         (remove-method #'gguf:gguf-type-storage method)))))
 
 (test gguf-writes-are-copy-on-write
   (with-gguf-file (path (sample-gguf))
     (let ((before (read-octets path)))
-      (ci:with-weights (w path :format :gguf)
-        (let ((tensor (ci:weights-tensor w "f32")))
+      (local:with-weights (w path :format :gguf)
+        (let ((tensor (local:weights-tensor w "f32")))
           (setf (ct:tref tensor 0 0) 9f0)
           (is (= 9 (ct:tref tensor 0 0)))))
       (is (equalp before (read-octets path))))))
 
 (test gguf-close-guards-access
   (with-gguf-file (path (sample-gguf))
-    (let ((w (ci:open-weights path)))
-      (ci:close-weights w)
-      (ci:close-weights w)
-      (signals ci:weights-closed (ci:weights-tensor w "f32")))))
+    (let ((w (local:open-weights path)))
+      (local:close-weights w)
+      (local:close-weights w)
+      (signals local:weights-closed (local:weights-tensor w "f32")))))
 
 (test gguf-custom-alignment
   (with-gguf-file (path (sample-gguf :alignment 64))
-    (ci:with-weights (w path :format :gguf)
-      (is (= 5 (ct:tref (ci:weights-tensor w "f32") 1 2)))
+    (local:with-weights (w path :format :gguf)
+      (is (= 5 (ct:tref (local:weights-tensor w "f32") 1 2)))
       (is (equalp (coerce *q8-block* 'vector)
-                  (coerce (tensor-list (ci:weights-tensor-bytes w "q8")) 'vector))))))
+                  (coerce (tensor-list (local:weights-tensor-bytes w "q8")) 'vector))))))
 
 (test gguf-rejects-empty-and-short-files
   (signals gguf:gguf-error (open-bad (make-array 0 :element-type '(unsigned-byte 8))))
@@ -150,8 +150,8 @@
 
 (test gguf-rejects-excess-nesting
   (with-gguf-file (path (build-gguf :metadata `(("n" 9 ,(nested-array 30)))))
-    (ci:with-weights (w path :format :gguf)
-      (is (ci:weights-metadata w "n"))))
+    (local:with-weights (w path :format :gguf)
+      (is (local:weights-metadata w "n"))))
   (signals gguf:gguf-error (open-bad (build-gguf :metadata `(("n" 9 ,(nested-array 40)))))))
 
 (test gguf-rejects-invalid-values

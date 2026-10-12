@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; A caller-held handle rather than a message: it reaches a completion through
 ;;; every layer without the caller knowing which backend holds it.

@@ -1,4 +1,4 @@
-(in-package #:cl-inference/client)
+(in-package #:cl-inference)
 
 ;;; The neutral model contract. A request is a plist (:messages, :tools,
 ;;; :model, sampling parameters, :timeout, :cancel, :stream, :ref); a reply is
