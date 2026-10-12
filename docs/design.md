@@ -10,7 +10,7 @@
 | System | Purpose |
 |---|---|
 | `cl-inference` | [Model client contract](client.md) and HTTP backends; no cl-tensor |
-| `cl-inference/local` | `:local` backend, [weights protocol](weights.md), [architectures](architectures.md), [blocks](blocks.md), sessions, sampling |
+| `cl-inference/local` | `:local` backend, [weights protocol](weights.md), [architectures](architectures.md), [tokenizers](tokenizers.md), [blocks](blocks.md), sessions, sampling |
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
 | `cl-inference/quant` | Quantized dtypes as cl-tensor extensions |
 
@@ -27,3 +27,13 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
 ```
 
 Kernels are pure Lisp on cl-tensor and trivial-simd; there is no inference-specific native code.
+
+## Tokenizers
+
+Tokenizers are declared the same way with `define-tokenizer`, selected by the file's `tokenizer.ggml.model` and `tokenizer.ggml.pre` rather than its architecture:
+
+```lisp
+(define-tokenizer qwen2 (llama-bpe)
+  (:pre-tokenizer (digits :max 1))
+  (:format :gguf (:pre "qwen2")))
+```

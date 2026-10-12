@@ -55,6 +55,8 @@ Merging happens on lookup, so redefining a parent updates its children.
 
 Because `~a` is the architecture's own `:arch`, `qwen3` reuses the `llama` key templates without repeating them.
 
+[Tokenizers](tokenizers.md) use the same inheritance rules.
+
 ## Functions
 
 | Function | Returns |

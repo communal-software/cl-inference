@@ -28,9 +28,11 @@
   :description "In-process inference on cl-tensor, a local provider for cl-inference"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference" "cl-tensor" "closer-mop")
+  :depends-on ("cl-inference" "cl-tensor" "closer-mop" "cl-unicode" "babel")
   :serial t
-  :components ((:file "local/package") (:file "local/weights") (:file "local/architecture")
+  :components ((:file "local/package") (:file "local/weights") (:file "local/sections")
+               (:file "local/architecture") (:file "local/tokenizer")
+               (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
                (:file "local/blocks") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
@@ -57,7 +59,7 @@
   :components ((:file "tests/local/package") (:file "tests/local/systems")
                (:file "tests/local/weights") (:file "tests/local/gguf-writer")
                (:file "tests/local/gguf") (:file "tests/local/architecture")
-               (:file "tests/local/blocks"))
+               (:file "tests/local/blocks") (:file "tests/local/tokenizer"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)

@@ -11,11 +11,7 @@
 (defun architecture-fail (condition-type control &rest args)
   (error condition-type :message (apply #'format nil control args)))
 
-(defclass architecture-class (standard-class)
-  ((sections :initform nil :accessor architecture-class-sections)))
-
-(defmethod mop:validate-superclass ((class architecture-class) (superclass standard-class))
-  t)
+(defclass architecture-class (section-class) ())
 
 (defclass architecture ()
   ((format :initarg :format :initform nil :reader architecture-format))
@@ -69,14 +65,6 @@
     (list key :options (nreverse options) :hparam-keys (nreverse hparam-keys)
               :tensors (nreverse tensors))))
 
-(defun merge-format (existing new)
-  (if existing
-      (list* (first existing)
-             (loop for kind in '(:options :hparam-keys :tensors)
-                   append (list kind (append (getf (rest existing) kind)
-                                             (getf (rest new) kind)))))
-      new))
-
 (defun parse-sections (forms)
   (let (hparams blocks model-blocks formats)
     (dolist (form forms)
@@ -88,9 +76,7 @@
         (:model-blocks (setf model-blocks (append model-blocks
                                                   (mapcar #'parse-block (rest form)))))
         (:format (let ((new (parse-format (second form) (cddr form))))
-                   (setf formats (append (remove (first new) formats :key #'first)
-                                         (list (merge-format (assoc (first new) formats)
-                                                             new))))))
+                   (setf formats (add-format formats new))))
         (t (architecture-fail 'architecture-error "Unknown architecture section ~S"
                               (first form)))))
     (list :hparams hparams :blocks blocks :model-blocks model-blocks :formats formats)))
@@ -107,7 +93,7 @@
        (defclass ,name ,(or parents '(architecture))
          ,(mapcar #'hparam-slot (getf spec :hparams))
          (:metaclass architecture-class))
-       (setf (architecture-class-sections (find-class ',name)) ',spec)
+       (setf (class-sections (find-class ',name)) ',spec)
        (check-architecture (find-class ',name))
        ',name)))
 
@@ -119,30 +105,9 @@
     (mop:ensure-finalized class)
     class))
 
-(defun architecture-lineage (class)
-  "CLASS and its ancestors that are architectures, most general first."
-  (mop:ensure-finalized class)
-  (reverse (remove-if-not (lambda (c) (typep c 'architecture-class))
-                          (mop:class-precedence-list class))))
-
-(defun merged-entries (class reader)
-  "Entries from READER over CLASS's lineage, parents first; a later entry replaces an earlier
-one with the same key in place."
-  (let (result)
-    (dolist (ancestor (architecture-lineage class) result)
-      (dolist (entry (funcall reader (architecture-class-sections ancestor)))
-        (let ((cell (assoc (car entry) result)))
-          (if cell
-              (setf (cdr cell) (cdr entry))
-              (setf result (append result (list (cons (car entry) (cdr entry)))))))))))
-
-(defun format-entries (class format kind)
-  (merged-entries class (lambda (sections)
-                          (getf (rest (assoc format (getf sections :formats))) kind))))
-
 (defun check-architecture (class)
   (let ((hparams (mapcar #'car (merged-entries class (lambda (s) (getf s :hparams))))))
-    (loop for (format . spec) in (getf (architecture-class-sections class) :formats)
+    (loop for (format . spec) in (getf (class-sections class) :formats)
           do (loop for (name) in (getf spec :hparam-keys)
                    unless (member name hparams)
                      do (architecture-fail 'architecture-error
@@ -212,26 +177,17 @@ one with the same key in place."
           ((getf options :optional) nil)
           (t (weights-tensor weights name)))))
 
-(defun architecture-subclasses (class)
-  (let ((children (mop:class-direct-subclasses class)))
-    (remove-duplicates (append children (mapcan #'architecture-subclasses children)))))
-
 (defun find-architecture-class (format name)
   "The most specific architecture whose FORMAT section declares :arch NAME."
-  (let* ((matches (remove-if-not (lambda (class) (and name (equal name (architecture-arch-name class format))))
-                                 (architecture-subclasses (find-class 'architecture))))
-         (leaves (remove-if (lambda (class)
-                              (some (lambda (other) (and (not (eq other class))
-                                                         (subtypep other class)))
-                                    matches))
-                            matches)))
-    (cond ((null leaves)
-           (architecture-fail 'unknown-architecture "No architecture for ~S in format ~S"
-                              name format))
-          ((rest leaves)
-           (architecture-fail 'architecture-error "Architectures ~{~S~^, ~} all declare ~S for ~S"
-                              (mapcar #'class-name leaves) name format))
-          (t (first leaves)))))
+  (find-leaf-class (find-class 'architecture)
+                   (lambda (class) (and name (equal name (architecture-arch-name class format))))
+                   (lambda ()
+                     (architecture-fail 'unknown-architecture "No architecture for ~S in format ~S"
+                                        name format))
+                   (lambda (leaves)
+                     (architecture-fail 'architecture-error
+                                        "Architectures ~{~S~^, ~} all declare ~S for ~S"
+                                        (mapcar #'class-name leaves) name format))))
 
 (defun hparam-initargs (class weights format arch-name)
   (let ((keys (format-entries class format :hparam-keys)))

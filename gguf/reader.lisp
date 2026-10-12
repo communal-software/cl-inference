@@ -191,6 +191,7 @@
       (let* ((alignment (validate-alignment (gethash "general.alignment" metadata +default-alignment+)))
              (data-start (* alignment (ceiling (cursor-position cursor) alignment)))
              (tensors (nreverse tensors)))
+        ;; TODO: reject only when tensors are declared, so vocab-only files open (#35)
         (when (> data-start size)
           (gguf-fail "Missing tensor data section"))
         (validate-layout tensors data-start alignment size)

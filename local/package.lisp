@@ -24,6 +24,15 @@
    #:architecture-tensor
    #:architecture-error #:architecture-error-message #:unknown-architecture
    #:unknown-architecture-name
+   ;; tokenizers
+   #:define-tokenizer #:tokenizer #:tokenizer-class #:byte-level-bpe #:load-tokenizer
+   #:tokenizer-format #:tokenizer-format-option #:tokenizer-pre-rules #:rule-matcher
+   #:tokenizer-selector #:tokenizer-load #:pre-tokenize
+   #:encode #:decode #:token-id #:token-bytes #:tokenizer-vocab-size #:tokenizer-special-id
+   #:tokenizer-special-p #:tokenizer-add-bos-p #:tokenizer-ignore-merges-p
+   #:make-detokenizer #:detokenizer-push #:detokenizer-finish
+   #:tokenizer-error #:tokenizer-error-message #:unknown-tokenizer #:unknown-tokenizer-model
+   #:unknown-tokenizer-pre #:llama-bpe #:qwen2
    ;; blocks and models
    #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head

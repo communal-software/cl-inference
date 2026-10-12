@@ -71,6 +71,7 @@ The file is unmapped again when any check fails.
 | Typed Q8_0 views | [#3](https://github.com/communal-software/cl-inference/issues/3) |
 | Q4_0, Q4_K, Q6_K views | [#14](https://github.com/communal-software/cl-inference/issues/14) |
 | Windows and BSD mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
+| Vocab-only files with no tensors | [#35](https://github.com/communal-software/cl-inference/issues/35) |
 | Split (multi-file) GGUF | not planned |
 
 [^mmap]: `PROT_READ|PROT_WRITE` with `MAP_PRIVATE`, because cl-tensor treats foreign views as writable. The header is parsed straight from the mapping with bounds-checked reads. The file is not read through a stream.
