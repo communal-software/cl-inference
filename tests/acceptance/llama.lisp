@@ -5,15 +5,22 @@
 ;;; Llama 3.2 1B Instruct against llama.cpp. The model and the oracle's dump live in the
 ;;; gitignored reference/ directory; every test skips without them.
 
-(defparameter *prompt* "The capital of France is")
+(defparameter *cases*
+  '((:f16 :model :f16 :text "The capital of France is")
+    (:f16-chat :model :f16 :date "26 Jul 2024"
+     :messages ((:role :system :content "Answer in one word.")
+                (:role :user :content "What is the capital of France?"))))
+  "Each case reads its dump from reference/oracle/<name>/, made by reference/llama-oracle.sh.")
+
+(defun case-option (case key) (getf (rest (assoc case *cases*)) key))
 
 (defparameter *greedy-horizon* 4
   "Short, because one forward takes about a minute until half-precision matmul lands (#4).")
 
 ;;; llama.cpp multiplies in f16 or q8 activations; ours stay f32. Observed worst case: cosine
-;;; 0.999992, relative error 0.0040.
+;;; 0.999992, relative error 0.0040 on 6 tokens and 0.0119 on 46.
 (defparameter *minimum-cosine* 0.9999d0)
-(defparameter *maximum-relative-error* 0.01d0)
+(defparameter *maximum-relative-error* 0.02d0)
 
 ;; TODO: Q8_0 acceptance (bartowski's Llama-3.2-1B-Instruct-Q8_0.gguf) once the dtype lands (#3)
 (defparameter *models*
@@ -51,9 +58,9 @@
   (let ((*read-default-float-format* 'single-float))
     (map 'vector (lambda (string) (coerce (read-from-string string) 'double-float)) strings)))
 
-(defun oracle (kind)
-  "The oracle's dump for KIND as a plist, or NIL when it has not been generated."
-  (let ((directory (reference-path "oracle" (string-downcase (symbol-name kind)))))
+(defun oracle (case)
+  "The oracle's dump for CASE as a plist, or NIL when it has not been generated."
+  (let ((directory (reference-path "oracle" (string-downcase (symbol-name case)))))
     (when (probe-file (merge-pathnames "trace.txt" directory))
       (flet ((ids (name)
                (mapcar #'parse-integer (read-lines (merge-pathnames name directory)))))
@@ -74,27 +81,37 @@
     (coerce (loop for j below columns collect (coerce (ct:tref tensor row j) 'double-float))
             'vector)))
 
-(defun compute-run (kind)
-  (local:with-weights (weights (model-path kind))
+(defun compute-run (case)
+  (local:with-weights (weights (model-path (case-option case :model)))
     (let* ((model (local:load-model weights))
            (tokenizer (local:load-tokenizer weights))
            (template (local:load-chat-template weights))
-           (prompt (coerce (local:encode tokenizer *prompt*) 'list))
+           (messages (case-option case :messages))
+           (prompt (coerce (if messages
+                               (local:encode-chat template tokenizer messages
+                                                  :date (case-option case :date))
+                               (local:encode tokenizer (case-option case :text)))
+                           'list))
            (session (local:make-session model :tokenizer tokenizer :chat-template template))
            (start (get-internal-real-time))
            (logits nil)
            (trace (tests::tracing-layers (setf logits (local:session-prefill session prompt)))))
       (local:session-reset session)
-      (list :prompt prompt
-            :prefill-seconds (/ (- (get-internal-real-time) start) internal-time-units-per-second)
-            :layers (mapcar (lambda (tensor)
-                              (vector-of-row tensor (1- (aref (ct:tensor-shape tensor) 0))))
-                            trace)
-            :logits (vector-of-row logits 0)
-            :greedy (nth-value 2 (local:generate session prompt :max-tokens *greedy-horizon*
-                                                                :timeout 3600000))))))
+      (multiple-value-bind (text finish ids)
+          (local:generate session prompt :max-tokens *greedy-horizon* :timeout 3600000)
+        (declare (ignore text))
+        (list :prompt prompt
+              :prefill-seconds (/ (- (get-internal-real-time) start) internal-time-units-per-second)
+              :layers (mapcar (lambda (tensor)
+                                (vector-of-row tensor (1- (aref (ct:tensor-shape tensor) 0))))
+                              trace)
+              :logits (vector-of-row logits 0)
+              :stop-ids (local:chat-template-stop-ids template tokenizer)
+              :finish finish
+              :greedy ids)))))
 
-(defun our-run (kind) (or (gethash kind *runs*) (setf (gethash kind *runs*) (compute-run kind))))
+(defun our-run (case)
+  (or (gethash case *runs*) (setf (gethash case *runs*) (compute-run case))))
 
 ;;; Comparison
 
@@ -110,13 +127,15 @@
                                  #'> :key #'cdr)
                            0 count)))
 
-(defmacro with-acceptance ((kind (run oracle)) &body body)
-  `(cond ((not (verified-model-p ,kind))
-          (skip "~A is not in reference/models with its pinned sha256" (second (assoc ,kind *models*))))
-         ((not (oracle ,kind))
-          (skip "run reference/llama-oracle.sh for ~A first" ,kind))
-         (t (let ((,run (our-run ,kind)) (,oracle (oracle ,kind)))
-              ,@body))))
+(defmacro with-acceptance ((case (ours oracle)) &body body)
+  `(let ((model (case-option ,case :model)))
+     (cond ((not (verified-model-p model))
+            (skip "~A is not in reference/models with its pinned sha256"
+                  (second (assoc model *models*))))
+           ((not (oracle ,case))
+            (skip "run reference/llama-oracle.sh for ~A first" ,case))
+           (t (let ((,ours (our-run ,case)) (,oracle (oracle ,case)))
+                ,@body)))))
 
 ;;; Metadata
 
@@ -138,29 +157,42 @@
 
 ;;; Against llama.cpp
 
-(test llama-3-2-1b-f16-prompt-ids
-  (with-acceptance (:f16 (ours oracle))
-    (is (equal (getf oracle :prompt) (getf ours :prompt)))))
-
 (defun check-close (name ours expected)
   (is (>= (cosine ours expected) *minimum-cosine*) "~A cosine ~,6f" name (cosine ours expected))
   (is (<= (relative-error ours expected) *maximum-relative-error*)
       "~A relative error ~,5f" name (relative-error ours expected)))
 
-(test llama-3-2-1b-f16-layer-traces
-  (with-acceptance (:f16 (ours oracle))
-    (is (= 16 (length (getf ours :layers))))
-    (loop for layer in (getf ours :layers) for index from 0
-          for name = (format nil "l_out-~D" index)
-          do (check-close name layer (cdr (assoc name (getf oracle :trace) :test #'string=))))))
+(defun without-stop-ids (ids stop-ids)
+  (remove-if (lambda (id) (member id stop-ids)) ids))
 
-(test llama-3-2-1b-f16-logits
-  (with-acceptance (:f16 (ours oracle))
-    (check-close "logits" (getf ours :logits)
-                 (cdr (assoc "result_output" (getf oracle :trace) :test #'string=)))
-    (is (equal (subseq (mapcar #'car (getf oracle :top)) 0 5)
-               (top-ids (getf ours :logits) 5)))))
+(defmacro define-case-tests (case)
+  (flet ((name (suffix) (intern (format nil "~A-~A" case suffix))))
+    `(progn
+       (test ,(name "PROMPT-IDS")
+         (with-acceptance (,case (ours oracle))
+           (is (equal (getf oracle :prompt) (getf ours :prompt)))))
+       (test ,(name "LAYER-TRACES")
+         (with-acceptance (,case (ours oracle))
+           (is (= 16 (length (getf ours :layers))))
+           (loop for layer in (getf ours :layers) for index from 0
+                 for name = (format nil "l_out-~D" index)
+                 do (check-close name layer
+                                 (cdr (assoc name (getf oracle :trace) :test #'string=))))))
+       (test ,(name "LOGITS")
+         (with-acceptance (,case (ours oracle))
+           (check-close "logits" (getf ours :logits)
+                        (cdr (assoc "result_output" (getf oracle :trace) :test #'string=)))
+           (is (equal (subseq (mapcar #'car (getf oracle :top)) 0 5)
+                      (top-ids (getf ours :logits) 5)))))
+       (test ,(name "GREEDY")
+         (with-acceptance (,case (ours oracle))
+           (let ((expected (subseq (getf oracle :greedy) 0
+                                   (min *greedy-horizon* (length (getf oracle :greedy)))))
+                 (stops (getf ours :stop-ids)))
+             (is (equal (without-stop-ids expected stops)
+                        (without-stop-ids (getf ours :greedy) stops)))
+             ;; the reply ends where llama.cpp's does: on a stop id, or at the horizon
+             (is (eq (if (intersection expected stops) :stop :length) (getf ours :finish)))))))))
 
-(test llama-3-2-1b-f16-greedy
-  (with-acceptance (:f16 (ours oracle))
-    (is (equal (subseq (getf oracle :greedy) 0 *greedy-horizon*) (getf ours :greedy)))))
+(define-case-tests :f16)
+(define-case-tests :f16-chat)
