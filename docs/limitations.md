@@ -3,7 +3,6 @@
 | Missing | Tracker |
 |---|---|
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
-| Block protocol and standard blocks | [#2](https://github.com/communal-software/cl-inference/issues/2) |
 | Removing an inherited architecture entry | [#23](https://github.com/communal-software/cl-inference/issues/23) |
 | Q8_0 and half-precision weight matmul | [#3](https://github.com/communal-software/cl-inference/issues/3), [#4](https://github.com/communal-software/cl-inference/issues/4) |
 | Tokenizer and chat templates | [#5](https://github.com/communal-software/cl-inference/issues/5), [#6](https://github.com/communal-software/cl-inference/issues/6) |

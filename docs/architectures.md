@@ -38,17 +38,18 @@ Loading picks the architecture the file declares:
 | Section | Entry | Meaning |
 |---|---|---|
 | `(:hparams ...)` | `name` or `(name :default value)` | A hyperparameter, stored in a slot of the same name. No default makes it required |
-| `(:blocks ...)` | `(slot class . initargs)` | A block slot, stored as data[^blocks] |
+| `(:blocks ...)` | `(slot class . initargs)` | A block that runs once per layer[^blocks] |
+| `(:model-blocks ...)` | `(slot class . initargs)` | A block that runs once per model, such as the embedding and LM head |
 | `(:format key ...)` | `(:arch "name")` | The `general.architecture` value that selects this architecture |
 | | `(:hparam name "template")` | Metadata key for an hparam; `~a` is the `:arch` name |
-| | `(:tensor role "template" [:optional t])` | Tensor name for a role; `~d` is the layer index |
+| | `(:tensor role "template" [:optional t] [:fallback role])` | Tensor name for a role; `~d` is the layer index. `:fallback` reads another role when the file lacks this tensor |
 | | `(:option value)` | Any other keyword, e.g. `:rope-pairing`; read with `architecture-format-option` |
 
 Each format has its own section, so tensor names, metadata keys and RoPE pairing belong to the architecture and the format together.[^rope]
 
 ## Inheritance
 
-Entries merge by name along the class precedence list: hparam name, block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
+Entries merge by name along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
 
 Merging happens on lookup, so redefining a parent updates its children.
 
@@ -62,12 +63,13 @@ Because `~a` is the architecture's own `:arch`, `qwen3` reuses the `llama` key t
 | `hparam arch name` | An hparam value |
 | `architecture-format arch` | The weights format the instance was loaded for |
 | `architecture-tensor-name arch role &optional layer` | The file's tensor name |
-| `architecture-tensor arch weights role &optional layer` | Tensor view; NIL when `:optional` and absent |
+| `architecture-tensor arch weights role &optional layer` | Tensor view, the `:fallback` role's view when absent, or NIL when `:optional` and absent |
 | `architecture-format-option arch format option &optional default` | Option value and whether it was declared |
 | `architecture-block-slots arch` / `architecture-block-spec arch slot` | Block slot names / `(class . initargs)` |
+| `architecture-model-block-slots arch` / `architecture-model-block-spec arch slot` | The same for `:model-blocks` |
 | `architecture-hparam-specs arch` | Alist of `(name . plist)` |
 
-`arch` in the lookup functions is an instance, a class or a class name.
+`arch` in the lookup functions is an instance, a class or a class name. Roles and hparams are matched by symbol name, so they need not be in the architecture's package.
 
 ## Errors
 
@@ -80,5 +82,5 @@ A non-optional tensor missing from the file signals `weights-error`.
 
 Mods specialise methods on the architecture class, including with `:around`.
 
-[^blocks]: Block slots hold a class name and initargs; nothing is instantiated. Blocks are listed under [Limitations](limitations.md).
+[^blocks]: Block slots hold a class name and initargs; `load-model` instantiates them. See [blocks](blocks.md).
 [^rope]: GGUF `llama` permutes Q/K and uses adjacent-pair RoPE, HF safetensors uses rotate-half, and Qwen uses NeoX, so one architecture can need a different pairing per format.

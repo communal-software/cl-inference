@@ -31,7 +31,7 @@
   :depends-on ("cl-inference" "cl-tensor" "closer-mop")
   :serial t
   :components ((:file "local/package") (:file "local/weights") (:file "local/architecture")
-               (:file "local/backend"))
+               (:file "local/blocks") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
 (asdf:defsystem "cl-inference/gguf"
@@ -56,7 +56,8 @@
   :serial t
   :components ((:file "tests/local/package") (:file "tests/local/systems")
                (:file "tests/local/weights") (:file "tests/local/gguf-writer")
-               (:file "tests/local/gguf") (:file "tests/local/architecture"))
+               (:file "tests/local/gguf") (:file "tests/local/architecture")
+               (:file "tests/local/blocks"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)

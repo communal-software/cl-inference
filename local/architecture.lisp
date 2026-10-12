@@ -50,7 +50,9 @@
                               (evenp (length args))
                               (null (set-difference (loop for key in (cddr args) by #'cddr
                                                           collect key)
-                                                    '(:optional))))
+                                                    '(:optional :fallback)))
+                              (let ((fallback (getf (cddr args) :fallback)))
+                                (or (null fallback) (symbolp fallback))))
                    (bad))
          (push (cons (first args) (rest args)) tensors))
         (t (unless (= (length args) 1) (bad))
@@ -76,20 +78,22 @@
       new))
 
 (defun parse-sections (forms)
-  (let (hparams blocks formats)
+  (let (hparams blocks model-blocks formats)
     (dolist (form forms)
       (unless (consp form)
         (architecture-fail 'architecture-error "Bad architecture section ~S" form))
       (case (first form)
         (:hparams (setf hparams (append hparams (mapcar #'parse-hparam (rest form)))))
         (:blocks (setf blocks (append blocks (mapcar #'parse-block (rest form)))))
+        (:model-blocks (setf model-blocks (append model-blocks
+                                                  (mapcar #'parse-block (rest form)))))
         (:format (let ((new (parse-format (second form) (cddr form))))
                    (setf formats (append (remove (first new) formats :key #'first)
                                          (list (merge-format (assoc (first new) formats)
                                                              new))))))
         (t (architecture-fail 'architecture-error "Unknown architecture section ~S"
                               (first form)))))
-    (list :hparams hparams :blocks blocks :formats formats)))
+    (list :hparams hparams :blocks blocks :model-blocks model-blocks :formats formats)))
 
 (defun hparam-slot (hparam)
   (let ((name (first hparam)))
@@ -158,6 +162,15 @@ one with the same key in place."
   (cdr (assoc slot (merged-entries (architecture-class-of architecture)
                                    (lambda (s) (getf s :blocks))))))
 
+(defun architecture-model-block-slots (architecture)
+  (mapcar #'car (merged-entries (architecture-class-of architecture)
+                                (lambda (s) (getf s :model-blocks)))))
+
+(defun architecture-model-block-spec (architecture slot)
+  "The (class . initargs) declared for once-per-model block SLOT, or NIL."
+  (cdr (assoc slot (merged-entries (architecture-class-of architecture)
+                                   (lambda (s) (getf s :model-blocks))))))
+
 (defun architecture-format-option (architecture format option &optional default)
   "Value of OPTION in the FORMAT section, and whether it was declared."
   (let ((cell (assoc option (format-entries (architecture-class-of architecture) format
@@ -165,17 +178,22 @@ one with the same key in place."
     (if cell (values (cdr cell) t) (values default nil))))
 
 (defun hparam (architecture name)
-  (if (slot-exists-p architecture name)
-      (slot-value architecture name)
-      (architecture-fail 'architecture-error "~S has no hparam ~S"
-                         (class-name (class-of architecture)) name)))
+  "Value of hparam NAME; names are matched by symbol name, so any package works."
+  (let ((slot (find (symbol-name name) (mop:class-slots (class-of architecture))
+                    :key (lambda (slot) (symbol-name (mop:slot-definition-name slot)))
+                    :test #'string=)))
+    (if slot
+        (slot-value architecture (mop:slot-definition-name slot))
+        (architecture-fail 'architecture-error "~S has no hparam ~S"
+                           (class-name (class-of architecture)) name))))
 
 (defun architecture-arch-name (class format)
   (values (architecture-format-option class format :arch)))
 
 (defun architecture-tensor-spec (architecture role)
   (let ((format (architecture-format architecture)))
-    (or (cdr (assoc role (format-entries (architecture-class-of architecture) format :tensors)))
+    (or (cdr (assoc role (format-entries (architecture-class-of architecture) format :tensors)
+                    :test (lambda (a b) (string= (symbol-name a) (symbol-name b)))))
         (architecture-fail 'architecture-error "~S has no tensor ~S for format ~S"
                            (class-name (class-of architecture)) role format))))
 
@@ -185,12 +203,14 @@ one with the same key in place."
     (if layer (format nil template layer) (format nil template))))
 
 (defun architecture-tensor (architecture weights role &optional layer)
-  "Tensor ROLE as a view, or NIL when it is optional and absent."
+  "Tensor ROLE as a view. When absent, its :fallback role's tensor, or NIL if :optional."
   (let* ((name (architecture-tensor-name architecture role layer))
-         (optional (getf (rest (architecture-tensor-spec architecture role)) :optional)))
-    (if (and optional (null (weights-tensor-info-ref (ensure-open weights) name)))
-        nil
-        (weights-tensor weights name))))
+         (options (rest (architecture-tensor-spec architecture role)))
+         (fallback (getf options :fallback)))
+    (cond ((weights-tensor-info-ref (ensure-open weights) name) (weights-tensor weights name))
+          (fallback (architecture-tensor architecture weights fallback layer))
+          ((getf options :optional) nil)
+          (t (weights-tensor weights name)))))
 
 (defun architecture-subclasses (class)
   (let ((children (mop:class-direct-subclasses class)))

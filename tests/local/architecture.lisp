@@ -98,6 +98,41 @@
         (is (null (local:architecture-tensor arch w 'output)))
         (signals local:weights-error (local:architecture-tensor arch w 'mlp.up 0))))))
 
+(local:define-architecture toy-heads ()
+  (:model-blocks (token toy-embedding) (head toy-head))
+  (:format :gguf
+    (:arch "toy-heads")
+    (:tensor token.embd "token_embd.weight")
+    (:tensor head.output "output.weight" :fallback token.embd)))
+
+(local:define-architecture toy-heads-child (toy-heads)
+  (:model-blocks (head toy-other-head)))
+
+(test architecture-model-blocks-merge-by-name
+  (is (equal '(token head) (local:architecture-model-block-slots 'toy-heads-child)))
+  (is (equal '(toy-other-head) (local:architecture-model-block-spec 'toy-heads-child 'head)))
+  (is (equal '(toy-head) (local:architecture-model-block-spec 'toy-heads 'head)))
+  (is (null (local:architecture-block-slots 'toy-heads))))
+
+(test architecture-tensor-falls-back
+  (let ((embd `("token_embd.weight" (2) 0 ,(f32-octets '(1f0 2f0)))))
+    (with-toy (w "toy-heads" :tensors (list embd))
+      (let ((arch (local:load-architecture w)))
+        (is (= 2 (ct:tref (local:architecture-tensor arch w 'head.output) 1)))))
+    (with-toy (w "toy-heads"
+                 :tensors (list embd `("output.weight" (2) 0 ,(f32-octets '(5f0 6f0)))))
+      (is (= 6 (ct:tref (local:architecture-tensor (local:load-architecture w) w 'head.output)
+                        1))))
+    (with-toy (w "toy-heads")
+      (signals local:weights-error
+        (local:architecture-tensor (local:load-architecture w) w 'head.output)))))
+
+(test architecture-roles-and-hparams-match-by-name
+  (with-toy (w "toy-llama")
+    (let ((arch (local:load-architecture w)))
+      (is (equal "blk.1.attn_q.weight" (local:architecture-tensor-name arch :attn.q 1)))
+      (is (= 2 (local:hparam arch :n-layers))))))
+
 (test architecture-ambiguous-match
   (eval '(local:define-architecture toy-twin-a () (:format :gguf (:arch "toy-twin"))))
   (eval '(local:define-architecture toy-twin-b () (:format :gguf (:arch "toy-twin"))))
@@ -123,7 +158,9 @@
                   (local:define-architecture bad-d () (:format "gguf"))
                   (local:define-architecture bad-e () (:format :gguf (:tensor role)))
                   (local:define-architecture bad-f () (:format :gguf (:tensor role "t" :bogus t)))
-                  (local:define-architecture bad-g () (:format :gguf (:hparam x 1)))))
+                  (local:define-architecture bad-g () (:format :gguf (:hparam x 1)))
+                  (local:define-architecture bad-i () (:format :gguf (:tensor role "t" :fallback "x")))
+                  (local:define-architecture bad-j () (:model-blocks (just-one)))))
     (signals local:architecture-error (macroexpand-1 form)))
   (signals local:architecture-error
     (eval '(local:define-architecture bad-h () (:format :gguf (:hparam undeclared "k"))))))

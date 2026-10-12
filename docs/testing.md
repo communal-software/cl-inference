@@ -17,7 +17,8 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
 | `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
-| `tests/local/architecture.lisp` | Architecture DSL: inheritance, hparams, tensor names, loading from GGUF, malformed definitions |
+| `tests/local/architecture.lisp` | Architecture DSL: inheritance, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
+| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, cache |
 
 | File | Covers |
 |---|---|

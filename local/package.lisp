@@ -19,9 +19,15 @@
    ;; architectures
    #:define-architecture #:architecture #:architecture-class #:load-architecture
    #:hparam #:architecture-format #:architecture-hparam-specs #:architecture-block-slots
-   #:architecture-block-spec #:architecture-format-option #:architecture-tensor-name
+   #:architecture-block-spec #:architecture-model-block-slots
+   #:architecture-model-block-spec #:architecture-format-option #:architecture-tensor-name
    #:architecture-tensor
    #:architecture-error #:architecture-error-message #:unknown-architecture
    #:unknown-architecture-name
+   ;; blocks and models
+   #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
+   #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head
+   #:model #:model-architecture #:model-layers #:model-model-blocks #:load-model
+   #:layer-forward #:model-forward
    ;; client backend
    #:local-backend))
