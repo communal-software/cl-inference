@@ -26,7 +26,7 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
   (:format :gguf (:arch "qwen3") (:rope-pairing :neox)))
 ```
 
-Kernels are pure Lisp on cl-tensor and trivial-simd; there is no inference-specific native code.
+This repository is pure Lisp on cl-tensor and trivial-simd. Native kernels, such as the Q8_0 matmul, live in trivial-simd.
 
 ## Tokenizers
 
