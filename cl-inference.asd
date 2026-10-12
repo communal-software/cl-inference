@@ -60,7 +60,8 @@
   :serial t
   :components ((:file "tests/local/package") (:file "tests/local/systems")
                (:file "tests/local/weights") (:file "tests/local/gguf-writer")
-               (:file "tests/local/gguf") (:file "tests/local/architecture")
+               (:file "tests/local/gguf") (:file "tests/local/fixtures")
+               (:file "tests/local/architecture")
                (:file "tests/local/blocks") (:file "tests/local/tokenizer")
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")

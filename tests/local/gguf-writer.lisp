@@ -89,6 +89,40 @@ llama.cpp writes a file with no tensors."
   (let ((buffer (make-buffer)))
     (dolist (value values buffer) (put-uint buffer (float-bits value :float) 4))))
 
+(defun bits-float (bits)
+  (cffi:with-foreign-object (pointer :uint32)
+    (setf (cffi:mem-ref pointer :uint32) bits)
+    (cffi:mem-ref pointer :float)))
+
+(defun f16-bits (value)
+  "IEEE half-precision bits of VALUE, rounded to nearest even."
+  (let ((sign (if (minusp (float-sign value)) #x8000 0))
+        (x (abs (rational value))))
+    (if (zerop x)
+        sign
+        (let ((e (- (integer-length (numerator x)) (integer-length (denominator x)))))
+          (when (< x (expt 2 e)) (decf e))
+          (let* ((e (max e -14))
+                 (mantissa (round x (expt 2 (- e 10)))))
+            (when (>= mantissa 2048) (setf mantissa (floor mantissa 2)) (incf e))
+            (if (and (= e -14) (< mantissa 1024))
+                (logior sign mantissa)
+                (logior sign (ash (+ e 15) 10) (- mantissa 1024))))))))
+
+(defun f16-value (bits)
+  (let ((exponent (ldb (byte 5 10) bits)) (fraction (ldb (byte 10 0) bits)))
+    (* (if (logbitp 15 bits) -1 1)
+       (if (zerop exponent)
+           (float (* fraction (expt 2 -24)) 1f0)
+           (float (* (+ 1024 fraction) (expt 2 (- exponent 25))) 1f0)))))
+
+(defun bf16-bits (value)
+  "The top half of VALUE's single-float bits, rounded to nearest even."
+  (let ((bits (float-bits value :float)))
+    (ldb (byte 16 0) (ash (+ bits #x7fff (ldb (byte 1 16) bits)) -16))))
+
+(defun bf16-value (bits) (bits-float (ash bits 16)))
+
 (defun u16-octets (values)
   (let ((buffer (make-buffer)))
     (dolist (value values buffer) (put-uint buffer value 2))))

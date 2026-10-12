@@ -15,6 +15,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 |---|---|
 | `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
+| `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16 or bf16 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
 | `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 | `tests/local/architecture.lisp` | Architecture DSL: inheritance, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
@@ -24,7 +25,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/vocab-fixtures.lisp` | Encode against llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures; skipped when `reference/` lacks them |
 | `tests/local/sampler.lisp` | Samplers: greedy equivalence, top-k and top-p, seeds and a golden sequence, argument checks, non-finite logits, `generate` with a sampler |
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
-| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, cache |
+| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, per-layer traces, cache |
 
 | File | Covers |
 |---|---|
