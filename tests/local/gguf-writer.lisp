@@ -50,10 +50,11 @@
   (loop until (zerop (mod (length buffer) alignment)) do (vector-push-extend 0 buffer)))
 
 (defun build-gguf (&key metadata tensors (alignment 32) (version 3) (magic #x46554747)
-                     tensor-count truncate)
+                     tensor-count truncate (pad t))
   "METADATA is a list of (key type value). TENSORS is a list of
 (name dims type-id octets &optional offset); offsets default to the next aligned slot.
-TRUNCATE drops that many bytes from the end."
+TRUNCATE drops that many bytes from the end. PAD nil leaves the header unaligned, as
+llama.cpp writes a file with no tensors."
   (let ((header (make-buffer)) (data (make-buffer)) (cursor 0)
         (metadata (if (= alignment 32)
                       metadata
@@ -79,7 +80,7 @@ TRUNCATE drops that many bytes from the end."
                           (setf (aref data (+ offset i)) octet)
                           (vector-push-extend octet data)))
              (setf cursor (* alignment (ceiling (length data) alignment))))
-    (pad-to header alignment)
+    (when pad (pad-to header alignment))
     (put-octets header data)
     (let ((out (coerce header '(simple-array (unsigned-byte 8) (*)))))
       (if truncate (subseq out 0 (- (length out) truncate)) out))))

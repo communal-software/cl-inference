@@ -19,6 +19,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 | `tests/local/architecture.lisp` | Architecture DSL: inheritance, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
 | `tests/local/tokenizer.lisp` | Tokenizer DSL, both pre-tokenizers against llama.cpp's patterns, BPE merging, special tokens, streaming decode, malformed vocabularies |
+| `tests/local/vocab-fixtures.lisp` | Encode against llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures; skipped when `reference/` lacks them |
 | `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, cache |
 
 | File | Covers |

@@ -141,6 +141,16 @@
   (signals gguf:gguf-error (open-bad (subseq (sample-gguf) 0 60)))
   (signals gguf:gguf-error (open-bad (sample-gguf :tensor-count 1000000))))
 
+(test gguf-opens-files-without-tensors
+  (with-gguf-file (path (build-gguf :metadata '(("general.architecture" 8 "llama")) :pad nil))
+    (local:with-weights (w path :format :gguf)
+      (is (equal "llama" (local:weights-metadata w "general.architecture")))
+      (is (null (local:weights-tensor-names w))))))
+
+(test gguf-rejects-missing-tensor-data
+  (signals gguf:gguf-error
+    (open-bad (build-gguf :tensors `(("t" (1) 0 ,(f32-octets '(1f0)))) :truncate 5))))
+
 (test gguf-rejects-duplicates
   (signals gguf:gguf-error
     (open-bad (build-gguf :metadata '(("k" 4 1) ("k" 4 2)))))

@@ -53,6 +53,8 @@ Another system adds a typed view by specializing `gguf-type-storage`, which retu
 
 ## Validation
 
+A file with metadata and no tensors opens, so a vocabulary-only file such as llama.cpp's `ggml-vocab-*.gguf` is readable.
+
 Opening signals `gguf-error` for:
 
 - a file shorter than the 24-byte header, wrong magic, or any version but 3;
@@ -60,7 +62,7 @@ Opening signals `gguf-error` for:
 - invalid UTF-8, invalid booleans, unknown value types, nesting deeper than 32;
 - duplicate metadata keys or tensor names;
 - tensor rank outside 1–4, a zero dimension, a row not a whole number of blocks;
-- `general.alignment` that is not a power of two up to 4096, unaligned or overlapping tensors, or tensors running past the end of the file.
+- `general.alignment` that is not a power of two up to 4096, unaligned or overlapping tensors, or tensors running past the end of the file, including a tensor-bearing file with no data section.
 
 The file is unmapped again when any check fails.
 
@@ -71,7 +73,6 @@ The file is unmapped again when any check fails.
 | Typed Q8_0 views | [#3](https://github.com/communal-software/cl-inference/issues/3) |
 | Q4_0, Q4_K, Q6_K views | [#14](https://github.com/communal-software/cl-inference/issues/14) |
 | Windows and BSD mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
-| Vocab-only files with no tensors | [#35](https://github.com/communal-software/cl-inference/issues/35) |
 | Split (multi-file) GGUF | not planned |
 
 [^mmap]: `PROT_READ|PROT_WRITE` with `MAP_PRIVATE`, because cl-tensor treats foreign views as writable. The header is parsed straight from the mapping with bounds-checked reads. The file is not read through a stream.
