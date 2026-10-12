@@ -164,3 +164,13 @@
     (signals local:architecture-error (macroexpand-1 form)))
   (signals local:architecture-error
     (eval '(local:define-architecture bad-h () (:format :gguf (:hparam undeclared "k"))))))
+
+(local:define-architecture cross-package-child (local:llama)
+  (:blocks (attn local:attention :qk-norm t))
+  (:format :gguf (:arch "cross-package-child")))
+
+(test child-in-another-package-overrides-an-inherited-block
+  (let ((slots (local:architecture-block-slots 'cross-package-child)))
+    (is (= 2 (length slots)))
+    (is (equal '(local:attention :qk-norm t)
+               (local:architecture-block-spec 'cross-package-child 'attn)))))

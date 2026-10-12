@@ -23,7 +23,7 @@
    #:architecture-model-block-spec #:architecture-format-option #:architecture-tensor-name
    #:architecture-tensor
    #:architecture-error #:architecture-error-message #:unknown-architecture
-   #:unknown-architecture-name
+   #:unknown-architecture-name #:llama
    ;; tokenizers
    #:define-tokenizer #:tokenizer #:tokenizer-class #:byte-level-bpe #:load-tokenizer
    #:tokenizer-format #:tokenizer-format-option #:tokenizer-pre-rules #:rule-matcher

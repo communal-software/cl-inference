@@ -3,7 +3,7 @@
 A session holds a model's KV cache and position. `generate` runs one turn on it: feed a prompt, then sample until the reply ends.
 
 ```lisp
-(local:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
+(local:with-weights (w "Llama-3.2-1B-Instruct-f16.gguf")
   (let* ((model (local:load-model w))
          (session (local:make-session model
                                       :tokenizer (local:load-tokenizer w)

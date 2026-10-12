@@ -1,0 +1,12 @@
+(defpackage #:cl-inference/acceptance
+  (:use #:cl #:fiveam)
+  (:local-nicknames (#:ci #:cl-inference) (#:local #:cl-inference/local) (#:ct #:cl-tensor)
+                    (#:gguf #:cl-inference/gguf) (#:tests #:cl-inference/local/tests))
+  (:export #:run-tests))
+
+(in-package #:cl-inference/acceptance)
+
+(def-suite :cl-inference/acceptance)
+
+(defun run-tests ()
+  (run! :cl-inference/acceptance))

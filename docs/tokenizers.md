@@ -3,7 +3,7 @@
 `load-tokenizer` reads the tokenizer a weight file carries and turns text into token ids and back. Tokenizers are declared with `define-tokenizer`, the same inheritance DSL as [architectures](architectures.md).
 
 ```lisp
-(local:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
+(local:with-weights (w "Llama-3.2-1B-Instruct-f16.gguf")
   (let ((tokenizer (local:load-tokenizer w)))     ; => #<LLAMA-BPE>
     (let ((ids (local:encode tokenizer "Hello, world!")))   ; begins with the BOS id
       (local:decode tokenizer ids))))                      ; => "Hello, world!"

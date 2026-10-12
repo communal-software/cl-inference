@@ -34,7 +34,7 @@
                (:file "local/architecture") (:file "local/tokenizer")
                (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
                (:file "local/chat-template") (:file "local/tojson") (:file "local/chat-templates")
-               (:file "local/blocks") (:file "local/session") (:file "local/sampler")
+               (:file "local/blocks") (:file "local/architectures") (:file "local/session") (:file "local/sampler")
                (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
@@ -70,3 +70,13 @@
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)
                (error "cl-inference/local tests failed"))))
+
+(asdf:defsystem "cl-inference/local/acceptance"
+  :description "Llama 3.2 1B against llama.cpp; needs the model and oracle in reference/"
+  :depends-on ("cl-inference/local/tests" "uiop" "fiveam")
+  :serial t
+  :components ((:file "tests/acceptance/package") (:file "tests/acceptance/llama"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
+               (error "cl-inference acceptance tests failed"))))

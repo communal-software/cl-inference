@@ -3,8 +3,7 @@
 (in-suite :cl-inference/local)
 
 (local:define-architecture ses-llama (blk-llama)
-  (:hparams (context-length :default nil))
-  (:format :gguf (:arch "ses-llama") (:hparam context-length "~a.context_length")))
+  (:format :gguf (:arch "ses-llama")))
 
 (defun greedy-continuation (model tokens count)
   "COUNT greedy ids after TOKENS, each from a full pass with no cache."

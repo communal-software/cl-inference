@@ -125,7 +125,8 @@
 (defun architecture-block-spec (architecture slot)
   "The (class . initargs) declared for block SLOT, or NIL."
   (cdr (assoc slot (merged-entries (architecture-class-of architecture)
-                                   (lambda (s) (getf s :blocks))))))
+                                   (lambda (s) (getf s :blocks)))
+              :test #'same-key-p)))
 
 (defun architecture-model-block-slots (architecture)
   (mapcar #'car (merged-entries (architecture-class-of architecture)
@@ -134,7 +135,8 @@
 (defun architecture-model-block-spec (architecture slot)
   "The (class . initargs) declared for once-per-model block SLOT, or NIL."
   (cdr (assoc slot (merged-entries (architecture-class-of architecture)
-                                   (lambda (s) (getf s :model-blocks))))))
+                                   (lambda (s) (getf s :model-blocks)))
+              :test #'same-key-p)))
 
 (defun architecture-format-option (architecture format option &optional default)
   "Value of OPTION in the FORMAT section, and whether it was declared."

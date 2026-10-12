@@ -3,7 +3,7 @@
 A block is one computation of a model: a norm, an attention, an MLP. An [architecture](architectures.md) names its blocks; `load-model` creates them and binds each to its tensors.
 
 ```lisp
-(local:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
+(local:with-weights (w "Llama-3.2-1B-Instruct-f16.gguf")
   (let ((model (local:load-model w)))
     (local:model-forward model '(128000 9906))))   ; logits of the last position, shape (1 vocab)
 ```

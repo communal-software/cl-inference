@@ -211,7 +211,7 @@
 
 ;;; Selection and loading
 
-(defun chat-file (&key template (architecture "llama"))
+(defun chat-file (&key template (architecture "unregistered"))
   (build-gguf :pad nil
               :metadata `(("general.architecture" 8 ,architecture)
                           ,@(when template `(("tokenizer.chat_template" 8 ,template))))))

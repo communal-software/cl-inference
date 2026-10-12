@@ -3,7 +3,7 @@
 A chat template turns client messages into the prompt text a model was trained on, and names the tokens that end its reply. Templates are declared with `define-chat-template`, the same inheritance DSL as [architectures](architectures.md) and [tokenizers](tokenizers.md).
 
 ```lisp
-(local:with-weights (w "Llama-3.2-1B-Instruct-Q8_0.gguf")
+(local:with-weights (w "Llama-3.2-1B-Instruct-f16.gguf")
   (let* ((tokenizer (local:load-tokenizer w))
          (template (local:load-chat-template w)))          ; => #<LLAMA3-CHAT>
     (local:encode-chat template tokenizer

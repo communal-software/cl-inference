@@ -23,6 +23,13 @@
     (:tensor attn.q-norm "blk.~d.attn_q_norm.weight")))
 ```
 
+`llama` ships with the library, so a child needs only what differs:
+
+```lisp
+(local:define-architecture llama-variant (local:llama)
+  (:format :gguf (:arch "llama-variant")))
+```
+
 Loading picks the architecture the file declares:
 
 ```lisp
@@ -50,7 +57,7 @@ Each format has its own section, so tensor names, metadata keys and RoPE pairing
 
 ## Inheritance
 
-Entries merge by name along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
+Entries merge by symbol name, so a child in another package overrides what it inherits, along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
 
 Merging happens on lookup, so redefining a parent updates its children.
 

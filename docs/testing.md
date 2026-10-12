@@ -40,3 +40,18 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 Live Ollama tests are skipped unless `CL_INFERENCE_OLLAMA_URL` (the `/v1` route) or `CL_INFERENCE_OLLAMA_NATIVE_URL` is set; `CL_INFERENCE_OLLAMA_MODEL` picks the model.
 
 Full-model checks compare against a dev-only reference kept in the gitignored `reference/` directory, which also holds llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures for the tokenizer. `reference/chat-templates.py` needs `jinja2` and the two official templates in `reference/templates/`; it regenerates the chat template expectations.
+
+## Acceptance
+
+`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct (F16) against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the first 4 greedy ids. It takes about six minutes and skips every test when its inputs are missing.
+
+```sh
+curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
+  https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-f16.gguf
+reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-f16.gguf f16 "The capital of France is"
+sbcl --dynamic-space-size 16GB --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference/local/acceptance)'
+```
+
+The test checks the file against its pinned sha256. `llama-oracle.sh` builds llama.cpp[^oracle] and writes the dump to `reference/oracle/f16/`. llama.cpp multiplies in f16, ours in f32, so layers match by cosine (at least 0.9999) and relative error (at most 0.01), not exactly.
+
+[^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and four greedy ids.
