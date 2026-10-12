@@ -238,3 +238,9 @@ rendered schema renders the same way on every run and implementation."
   (signals error (client:json-schema->schema
                   (com.inuoe.jzon:parse "{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"array\"}}}")))
   (signals error (client:json-schema->schema (com.inuoe.jzon:parse "{\"type\":\"string\"}"))))
+
+(test json-object-alist-keeps-insertion-order
+  (let ((object (client:json-object "b" 1 "a" 2)))
+    (setf (client:json-get object "c") 3
+          (client:json-get object "b") 9)
+    (is (equal '(("b" . 9) ("a" . 2) ("c" . 3)) (client:json-object-alist object)))))

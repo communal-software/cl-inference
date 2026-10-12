@@ -28,8 +28,10 @@
    #:any #:array-of #:map-of #:object
    #:coerce-args #:validate-schema #:schema->json-schema #:json-schema->schema
    #:param-name #:param-type #:param-options #:*absent* #:json-object #:json-get
+   #:json-object-alist
    ;; contract helpers
-   #:tool-schema #:untyped->json #:json->arguments #:lisp-tool-name
+   #:tool-schema #:tools->json #:call-arguments->json #:wire-tool-name #:untyped->json
+   #:json->arguments #:lisp-tool-name
    #:reply-prompt-tokens #:done-reason
    ;; transport
    #:+default-timeout+ #:*sink-grace* #:call-with-deadline #:header-alist))

@@ -129,6 +129,8 @@ For consumers that layer their own services over the client.
 | `param-name`, `param-type`, `param-options` | Read one `(:name type . options)` schema entry |
 | `*absent*` | Marks a parameter the caller did not supply |
 | `json-object`, `json-get` | Build and read a JSON object; `(setf json-get)` sets a key |
+| `json-object-alist` | A JSON object's `(key . value)` pairs in insertion order |
+| `tools->json`, `call-arguments->json`, `wire-tool-name` | The wire form of a tool list, a call's arguments and a tool's name |
 | `untyped->json`, `json->arguments` | Render and read an argument plist without a schema |
 | `lisp-tool-name` | A wire tool name as a keyword |
 | `reply-prompt-tokens`, `done-reason` | Read a reply's prompt size and a result's finish reason |

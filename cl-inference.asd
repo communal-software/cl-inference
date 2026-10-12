@@ -33,6 +33,7 @@
   :components ((:file "local/package") (:file "local/weights") (:file "local/sections")
                (:file "local/architecture") (:file "local/tokenizer")
                (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
+               (:file "local/chat-template") (:file "local/tojson") (:file "local/chat-templates")
                (:file "local/blocks") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
@@ -60,7 +61,8 @@
                (:file "tests/local/weights") (:file "tests/local/gguf-writer")
                (:file "tests/local/gguf") (:file "tests/local/architecture")
                (:file "tests/local/blocks") (:file "tests/local/tokenizer")
-               (:file "tests/local/vocab-fixtures"))
+               (:file "tests/local/vocab-fixtures")
+               (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)

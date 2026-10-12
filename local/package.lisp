@@ -33,6 +33,11 @@
    #:make-detokenizer #:detokenizer-push #:detokenizer-finish
    #:tokenizer-error #:tokenizer-error-message #:unknown-tokenizer #:unknown-tokenizer-model
    #:unknown-tokenizer-pre #:llama-bpe #:qwen2
+   ;; chat templates
+   #:define-chat-template #:chat-template #:chat-template-class #:load-chat-template
+   #:render-chat #:encode-chat #:chat-template-stop-ids #:chat-template-source
+   #:chat-template-error #:chat-template-error-message #:unknown-chat-template
+   #:unknown-chat-template-source #:llama3-chat #:chatml #:qwen3-chat
    ;; blocks and models
    #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head

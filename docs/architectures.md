@@ -43,6 +43,7 @@ Loading picks the architecture the file declares:
 | `(:format key ...)` | `(:arch "name")` | The `general.architecture` value that selects this architecture |
 | | `(:hparam name "template")` | Metadata key for an hparam; `~a` is the `:arch` name |
 | | `(:tensor role "template" [:optional t] [:fallback role])` | Tensor name for a role; `~d` is the layer index. `:fallback` reads another role when the file lacks this tensor |
+| | `(:chat-template name)` | The [chat template](chat-templates.md) to use when the file carries no recognisable one |
 | | `(:option value)` | Any other keyword, e.g. `:rope-pairing`; read with `architecture-format-option` |
 
 Each format has its own section, so tensor names, metadata keys and RoPE pairing belong to the architecture and the format together.[^rope]
@@ -55,7 +56,7 @@ Merging happens on lookup, so redefining a parent updates its children.
 
 Because `~a` is the architecture's own `:arch`, `qwen3` reuses the `llama` key templates without repeating them.
 
-[Tokenizers](tokenizers.md) use the same inheritance rules.
+[Tokenizers](tokenizers.md) and [chat templates](chat-templates.md) use the same inheritance rules.
 
 ## Functions
 

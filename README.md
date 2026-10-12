@@ -9,6 +9,7 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 - [Design](docs/design.md)
 - [Architectures](docs/architectures.md)
 - [Tokenizers](docs/tokenizers.md)
+- [Chat templates](docs/chat-templates.md)
 - [Blocks](docs/blocks.md)
 - [Weights](docs/weights.md)
 - [GGUF](docs/gguf.md)

@@ -28,7 +28,7 @@ The tokenizer keeps its own copy of the vocabulary, so it stays valid after `w` 
 | `tokenizer-add-bos-p tokenizer` | The file's `add_bos_token`, or the tokenizer's default |
 | `tokenizer-ignore-merges-p tokenizer` | Whether whole pieces found in the vocabulary skip merging |
 
-`add-bos` defaults to the file's `add_bos_token`. Stop tokens are not decided here; read them with `tokenizer-special-id`.
+`add-bos` defaults to the file's `add_bos_token`. Stop tokens are not decided here; read them with `tokenizer-special-id`, or `chat-template-stop-ids` from a [chat template](chat-templates.md).
 
 ## Special tokens
 
@@ -131,7 +131,6 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 | Files without `tokenizer.ggml.pre` | [#32](https://github.com/communal-software/cl-inference/issues/32) |
 | Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
 | Placing a child's rule before an inherited one | [#34](https://github.com/communal-software/cl-inference/issues/34) |
-| Chat templates | [#6](https://github.com/communal-software/cl-inference/issues/6) |
 
 [^regex]: The standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
 [^merges]: The llama 3 merge list does not reach every token, so merging alone encodes some words differently from llama.cpp.

@@ -284,6 +284,10 @@ promise. PAIRS is newest first."
 (defun json-get (object key)
   (cdr (assoc key (json-object-pairs object) :test #'equal)))
 
+(defun json-object-alist (object)
+  "OBJECT's (key . value) pairs in insertion order."
+  (reverse (json-object-pairs object)))
+
 (defun (setf json-get) (value object key)
   "Set KEY, keeping its place if OBJECT already has it."
   ;; TODO: ASSOC per key makes building an object O(n^2); index the pairs if
