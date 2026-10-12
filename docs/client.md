@@ -78,7 +78,7 @@ A turn ends with exactly one `:done`. The sink runs on the calling thread; a sin
 | `openai-backend` | `:protocol-openai` | OpenAI-compatible chat completions, SSE streaming |
 | `ollama-backend` | `:protocol-ollama` | Ollama native `/api/chat`, NDJSON streaming |
 | `scripted-backend` | not registered | Canned replies, for offline tests |
-| `local-backend` | `:local` | A model in this image; loaded by `cl-inference/local`, answers `:unavailable` until the session work lands |
+| `local-backend` | `:local` | A model in this image; loaded by `cl-inference/local`, answers `:unavailable` until the backend lands |
 
 `describe-backend` returns a metadata plist (`:kind`, `:name`, `:summary`, ...). `(backends :kind :provider)` lists registered names.
 

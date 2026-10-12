@@ -43,5 +43,10 @@
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head
    #:model #:model-architecture #:model-layers #:model-model-blocks #:load-model
    #:layer-forward #:model-forward
+   ;; sessions
+   #:kv-cache #:make-kv-cache #:make-session #:session #:session-model #:session-tokenizer
+   #:session-chat-template #:session-n-ctx #:session-n-batch #:session-position #:session-reset
+   #:session-prefill #:generate #:greedy-sampler #:stop-split
+   #:session-error #:session-error-message #:context-overflow
    ;; client backend
    #:local-backend))

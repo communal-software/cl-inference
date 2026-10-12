@@ -83,7 +83,7 @@
           do (setf (gethash name table) (cons shape (weight-values name shape))))
     table))
 
-(defun spec-gguf (arch spec table)
+(defun spec-gguf (arch spec table &optional extra-metadata)
   (destructuring-bind (&key dim heads kv head-dim layers rope-dims epsilon theta &allow-other-keys)
       spec
     (build-gguf
@@ -95,7 +95,8 @@
                  (,(format nil "~a.attention.key_length" arch) 4 ,head-dim)
                  (,(format nil "~a.attention.layer_norm_rms_epsilon" arch) 6 ,epsilon)
                  (,(format nil "~a.rope.freq_base" arch) 6 ,theta)
-                 (,(format nil "~a.rope.dimension_count" arch) 4 ,rope-dims))
+                 (,(format nil "~a.rope.dimension_count" arch) 4 ,rope-dims)
+                 ,@extra-metadata)
      :tensors (loop for (name . shape) in (weight-shapes spec)
                     collect (list name (reverse shape) 0
                                   (f32-octets (cdr (gethash name table))))))))

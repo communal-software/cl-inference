@@ -57,7 +57,7 @@ Frequency `i` is `rope-theta^(-2i/rope-dims)` divided by element `i` of the opti
 
 ## Cache
 
-`block-forward` on `attention` takes `:start` (the position of the first input row) and `:cache`. Without a cache the input attends only to itself. With one, the new keys and values go through `kv-cache-update`, which a session implements:
+`block-forward` on `attention` takes `:start` (the position of the first input row) and `:cache`. Without a cache the input attends only to itself. With one, the new keys and values go through `kv-cache-update`. A [session](sessions.md) supplies a `kv-cache`; any object works if it implements the method:
 
 ```lisp
 (defmethod local:kv-cache-update ((cache my-cache) layer k v start)
@@ -93,4 +93,3 @@ Specialise `block-forward`, including with `:around`, to observe or change a blo
 | Missing | Tracker |
 |---|---|
 | Matmul over half-precision and quantized weights; they upcast per call | [#3](https://github.com/communal-software/cl-inference/issues/3), [#4](https://github.com/communal-software/cl-inference/issues/4) |
-| KV cache storage and sessions | [#7](https://github.com/communal-software/cl-inference/issues/7) |
