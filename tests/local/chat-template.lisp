@@ -188,6 +188,13 @@
       (local:define-chat-template test-parent-chat ()
         (:detect "AAA") (:message "~a:~a|") (:generation-prompt "go") (:stop "x" "y")))))
 
+(test excluded-markers-veto-a-match
+  (is (eq 'local:chatml (loaded-chat-template-class :template "<|im_start|>")))
+  (signals local:unknown-chat-template
+    (loaded-chat-template-class :template "<|im_start|> <function=x>"))
+  (signals local:unknown-chat-template
+    (loaded-chat-template-class :template "<|im_start|> multi_step_tool <function=x>")))
+
 (test chat-template-definitions-are-checked
   (dolist (sections '(((:unknown "x"))
                       ((:message))
@@ -263,10 +270,13 @@
         (loop for (file class) in '(("meta-llama-Llama-3.2-3B-Instruct" local:llama3-chat)
                                     ("meta-llama-Llama-3.1-8B-Instruct" local:llama3-chat)
                                     ("Qwen-Qwen3-0.6B" local:qwen3-chat)
-                                    ("Qwen-QwQ-32B" local:chatml))
+                                    ("Qwen-QwQ-32B" local:chatml)
+                                    ("Qwen3.5-4B" nil)
+                                    ("Qwen3-Coder" nil))
               for path = (fixture-path (format nil "templates/~A.jinja" file))
               when (probe-file path)
-                do (is (eq class (class-name (local::detected-chat-template-class (fixture-text path))))
+                do (is (eq class (let ((found (local::detected-chat-template-class (fixture-text path))))
+                          (and found (class-name found))))
                        "~A" file)))))
 
 (test real-vocab-fixture-declares-chatml

@@ -10,6 +10,7 @@
 
 (define-chat-template chatml ()
   (:detect "<|im_start|>")
+  (:exclude "<function=")
   (:message "<|im_start|>~a~%~a<|im_end|>~%")
   (:generation-prompt "<|im_start|>assistant~%")
   (:stop "<|im_end|>" "<|endoftext|>"))

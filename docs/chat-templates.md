@@ -30,8 +30,8 @@ A chat template turns client messages into the prompt text a model was trained o
 | Template | Detected by | Format | Tools |
 |---|---|---|---|
 | `llama3-chat` | `<\|start_header_id\|>` and `Cutting Knowledge Date` | Llama 3.2 Instruct | In the first user message; tool results use the `ipython` role; one call per message |
-| `chatml` | `<\|im_start\|>` | Plain `<\|im_start\|>role` turns | Rejected |
-| `qwen3-chat` | `<\|im_start\|>` and `multi_step_tool` | Qwen3 | In the system turn; calls as `<tool_call>` blocks; consecutive results share one `<tool_response>` user turn |
+| `chatml` | `<\|im_start\|>`, not `<function=` | Plain `<\|im_start\|>role` turns | Rejected |
+| `qwen3-chat` | `<\|im_start\|>` and `multi_step_tool`, not `<function=` | Qwen3 | In the system turn; calls as `<tool_call>` blocks; consecutive results share one `<tool_response>` user turn |
 
 `llama3-chat` and `qwen3-chat` match the official Jinja templates byte for byte.[^jinja]
 
@@ -53,7 +53,7 @@ An assistant turn keeps its `<think>` block only after the last user query, and 
 
 | Source | Match |
 |---|---|
-| The file's `tokenizer.chat_template` | Every `:detect` marker of a template occurs in it; the most specific template wins |
+| The file's `tokenizer.chat_template` | Every `:detect` marker of a template occurs in it and no `:exclude` marker does; the most specific template wins |
 | The architecture's `(:chat-template name)` format option | The template class named `name`, in any package |
 
 A file that matches neither signals `unknown-chat-template`.
@@ -77,6 +77,7 @@ A file that matches neither signals `unknown-chat-template`.
 | Section | Meaning |
 |---|---|
 | `(:detect "marker" ...)` | Strings that all occur in the file's template |
+| `(:exclude "marker" ...)` | Strings that rule a template out when any occurs in the file's template |
 | `(:message control)` | `format` control for one turn, taking the role and the text |
 | `(:generation-prompt control)` | Appended when `:add-generation-prompt` is true |
 | `(:stop "token" ...)` | Tokens that end a reply |
@@ -104,7 +105,7 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 | Missing | Tracker |
 |---|---|
 | Parsing tool calls and reasoning out of a reply | [#36](https://github.com/communal-software/cl-inference/issues/36) |
-| Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder, Qwen3.5, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
+| Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder and Qwen3.5 tool format, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Message text that spells a control token encodes as that token | [#37](https://github.com/communal-software/cl-inference/issues/37) |
 | Running the file's Jinja directly | not planned |
 

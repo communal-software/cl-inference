@@ -24,7 +24,7 @@
   (flet ((bad () (chat-template-fail "Bad chat template section ~S" form)))
     (unless (and (consp form) (rest form) (every #'stringp (rest form))) (bad))
     (case (first form)
-      ((:detect :stop))
+      ((:detect :exclude :stop))
       (:message (unless (and (= (length form) 2)
                              (handler-case (format nil (second form) "role" "text")
                                (error () nil)))
@@ -47,6 +47,7 @@
 
 (defmacro define-chat-template (name (&rest parents) &body sections)
   "Define chat template NAME inheriting from PARENTS. Sections: (:detect \"marker\"...),
+(:exclude \"marker\"...),
 (:message \"control\"), (:generation-prompt \"control\") and (:stop \"token\"...). A child
 overrides sections by name. Messages that need more than the plain turn format specialise
 `render-chat`."
@@ -135,11 +136,15 @@ end-of-sequence, end-of-turn and end-of-message ids the file declares."
     (and (stringp source) source)))
 
 (defun detected-chat-template-class (source)
-  "The most specific chat template whose :detect markers all occur in SOURCE."
+  "The most specific chat template whose :detect markers all occur in SOURCE and :exclude
+markers none do."
   (find-leaf-class (find-class 'chat-template)
                    (lambda (class)
                      (let ((markers (chat-template-entry class :detect)))
-                       (and markers (every (lambda (marker) (search marker source)) markers))))
+                       (and markers
+                            (every (lambda (marker) (search marker source)) markers)
+                            (notany (lambda (marker) (search marker source))
+                                    (chat-template-entry class :exclude)))))
                    (constantly nil)
                    (lambda (leaves)
                      (chat-template-fail "Chat templates ~{~S~^, ~} all match the file's template"
