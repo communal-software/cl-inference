@@ -22,6 +22,7 @@ A session holds a model's KV cache and position. `generate` runs one turn on it:
 | `session-reset session` | Position 0; the cache buffers are kept |
 | `session-position session` | Tokens in the cache |
 | `greedy-sampler logits` | The default sampler: the largest logit's id |
+| `make-sampler &key temperature top-k top-p seed` | A [sampler](sampling.md) |
 
 ## Sizing
 
@@ -47,7 +48,7 @@ The deadline and token are checked before each prefill pass and each decoding st
 
 `:stop-ids` defaults to `chat-template-stop-ids` when the session has a template and a tokenizer. `:stop` strings need a tokenizer; text that could begin a stop string is held back until it cannot.
 
-`:sampler` is a function from the `(1 vocab)` logits to a token id.[^sampler]
+`:sampler` is a [sampler](sampling.md) or a function from the `(1 vocab)` logits to a token id.[^sampler]
 
 ## Events
 
@@ -77,7 +78,6 @@ A stop id is neither returned nor cached. When the context fills, `generate` end
 
 | Missing | Tracker |
 |---|---|
-| Temperature, top-k, top-p, seed and non-finite logit checks | [#8](https://github.com/communal-software/cl-inference/issues/8) |
 | Reusing the cache across messages or sessions | [#16](https://github.com/communal-software/cl-inference/issues/16) |
 | Bulk copy of new keys and values into the cache | [#39](https://github.com/communal-software/cl-inference/issues/39) |
 | Quantized cache | [#18](https://github.com/communal-software/cl-inference/issues/18) |

@@ -48,5 +48,7 @@
    #:session-chat-template #:session-n-ctx #:session-n-batch #:session-position #:session-reset
    #:session-prefill #:generate #:greedy-sampler #:stop-split
    #:session-error #:session-error-message #:context-overflow
+   #:sample #:sampler #:make-sampler #:sampler-temperature #:sampler-top-k #:sampler-top-p
+   #:sampler-seed #:sampler-error
    ;; client backend
    #:local-backend))

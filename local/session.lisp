@@ -91,6 +91,8 @@ returns one. Signals CONTEXT-OVERFLOW when TOKENS do not fit."
 
 ;;; Sampling and stop strings
 
+(declaim (ftype function sample))
+
 (defun greedy-sampler (logits)
   "The id of the largest of LOGITS, shape (1 vocab)."
   (ct:tref (ct:argmax logits :axis 1) 0))
@@ -143,7 +145,7 @@ is the text before it."
                                  (timeout ci:+default-timeout+) cancel sink ref)
   "Run one turn: feed INPUT, then sample until a stop id, a STOP string, MAX-TOKENS or a full
 context. INPUT is token ids, appended after the session's position, or messages, which reset it.
-SAMPLER maps the logits to an id. TIMEOUT (milliseconds, covering the whole turn) and CANCEL end
+SAMPLER is a sampler object or a function from the logits to an id. TIMEOUT (milliseconds, covering the whole turn) and CANCEL end
 the turn early. SINK receives client events: text deltas, then one :done.
 Returns (values text finish-reason token-ids usage). FINISH-REASON is :stop, :length or a
 failed result such as (:error :timeout). TEXT is NIL without a tokenizer."
@@ -169,7 +171,7 @@ failed result such as (:error :timeout). TEXT is NIL without a tokenizer."
                                   (and (>= (session-position session) (session-n-ctx session))
                                        :length)))
                  (unless finish
-                   (let ((token (funcall sampler logits)))
+                   (let ((token (sample sampler logits)))
                      (if (member token stop-ids)
                          (setf finish :stop)
                          (progn

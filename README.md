@@ -12,6 +12,7 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 - [Chat templates](docs/chat-templates.md)
 - [Blocks](docs/blocks.md)
 - [Sessions](docs/sessions.md)
+- [Sampling](docs/sampling.md)
 - [Weights](docs/weights.md)
 - [GGUF](docs/gguf.md)
 - [Client](docs/client.md)
