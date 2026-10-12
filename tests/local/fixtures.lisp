@@ -36,7 +36,7 @@
                          1f0))))
 
 (defun weight-dtype (spec shape)
-  "Matrices use the spec's :dtype (:f32, :f16 or :bf16); vectors stay f32, as in real files."
+  "Matrices use the spec's :dtype (:f32, :f16, :bf16 or :q8_0); vectors stay f32, as in real files."
   (if (rest shape) (or (spec-get spec :dtype) :f32) :f32))
 
 (defun dtype-bits (dtype)
@@ -44,20 +44,41 @@
     (:f16 (values #'f16-bits #'f16-value))
     (:bf16 (values #'bf16-bits #'bf16-value))))
 
+(defun q8-0-blocks (values)
+  "Quantize VALUES in blocks of 32 the way ggml does. Returns the stored f16 scales, and the
+quantized integers of each block."
+  (loop for start from 0 below (length values) by 32
+        for block = (subseq values start (+ start 32))
+        for scale = (/ (reduce #'max block :key #'abs) 127)
+        for stored = (f16-bits scale)
+        collect (cons stored
+                      (let ((divisor (f16-value stored)))
+                        (mapcar (lambda (value) (if (zerop divisor) 0 (round value scale)))
+                                block)))))
+
 (defun round-through (dtype values)
   "VALUES as DTYPE stores them, so the reference sees what the file holds."
-  (if (eq dtype :f32)
-      values
-      (multiple-value-bind (encode decode) (dtype-bits dtype)
-        (mapcar (lambda (value) (funcall decode (funcall encode value))) values))))
+  (case dtype
+    (:f32 values)
+    (:q8_0 (loop for (stored . quantized) in (q8-0-blocks values)
+                 append (mapcar (lambda (q) (* q (f16-value stored))) quantized)))
+    (t (multiple-value-bind (encode decode) (dtype-bits dtype)
+         (mapcar (lambda (value) (funcall decode (funcall encode value))) values)))))
 
-;; TODO: Q8_0 fixtures once the dtype lands (#3)
+(defun q8-0-octets (values)
+  (let ((buffer (make-buffer)))
+    (loop for (stored . quantized) in (q8-0-blocks values)
+          do (put-uint buffer stored 2)
+             (dolist (q quantized) (put-uint buffer (ldb (byte 8 0) q) 1)))
+    buffer))
+
 (defun dtype-octets (dtype values)
-  (if (eq dtype :f32)
-      (f32-octets values)
-      (u16-octets (mapcar (nth-value 0 (dtype-bits dtype)) values))))
+  (case dtype
+    (:f32 (f32-octets values))
+    (:q8_0 (q8-0-octets values))
+    (t (u16-octets (mapcar (nth-value 0 (dtype-bits dtype)) values)))))
 
-(defun dtype-id (dtype) (ecase dtype (:f32 0) (:f16 1) (:bf16 30)))
+(defun dtype-id (dtype) (ecase dtype (:f32 0) (:f16 1) (:q8_0 8) (:bf16 30)))
 
 (defun weight-table (spec)
   (let ((table (make-hash-table :test 'equal)))

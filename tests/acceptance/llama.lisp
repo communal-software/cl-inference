@@ -9,6 +9,10 @@
   '((:f16 :model :f16 :text "The capital of France is")
     (:f16-chat :model :f16 :date "26 Jul 2024"
      :messages ((:role :system :content "Answer in one word.")
+                (:role :user :content "What is the capital of France?")))
+    (:q8 :model :q8_0 :text "The capital of France is")
+    (:q8-chat :model :q8_0 :date "26 Jul 2024"
+     :messages ((:role :system :content "Answer in one word.")
                 (:role :user :content "What is the capital of France?"))))
   "Each case reads its dump from reference/oracle/<name>/, made by reference/llama-oracle.sh.")
 
@@ -17,15 +21,20 @@
 (defparameter *greedy-horizon* 8
   "The ids the oracle dumps.")
 
-;;; llama.cpp multiplies in f16 or q8 activations; ours stay f32. Observed worst case: cosine
-;;; 0.999992, relative error 0.0040 on 6 tokens and 0.0119 on 46.
-(defparameter *minimum-cosine* 0.9999d0)
-(defparameter *maximum-relative-error* 0.02d0)
+;;; llama.cpp multiplies in f16 or q8 activations; ours stay f32. Each entry is a minimum cosine
+;;; and a maximum relative error, then how many top logits must agree in order. Observed worst case, F16: cosine 0.999992, error 0.0040 on 6
+;;; tokens and 0.0119 on 46. Q8_0: cosine 0.99954, error 0.0318, from llama.cpp quantizing its
+;;; activations too; its own Q8_0 drifts 0.026 from its F16, ours 0.020. Its chat ranks 4 and 5
+;;; sit 0.09 apart and swap, so only the top 3 are compared.
+(defparameter *tolerances* '((:f16 0.9999d0 0.02d0 5) (:q8_0 0.999d0 0.04d0 3)))
 
-;; TODO: Q8_0 acceptance (bartowski's Llama-3.2-1B-Instruct-Q8_0.gguf) once the dtype lands (#3)
+(defvar *model* :f16 "The model of the case under test.")
+
 (defparameter *models*
   '((:f16 "Llama-3.2-1B-Instruct-f16.gguf"
-     "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146")))
+     "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146")
+    (:q8_0 "Llama-3.2-1B-Instruct-Q8_0.gguf"
+     "432f310a77f4650a88d0fd59ecdd7cebed8d684bafea53cbff0473542964f0c3")))
 
 (defun reference-path (&rest parts)
   (asdf:system-relative-pathname "cl-inference" (format nil "reference/~{~a~^/~}~:[/~;~]" parts (find #\. (car (last parts))))))
@@ -134,7 +143,7 @@
                   (second (assoc model *models*))))
            ((not (oracle ,case))
             (skip "run reference/llama-oracle.sh for ~A first" ,case))
-           (t (let ((,ours (our-run ,case)) (,oracle (oracle ,case)))
+           (t (let ((,ours (our-run ,case)) (,oracle (oracle ,case)) (*model* model))
                 ,@body)))))
 
 ;;; Metadata
@@ -158,9 +167,11 @@
 ;;; Against llama.cpp
 
 (defun check-close (name ours expected)
-  (is (>= (cosine ours expected) *minimum-cosine*) "~A cosine ~,6f" name (cosine ours expected))
-  (is (<= (relative-error ours expected) *maximum-relative-error*)
-      "~A relative error ~,5f" name (relative-error ours expected)))
+  (destructuring-bind (minimum-cosine maximum-error &rest counts) (rest (assoc *model* *tolerances*))
+    (declare (ignore counts))
+    (is (>= (cosine ours expected) minimum-cosine) "~A cosine ~,6f" name (cosine ours expected))
+    (is (<= (relative-error ours expected) maximum-error)
+        "~A relative error ~,5f" name (relative-error ours expected))))
 
 (defun without-stop-ids (ids stop-ids)
   (remove-if (lambda (id) (member id stop-ids)) ids))
@@ -182,8 +193,9 @@
          (with-acceptance (,case (ours oracle))
            (check-close "logits" (getf ours :logits)
                         (cdr (assoc "result_output" (getf oracle :trace) :test #'string=)))
-           (is (equal (subseq (mapcar #'car (getf oracle :top)) 0 5)
-                      (top-ids (getf ours :logits) 5)))))
+           (let ((count (fourth (assoc *model* *tolerances*))))
+             (is (equal (subseq (mapcar #'car (getf oracle :top)) 0 count)
+                        (top-ids (getf ours :logits) count))))))
        (test ,(name "GREEDY")
          (with-acceptance (,case (ours oracle))
            (let ((expected (subseq (getf oracle :greedy) 0
@@ -196,3 +208,5 @@
 
 (define-case-tests :f16)
 (define-case-tests :f16-chat)
+(define-case-tests :q8)
+(define-case-tests :q8-chat)

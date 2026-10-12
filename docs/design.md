@@ -12,7 +12,7 @@
 | `cl-inference` | [Model client contract](client.md) and HTTP backends; no cl-tensor |
 | `cl-inference/local` | `:local` backend, [weights protocol](weights.md), [architectures](architectures.md), [tokenizers](tokenizers.md), [chat templates](chat-templates.md), [blocks](blocks.md), [sessions](sessions.md), [sampling](sampling.md) |
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
-| `cl-inference/quant` | Quantized dtypes as cl-tensor extensions |
+| `cl-inference/quant` | [Quantized dtypes](quant.md) as cl-tensor extensions; the Q8_0 kernel is native code in trivial-simd |
 
 ## Architectures
 

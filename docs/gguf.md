@@ -28,7 +28,8 @@ The file is mapped once, copy-on-write, and every tensor view points into the ma
 | F32, F64 | `:f32`, `:f64` view | yes |
 | F16, BF16 | `:f16`, `:bf16` view | yes |
 | I8, I16, I32, I64 | `:s8`, `:s16`, `:s32`, `:s64` view | yes |
-| Q8_0 and every other quantized type | `unsupported-weights-type` until a method exists | yes |
+| Q8_0 | `:q8_0` view, with [`cl-inference/quant`](quant.md) loaded | yes |
+| Every other quantized type | `unsupported-weights-type` until a method exists | yes |
 
 All listed ggml types are bounds- and overlap-checked, so a file with Q4_K tensors opens and its other tensors are usable.[^types] Types that ggml has removed, and unknown ids, signal `gguf-error` at open.
 
@@ -37,8 +38,8 @@ Shapes are row-major: GGUF stores the innermost dimension first, so a tensor wit
 Another system adds a typed view by specializing `gguf-type-storage`, which returns storage and a dtype:
 
 ```lisp
-(defmethod gguf:gguf-type-storage ((type (eql :q8_0)) pointer element-count)
-  (values (make-q8-storage pointer element-count) :q8_0))
+(defmethod gguf:gguf-type-storage ((type (eql :q5_0)) pointer element-count)
+  (values (make-q5-storage pointer element-count) :q5_0))
 ```
 
 ## Metadata values
@@ -70,7 +71,6 @@ The file is unmapped again when any check fails.
 
 | Missing | Tracker |
 |---|---|
-| Typed Q8_0 views | [#3](https://github.com/communal-software/cl-inference/issues/3) |
 | Q4_0, Q4_K, Q6_K views | [#14](https://github.com/communal-software/cl-inference/issues/14) |
 | Windows and BSD mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Split (multi-file) GGUF | not planned |

@@ -15,7 +15,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 |---|---|
 | `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
-| `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16 or bf16 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
+| `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16, bf16 or Q8_0 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
 | `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 | `tests/local/architecture.lisp` | Architecture DSL: inheritance, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
@@ -25,7 +25,8 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/vocab-fixtures.lisp` | Encode against llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures; skipped when `reference/` lacks them |
 | `tests/local/sampler.lisp` | Samplers: greedy equivalence, top-k and top-p, seeds and a golden sequence, argument checks, non-finite logits, `generate` with a sampler |
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
-| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, per-layer traces, cache |
+| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, tiled half-precision `linear`, per-layer traces, cache |
+| `tests/local/quant.lisp` | The `:q8_0` dtype: whole-block views, `take`, dequantizing, matmul against the dequantized values, models with Q8_0 weights, GGUF tensors read in place |
 
 | File | Covers |
 |---|---|
@@ -43,7 +44,7 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 ## Acceptance
 
-`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct (F16) against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. It takes about half a minute and skips every test when its inputs are missing.
+`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct in F16 and Q8_0 against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. It takes about a minute and skips every test when its inputs are missing. Cases without their model or dump skip individually.
 
 ```sh
 curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
@@ -51,9 +52,21 @@ curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
 reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-f16.gguf f16 "The capital of France is"
 DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
   reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-f16.gguf f16-chat ""
+curl -L -o reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf \
+  https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q8_0.gguf
+reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf q8 "The capital of France is"
+DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
+  reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf q8-chat ""
 sbcl --dynamic-space-size 16GB --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference/local/acceptance)'
 ```
 
-The test checks the file against its pinned sha256. `llama-oracle.sh` builds llama.cpp[^oracle] and writes each dump to `reference/oracle/<name>/`; the chat run pins the template's date to 26 Jul 2024, as the test does. llama.cpp multiplies in f16, ours in f32, so layers match by cosine (at least 0.9999) and relative error (at most 0.02), not exactly.
+The test checks the file against its pinned sha256. `llama-oracle.sh` builds llama.cpp[^oracle] and writes each dump to `reference/oracle/<name>/`; the chat run pins the template's date to 26 Jul 2024, as the test does. llama.cpp multiplies in f16 or Q8_0, ours in f32, so layers match by cosine and relative error, not exactly:
+
+| Model | Cosine at least | Relative error at most | Top logits in order |
+|---|---|---|---|
+| F16 | 0.9999 | 0.02 | 5 |
+| Q8_0 | 0.999 | 0.04 | 3 |
+
+llama.cpp's Q8_0 also quantizes its activations, which is where the wider bounds come from: its Q8_0 layers drift 0.026 from its F16 and ours 0.020, and in the chat run its fourth and fifth logits sit 0.09 apart and swap.
 
 [^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and up to eight greedy ids.

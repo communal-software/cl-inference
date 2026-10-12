@@ -51,9 +51,9 @@
   :description "Quantized dtypes for cl-inference/local"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference/local" "trivial-simd")
+  :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-tensor" "trivial-simd")
   :serial t
-  :components ((:file "quant/package")))
+  :components ((:file "quant/package") (:file "quant/q8-0")))
 
 (asdf:defsystem "cl-inference/local/tests"
   :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-inference/quant" "fiveam")
@@ -65,7 +65,8 @@
                (:file "tests/local/blocks") (:file "tests/local/tokenizer")
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
-               (:file "tests/local/session") (:file "tests/local/sampler"))
+               (:file "tests/local/session") (:file "tests/local/sampler")
+               (:file "tests/local/quant"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)

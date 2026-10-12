@@ -88,9 +88,8 @@
       (is (equal '(1f0 2f0) (tensor-list f16)))
       (is (equal '(1f0 2f0) (tensor-list bf16))))))
 
-(test gguf-q8-0-exposes-raw-bytes-only
+(test gguf-unsupported-types-expose-raw-bytes-only
   (with-sample (w)
-    (signals local:unsupported-weights-type (local:weights-tensor w "q8"))
     (signals local:unsupported-weights-type (local:weights-tensor w "q4k"))
     (let ((bytes (local:weights-tensor-bytes w "q8")))
       (is (eq :u8 (ct:tensor-dtype bytes)))
@@ -98,11 +97,17 @@
 
 (test gguf-custom-dtype-hook
   (with-sample (w)
-    (let ((method (defmethod gguf:gguf-type-storage ((type (eql :q8_0)) pointer count)
-                    (values (trivial-simd:make-vector-view pointer :u8 (* 34 (/ count 32))) :u8))))
+    (let* ((generic #'gguf:gguf-type-storage)
+           (original (find-method generic '() (list (closer-mop:intern-eql-specializer :q8_0)
+                                                    (find-class t) (find-class t))))
+           (method (progn
+                     (remove-method generic original)
+                     (defmethod gguf:gguf-type-storage ((type (eql :q8_0)) pointer count)
+                       (values (trivial-simd:make-vector-view pointer :u8 (* 34 (/ count 32))) :u8)))))
       (unwind-protect
            (is (eq :u8 (ct:tensor-dtype (local:weights-tensor w "q8"))))
-        (remove-method #'gguf:gguf-type-storage method)))))
+        (remove-method generic method)
+        (add-method generic original)))))
 
 (test gguf-writes-are-copy-on-write
   (with-gguf-file (path (sample-gguf))

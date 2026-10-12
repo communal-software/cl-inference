@@ -15,6 +15,7 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 - [Sampling](docs/sampling.md)
 - [Weights](docs/weights.md)
 - [GGUF](docs/gguf.md)
+- [Quantized weights](docs/quant.md)
 - [Client](docs/client.md)
 - [Testing](docs/testing.md)
 - [Limitations](docs/limitations.md)
