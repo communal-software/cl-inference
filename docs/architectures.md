@@ -2,28 +2,20 @@
 
 `define-architecture` declares a model family. A child inherits from a parent and overrides only the entries that differ.
 
-```lisp
-(local:define-architecture llama ()
-  (:hparams (n-layers) (dim) (rope-theta :default 10000.0))
-  (:blocks (attn attention) (mlp swiglu-mlp))
-  (:format :gguf
-    (:arch "llama")
-    (:rope-pairing :adjacent)
-    (:hparam n-layers "~a.block_count")
-    (:hparam dim "~a.embedding_length")
-    (:hparam rope-theta "~a.rope.freq_base")
-    (:tensor attn.q "blk.~d.attn_q.weight")
-    (:tensor output "output.weight" :optional t)))
+The library ships `local:llama` and `local:qwen3`. Qwen3 inherits Llama's blocks, metadata mappings and tied-output fallback, and declares only its differences:
 
-(local:define-architecture qwen3 (llama)
-  (:blocks (attn attention :qk-norm rmsnorm))
+```lisp
+(define-architecture qwen3 (llama)
+  (:blocks (attn attention :qk-norm t))
   (:format :gguf
     (:arch "qwen3")
     (:rope-pairing :neox)
-    (:tensor attn.q-norm "blk.~d.attn_q_norm.weight")))
+    (:chat-template qwen3-chat)
+    (:tensor attn.q-norm "blk.~d.attn_q_norm.weight")
+    (:tensor attn.k-norm "blk.~d.attn_k_norm.weight")))
 ```
 
-`llama` ships with the library, so a child needs only what differs:
+The definition above uses the library's package. Applications refer to the shipped classes as `local:llama` and `local:qwen3`, or declare their own child:
 
 ```lisp
 (local:define-architecture llama-variant (local:llama)
@@ -33,12 +25,14 @@
 Loading picks the architecture the file declares:
 
 ```lisp
-(local:with-weights (w "qwen3.gguf")
-  (let ((arch (local:load-architecture w)))      ; => #<QWEN3>
-    (local:hparam arch 'n-layers)                ; from "qwen3.block_count"
+(local:with-weights (w "Qwen3-0.6B-Q8_0.gguf")
+  (let ((arch (local:load-architecture w)))
+    (local:hparam arch 'head-dim)                    ; 128
     (local:architecture-tensor-name arch 'attn.q 3)   ; "blk.3.attn_q.weight"
-    (local:architecture-tensor arch w 'output)))      ; a view, or NIL when absent
+    (local:architecture-tensor arch w 'head.output))) ; output or tied embedding view
 ```
+
+Qwen3 normalizes each Q/K head before NeoX RoPE. Its head dimension comes from GGUF metadata; for 0.6B it is 128, while `dim / n-heads` is 64. See [Qwen3](qwen3.md) for generation and full-model checks.
 
 ## Sections
 

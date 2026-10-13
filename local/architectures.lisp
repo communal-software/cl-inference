@@ -34,3 +34,12 @@
     (:tensor token.embd "token_embd.weight")
     (:tensor head.norm "output_norm.weight")
     (:tensor head.output "output.weight" :fallback token.embd)))
+
+(define-architecture qwen3 (llama)
+  (:blocks (attn attention :qk-norm t))
+  (:format :gguf
+    (:arch "qwen3")
+    (:rope-pairing :neox)
+    (:chat-template qwen3-chat)
+    (:tensor attn.q-norm "blk.~d.attn_q_norm.weight")
+    (:tensor attn.k-norm "blk.~d.attn_k_norm.weight")))

@@ -6,7 +6,12 @@
 
 (in-package #:cl-inference/acceptance)
 
+(defvar *hashes* (make-hash-table))
+(defvar *runs* (make-hash-table))
+
 (def-suite :cl-inference/acceptance)
 
 (defun run-tests ()
+  (clrhash *hashes*)
+  (clrhash *runs*)
   (run! :cl-inference/acceptance))

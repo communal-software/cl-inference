@@ -26,6 +26,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/sampler.lisp` | Samplers: greedy equivalence, top-k and top-p, seeds and a golden sequence, argument checks, non-finite logits, `generate` with a sampler |
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
 | `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, tiled half-precision `linear`, per-layer traces, cache |
+| `tests/local/qwen3.lisp` | Shipped Qwen3 architecture: explicit head dimension, reference logits, cached decoding, required Q/K norms, tied head and template fallback with stop handling |
 | `tests/local/quant.lisp` | The `:q8_0` dtype: whole-block views, `take`, dequantizing, matmul against the dequantized values, models with Q8_0 weights, GGUF tensors read in place |
 
 | File | Covers |
@@ -44,7 +45,7 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 ## Acceptance
 
-`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct in F16 and Q8_0 against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. It takes about a minute and skips every test when its inputs are missing. Cases without their model or dump skip individually.
+`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct in F16 and Q8_0 against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. The suite also checks Qwen3 0.6B in both formats, with plain prompts and thinking enabled or disabled in chat; see [Qwen3](qwen3.md). It skips every test when its inputs are missing. Cases without their model or dump skip individually.
 
 ```sh
 curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
@@ -70,3 +71,5 @@ The test checks the file against its pinned sha256. `llama-oracle.sh` builds lla
 llama.cpp's Q8_0 also quantizes its activations, which is where the wider bounds come from: its Q8_0 layers drift 0.026 from its F16 and ours 0.020, and in the chat run its fourth and fifth logits sit 0.09 apart and swap.
 
 [^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and up to eight greedy ids.
+
+The shared acceptance helpers use each case’s layer count, template arguments and generation horizon. Qwen3 uses the same numerical bounds as Llama except for the [two Q8_0 cases](qwen3.md#oracle-checks). All full-model inputs must be present when verifying a model; skips do not establish acceptance.

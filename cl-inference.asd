@@ -66,17 +66,18 @@
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/sampler")
-               (:file "tests/local/quant"))
+               (:file "tests/local/quant") (:file "tests/local/qwen3"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)
                (error "cl-inference/local tests failed"))))
 
 (asdf:defsystem "cl-inference/local/acceptance"
-  :description "Llama 3.2 1B against llama.cpp; needs the model and oracle in reference/"
+  :description "Llama and Qwen3 against llama.cpp; needs models and oracle in reference/"
   :depends-on ("cl-inference/local/tests" "uiop" "fiveam")
   :serial t
-  :components ((:file "tests/acceptance/package") (:file "tests/acceptance/llama"))
+  :components ((:file "tests/acceptance/package") (:file "tests/acceptance/helpers")
+               (:file "tests/acceptance/llama") (:file "tests/acceptance/qwen3"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
