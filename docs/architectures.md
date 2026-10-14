@@ -2,7 +2,7 @@
 
 `define-architecture` declares a model family. A child inherits from a parent and overrides only the entries that differ.
 
-The library ships `local:llama` and `local:qwen3`. Qwen3 inherits Llama's blocks, metadata mappings and tied-output fallback, and declares only its differences:
+The [support overview](support.md#local-architectures) lists the shipped and verified models. The library ships `local:llama` and `local:qwen3`. Qwen3 inherits Llama's blocks, metadata mappings and tied-output fallback, and declares only its differences:
 
 ```lisp
 (define-architecture qwen3 (llama)
@@ -32,7 +32,7 @@ Loading picks the architecture the file declares:
     (local:architecture-tensor arch w 'head.output))) ; output or tied embedding view
 ```
 
-Qwen3 normalizes each Q/K head before NeoX RoPE. Its head dimension comes from GGUF metadata; for 0.6B it is 128, while `dim / n-heads` is 64. See [Qwen3](qwen3.md) for generation and full-model checks.
+Qwen3 normalizes each Q/K head before NeoX RoPE. Its head dimension comes from GGUF metadata; for 0.6B it is 128, while `dim / n-heads` is 64. See [Sessions](sessions.md) for generation and [Model acceptance](acceptance.md) for full-model checks.
 
 ## Sections
 

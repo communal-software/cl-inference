@@ -21,7 +21,7 @@ A chat template turns client messages into the prompt text a model was trained o
 | `encode-chat template tokenizer messages &rest keys` | Token ids; control tokens become single ids and the generation prompt is added |
 | `chat-template-stop-ids template tokenizer` | Ids that end a reply |
 
-`messages` are the [client's](client.md) message plists and `tools` its tool metadata. `render-chat` also takes `:date` (Llama 3) and `:enable-thinking` (Qwen3).
+`messages` are the [client's](client.md) message plists and `tools` its tool metadata. `render-chat` and `encode-chat` also take `:date` (Llama 3) and `:enable-thinking` (Qwen3).
 
 `encode-chat` adds BOS only when the file's `add_bos_token` asks for it, so the prompt never carries two.
 
@@ -41,7 +41,7 @@ Every prompt opens with a system turn holding `Cutting Knowledge Date: December 
 
 ### Qwen3
 
-An assistant turn keeps its `<think>` block only after the last user query, and always when it is the final message. `:enable-thinking nil` ends the generation prompt with an empty `<think></think>` block.
+Thinking is enabled by default. Short generation limits can end with `:length` before an answer. An assistant turn keeps its `<think>` block only after the last user query, and always when it is the final message. `:enable-thinking nil` ends the generation prompt with an empty `<think></think>` block.
 
 ```lisp
 (local:render-chat template messages :add-generation-prompt t :enable-thinking nil)

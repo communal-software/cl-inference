@@ -46,31 +46,6 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 ## Acceptance
 
-`cl-inference/local/acceptance` runs Llama 3.2 1B Instruct in F16 and Q8_0 against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. The suite also checks Qwen3 0.6B in both formats, with plain prompts and thinking enabled or disabled in chat; see [Qwen3](qwen3.md). It skips every test when its inputs are missing. Cases without their model or dump skip individually.
+`cl-inference/local/acceptance` checks Llama 3.2 1B Instruct and Qwen3 0.6B in F16 and Q8_0 against a pinned llama.cpp reference. It compares metadata, prompt ids, layer outputs, final logits and greedy generation.
 
-```sh
-curl -L -o reference/models/Llama-3.2-1B-Instruct-f16.gguf \
-  https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-f16.gguf
-reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-f16.gguf f16 "The capital of France is"
-DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
-  reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-f16.gguf f16-chat ""
-curl -L -o reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf \
-  https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q8_0.gguf
-reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf q8 "The capital of France is"
-DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
-  reference/llama-oracle.sh reference/models/Llama-3.2-1B-Instruct-Q8_0.gguf q8-chat ""
-sbcl --dynamic-space-size 16GB --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference/local/acceptance)'
-```
-
-The test checks the file against its pinned sha256. `llama-oracle.sh` builds llama.cpp[^oracle] and writes each dump to `reference/oracle/<name>/`; the chat run pins the template's date to 26 Jul 2024, as the test does. llama.cpp multiplies in f16 or Q8_0, ours in f32, so layers match by cosine and relative error, not exactly:
-
-| Model | Cosine at least | Relative error at most | Top logits in order |
-|---|---|---|---|
-| F16 | 0.9999 | 0.02 | 5 |
-| Q8_0 | 0.999 | 0.04 | 3 |
-
-llama.cpp's Q8_0 also quantizes its activations, which is where the wider bounds come from: its Q8_0 layers drift 0.026 from its F16 and ours 0.020, and in the chat run its fourth and fifth logits sit 0.09 apart and swap.
-
-[^oracle]: CPU-only at release `b11574`, with a small dumper from `reference/dump-trace/` copied into its examples. It records the last position of every `l_out-N` and `result_output` and up to eight greedy ids.
-
-The shared acceptance helpers use each case’s layer count, template arguments and generation horizon. Qwen3 uses the same numerical bounds as Llama except for the [two Q8_0 cases](qwen3.md#oracle-checks). All full-model inputs must be present when verifying a model; skips do not establish acceptance.
+Models and oracle dumps stay in gitignored `reference/`. Missing inputs skip individual cases; skips do not establish acceptance. See [Model acceptance](acceptance.md) for downloads, commands and numerical bounds.
