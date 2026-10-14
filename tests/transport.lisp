@@ -222,3 +222,87 @@
 (test a-bounded-run-leaves-no-watcher-behind
   (client::call-bounded 30 (lambda (exchange) (declare (ignore exchange)) :quick))
   (is-true (eventually #'watchers-idle-p)))
+
+(defclass transport-test-socket (usocket:stream-usocket)
+  ((closes :initform 0 :accessor test-socket-closes)
+   (reads :initform 0 :accessor test-socket-reads))
+  (:default-initargs :stream (flexi-streams:make-in-memory-input-stream #())))
+
+(defmethod usocket:socket-stream :before ((socket transport-test-socket))
+  (incf (test-socket-reads socket)))
+
+(defmethod usocket:socket-shutdown ((socket transport-test-socket) direction)
+  (declare (ignore direction)))
+
+(defmethod usocket:socket-close ((socket transport-test-socket))
+  (incf (test-socket-closes socket))
+  (close (slot-value socket 'usocket::stream)))
+
+(test an-acquired-socket-is-owned-before-cancel-or-timeout-unwinds
+  (dolist (reason '(:cancelled :timeout))
+    (let ((socket (make-instance 'transport-test-socket))
+          (delivered (bt:make-semaphore)) (interrupt nil))
+      (with-replaced-function
+          (usocket:socket-connect
+           (lambda (&rest args)
+             (declare (ignore args))
+             (let ((exchange client::*exchange*))
+               (is (null (client::exchange-socket exchange)))
+               (setf interrupt
+                     (bt:make-thread
+                      (lambda ()
+                        (client::abandon-exchange exchange reason)
+                        (bt:interrupt-thread
+                         (client::exchange-thread exchange)
+                         (lambda () (bt:signal-semaphore delivered))))))
+               (is-true (eventually (lambda ()
+                                     (bt:wait-on-semaphore delivered :timeout 0))))
+               socket)))
+        (unwind-protect
+             (is (equal (list nil reason)
+                        (multiple-value-list
+                         (client::call-with-deadline 30000
+                                                    (lambda (connect)
+                                                      (funcall connect "http://localhost"))))))
+          (when interrupt (bt:join-thread interrupt))))
+      (is (= 1 (test-socket-closes socket)))
+      (is (= 0 (test-socket-reads socket)))))
+  (is-true (eventually #'watchers-idle-p)))
+
+(test cancellation-during-a-failed-connect-preserves-its-reason
+  (with-replaced-function
+      (usocket:socket-connect (lambda (&rest args)
+                               (declare (ignore args))
+                               (client::abandon-exchange client::*exchange* :cancelled)
+                               (error "connect failed")))
+    (is (equal '(nil :cancelled)
+               (multiple-value-list
+                (client::call-with-deadline 30000
+                                           (lambda (connect)
+                                             (funcall connect "http://localhost"))))))))
+
+(test socket-cleanup-covers-connect-and-stream-wrapping-exits
+  (dolist (failure '(nil :connect :wrap))
+    (let ((socket (make-instance 'transport-test-socket)))
+      (with-replaced-function
+          (usocket:socket-connect (lambda (&rest args)
+                                   (declare (ignore args))
+                                   (when (eq failure :connect) (error "connect failed"))
+                                   socket))
+        (with-replaced-function
+            (cl+ssl:make-ssl-client-stream (lambda (&rest args)
+                                           (declare (ignore args))
+                                           (error "TLS wrapping failed")))
+          (flet ((connect-stream ()
+                   (client::call-with-deadline
+                    30000 (lambda (connect)
+                            (let ((stream (funcall connect (if (eq failure :wrap)
+                                                              "https://localhost"
+                                                              "http://localhost"))))
+                              (is (typep stream 'flexi-streams:flexi-stream))
+                              :stream)))))
+            (if failure
+                (signals error (connect-stream))
+                (is (equal '(:stream nil) (multiple-value-list (connect-stream))))))))
+      (is (= (if (eq failure :connect) 0 1) (test-socket-closes socket)))))
+  (is-true (eventually #'watchers-idle-p)))

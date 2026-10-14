@@ -80,6 +80,8 @@ than waiting out the connect timeout."
   "The exchange this thread is running, so an interrupt meant for one that has
 finished does nothing.")
 
+(defvar *defer-exchange-interrupt* nil)
+
 (defparameter *sink-grace* 5
   "Seconds a sink has to take the closing :done once the exchange is over.")
 
@@ -111,9 +113,7 @@ on the exchange is closed."
                    (on-cancel cancel (lambda () (abandon-exchange exchange :cancelled)))))
            (catch exchange
              (let ((*exchange* exchange))
-               (when (bt:with-lock-held ((exchange-lock exchange))
-                       (exchange-reason exchange))
-                 (throw exchange nil))
+               (check-exchange-reason exchange)
                (setf result (funcall function exchange)))))
       (finish-exchange exchange)
       (when remove-action (funcall remove-action))
@@ -136,6 +136,11 @@ URL answering a stream ready for drakma's :STREAM."
   (bt:with-lock-held ((exchange-lock exchange))
     (setf (exchange-finished exchange) t)))
 
+(defun check-exchange-reason (exchange)
+  (when (bt:with-lock-held ((exchange-lock exchange))
+          (exchange-reason exchange))
+    (throw exchange nil)))
+
 (defun close-socket (socket)
   "Shut SOCKET down before closing it: on Linux a close alone leaves a thread
 blocked in a read on it asleep, and a shutdown wakes it."
@@ -155,7 +160,8 @@ its thread out of FUNCTION. Cheap, and safe to call from any thread."
       (ignore-errors
        (bt:interrupt-thread (exchange-thread exchange)
                             (lambda ()
-                              (when (eq *exchange* exchange)
+                              (when (and (eq *exchange* exchange)
+                                         (not *defer-exchange-interrupt*))
                                 (throw exchange nil))))))))
 
 ;;; --- the connection -----------------------------------------------------
@@ -172,22 +178,24 @@ its thread out of FUNCTION. Cheap, and safe to call from any thread."
 (defun open-connection (url exchange timeout-ms)
   (let* ((uri (puri:parse-uri url))
          (securep (eq (puri:uri-scheme uri) :https))
-         ;; An interrupt landing between this call returning and the store
-         ;; below leaks the socket (#28).
-         (socket (with-immediate-connect-refusal
-                   (usocket:socket-connect
-                    (puri:uri-host uri) (or (puri:uri-port uri) (if securep 443 80))
-                    :element-type '(unsigned-byte 8)
-                    ;; Bounds the connect phase alone, ahead of the whole-
-                    ;; exchange deadline.
-                    :timeout (max 1 (ceiling timeout-ms 1000))
-                    :nodelay :if-supported))))
-    ;; A cancel that landed while connecting found no socket to close.
-    (when (bt:with-lock-held ((exchange-lock exchange))
-            (setf (exchange-socket exchange) socket)
-            (exchange-reason exchange))
-      (close-socket socket)
-      (error "cancelled"))
+         (socket
+           ;; Defer the exchange's throw until cleanup owns the acquired socket.
+           (handler-case
+                (let ((*defer-exchange-interrupt* t))
+                  (let ((socket (with-immediate-connect-refusal
+                                  (usocket:socket-connect
+                                   (puri:uri-host uri)
+                                   (or (puri:uri-port uri) (if securep 443 80))
+                                   :element-type '(unsigned-byte 8)
+                                   :timeout (max 1 (ceiling timeout-ms 1000))
+                                   :nodelay :if-supported))))
+                    (bt:with-lock-held ((exchange-lock exchange))
+                      (setf (exchange-socket exchange) socket))
+                    socket))
+             (error (condition)
+               (check-exchange-reason exchange)
+               (error condition)))))
+    (check-exchange-reason exchange)
     (wrap-http-stream socket (puri:uri-host uri) securep)))
 
 (defun wrap-http-stream (socket host securep)

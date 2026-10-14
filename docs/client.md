@@ -183,9 +183,8 @@ actions when they finish, so a token can be reused across calls until cancelled.
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |
-| Socket leak window in `open-connection` | [#28](https://github.com/communal-software/cl-inference/issues/28) |
 
 [^retry]: `retry-after` is milliseconds, read from `retry-after-ms`, else `Retry-After` as seconds or an HTTP date.
-[^sink]: Deltas are delivered inside the deadline, so a sink blocked on one is unwound when the deadline passes. The closing `:done` is delivered under its own bound, `*sink-grace*` seconds (default 5), so `complete` returns within `:timeout` plus `*sink-grace*`. The deadline is a watcher thread that shuts the socket down and interrupts the calling thread out of the exchange.
+[^sink]: Deltas are delivered inside the deadline, so a sink blocked on one is unwound when the deadline passes. The closing `:done` is delivered under its own bound, `*sink-grace*` seconds (default 5). During socket acquisition, cancellation and deadline unwinding wait until the socket is recorded for cleanup or connect fails; the connect timeout is `:timeout` rounded up to whole seconds, with a one-second minimum. The deadline is a watcher thread that shuts the socket down and interrupts the calling thread out of the exchange.
 
 [^stream-usage]: A stalled trailer times out even after a finish reason; cancellation also remains active. No usage is invented and rejected requests are not retried. The [OpenAI API reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) describes the empty-choices usage chunk before `[DONE]`.
