@@ -90,10 +90,14 @@
 
 (test gguf-unsupported-types-expose-raw-bytes-only
   (with-sample (w)
-    (signals local:unsupported-weights-type (local:weights-tensor w "q4k"))
+    (is (eq :q4_k (ct:tensor-dtype (local:weights-tensor w "q4k"))))
     (let ((bytes (local:weights-tensor-bytes w "q8")))
       (is (eq :u8 (ct:tensor-dtype bytes)))
-      (is (equalp (coerce *q8-block* 'vector) (coerce (tensor-list bytes) 'vector))))))
+      (is (equalp (coerce *q8-block* 'vector) (coerce (tensor-list bytes) 'vector)))))
+  (with-gguf-file (path (build-gguf :tensors `(("unsupported" (32) 3 ,(make-array 20 :initial-element 0)))))
+    (local:with-weights (w path)
+      (signals local:unsupported-weights-type (local:weights-tensor w "unsupported"))
+      (is (= 20 (ct:tensor-size (local:weights-tensor-bytes w "unsupported")))))))
 
 (test gguf-custom-dtype-hook
   (with-sample (w)

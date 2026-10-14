@@ -1,0 +1,158 @@
+(in-package #:cl-inference/quant)
+
+(defclass packed-dtype (ct:dtype)
+  ((storage-class :initarg :storage-class :reader packed-storage-class)
+   (matmul :initarg :matmul :reader packed-matmul)))
+
+(defclass packed-storage ()
+  ((bytes :initarg :bytes :reader packed-bytes)
+   (dtype :initarg :dtype :reader packed-storage-dtype)))
+
+(defun make-packed-storage (class dtype bytes)
+  (unless (or (typep bytes '(simple-array (unsigned-byte 8) (*)))
+              (and (simd:vector-view-p bytes) (eq (simd:vector-view-type bytes) :u8)))
+    (error "Packed storage requires simple unsigned byte vectors or views"))
+  (unless (zerop (mod (byte-count bytes) (ct:dtype-block-bytes dtype)))
+    (error "~S data is not a whole number of blocks" dtype))
+  (make-instance class :bytes bytes :dtype dtype))
+
+(defmethod ct:storage-length ((storage packed-storage))
+  (* (ct:dtype-block-size (packed-storage-dtype storage))
+     (floor (byte-count (packed-bytes storage)) (ct:dtype-block-bytes (packed-storage-dtype storage)))))
+(defmethod ct:storage-element-type ((storage packed-storage)) 'single-float)
+(defmethod ct:storage-dtype ((storage packed-storage)) (packed-storage-dtype storage))
+
+(defmethod ct:allocate-storage ((dtype packed-dtype) shape)
+  (let* ((name (ct:dtype-name dtype)) (elements (ct:dtype-block-size name)) (size (reduce #'* shape)))
+    (unless (zerop (mod size elements)) (error "~S needs whole blocks of ~D elements" name elements))
+    (make-packed-storage (packed-storage-class dtype) name
+                         (make-array (* (floor size elements) (ct:dtype-block-bytes name))
+                                     :element-type '(unsigned-byte 8) :initial-element 0))))
+
+(defmethod ct:validate-storage-view ((dtype packed-dtype) storage shape strides offset)
+  (let ((elements (ct:dtype-block-size (ct:dtype-name dtype))))
+    (unless (and (typep storage (packed-storage-class dtype))
+                 (eq (ct:dtype-name dtype) (packed-storage-dtype storage))
+                 (zerop (mod offset elements)) (plusp (length shape))
+                 (or (and (row-major-p shape strides)
+                          (zerop (mod (aref shape (1- (length shape))) elements)))
+                     (and (transposed-matrix-p shape strides) (zerop (mod (aref shape 0) elements)))))
+      (error "~S views require whole packed rows or their transpose" (ct:dtype-name dtype)))))
+
+(defun packed-byte-offset (tensor)
+  (* (floor (ct:tensor-offset tensor) (ct:dtype-block-size (ct:tensor-dtype tensor)))
+     (ct:dtype-block-bytes (ct:tensor-dtype tensor))))
+
+(defmethod ct:copy-storage-supported-p ((dtype packed-dtype) out)
+  (typep (ct:tensor-storage out) (packed-storage-class dtype)))
+
+(defmethod ct:copy-storage! ((dtype packed-dtype) out input)
+  (unless (and (eq (ct:tensor-dtype out) (ct:tensor-dtype input))
+               (equalp (ct:tensor-shape out) (ct:tensor-shape input))
+               (ct:contiguous-p out) (ct:contiguous-p input))
+    (error "Packed copies require contiguous tensors of one dtype and shape"))
+  (simd:copy! (packed-bytes (ct:tensor-storage out)) (packed-bytes (ct:tensor-storage input))
+              :end (* (floor (ct:tensor-size input) (ct:dtype-block-size (ct:tensor-dtype input)))
+                      (ct:dtype-block-bytes (ct:tensor-dtype input)))
+              :destination-start (packed-byte-offset out) :source-start (packed-byte-offset input))
+  out)
+
+(defun packed-weight-bytes (tensor)
+  (let* ((bytes (packed-bytes (ct:tensor-storage tensor))) (offset (packed-byte-offset tensor)))
+    (cond ((zerop offset) bytes)
+          ((simd:vector-view-p bytes)
+           (simd:make-vector-view (cffi:inc-pointer (simd:vector-view-pointer bytes) offset)
+                                 :u8 (- (byte-count bytes) offset)))
+          (t (subseq bytes offset)))))
+
+(defun packed-matmul-executor (out inputs options)
+  (declare (ignore options))
+  (destructuring-bind (x weight) inputs
+    (let ((x (if (and (ct:contiguous-p x) (zerop (ct:tensor-offset x))) x (ct:copy-tensor x))))
+      (funcall (packed-matmul (ct:find-dtype (ct:tensor-dtype weight)))
+               (ct:tensor-storage out) (ct:tensor-storage x) (packed-weight-bytes weight)
+               (aref (ct:tensor-shape x) 0) (aref (ct:tensor-shape weight) 1)
+               (aref (ct:tensor-shape x) 1)))))
+
+(defun packed-octet (bytes index)
+  (if (simd:vector-view-p bytes)
+      (cffi:mem-aref (simd:vector-view-pointer bytes) :uint8 index)
+      (aref bytes index)))
+
+(defun packed-half (bytes base)
+  (block-scale (packed-octet bytes base) (packed-octet bytes (1+ base))))
+
+(defun packed-element (dtype bytes base e)
+  (ecase dtype
+    (:q4_0 (* (packed-half bytes base)
+              (- (ldb (byte 4 (if (< e 16) 0 4)) (packed-octet bytes (+ base 2 (mod e 16)))) 8)))
+    (:q4_k
+     (let* ((group (floor e 32)) (s (+ base 4))
+            (scale (if (< group 4) (logand 63 (packed-octet bytes (+ s group)))
+                       (logior (logand 15 (packed-octet bytes (+ s group 4)))
+                               (ash (logand 192 (packed-octet bytes (+ s group -4))) -2))))
+            (minimum (if (< group 4) (logand 63 (packed-octet bytes (+ s group 4)))
+                         (logior (ash (packed-octet bytes (+ s group 4)) -4)
+                                 (ash (logand 192 (packed-octet bytes (+ s group))) -2))))
+            (q (ldb (byte 4 (* 4 (mod group 2)))
+                    (packed-octet bytes (+ base 16 (* 32 (floor group 2)) (mod e 32))))))
+       (- (* (* (packed-half bytes base) scale) q)
+          (* (packed-half bytes (+ base 2)) minimum))))
+    (:q6_k
+     (let* ((half (floor e 128)) (group (floor (mod e 128) 32)) (l (mod e 32))
+            (low (ldb (byte 4 (* 4 (floor group 2)))
+                      (packed-octet bytes (+ base (* half 64) (* (mod group 2) 32) l))))
+            (high (ldb (byte 2 (* group 2)) (packed-octet bytes (+ base 128 (* half 32) l))))
+            (scale (packed-octet bytes (+ base 192 (* half 8) (* group 2) (floor l 16)))))
+       (* (* (packed-half bytes (+ base 208)) (if (< scale 128) scale (- scale 256)))
+          (- (logior low (ash high 4)) 32))))))
+
+(defun packed-dequantize-executor (out inputs options)
+  (declare (ignore options))
+  (let* ((input (first inputs)) (dtype (ct:tensor-dtype input))
+         (elements (ct:dtype-block-size dtype)) (block-bytes (ct:dtype-block-bytes dtype))
+         (bytes (packed-bytes (ct:tensor-storage input)))
+         (shape (ct:tensor-shape input)) (strides (ct:tensor-strides input)) (position 0))
+    (labels ((walk (axis index)
+               (if (= axis (length shape))
+                   (multiple-value-bind (block e) (floor index elements)
+                     (setf (aref (ct:tensor-storage out) position)
+                           (packed-element dtype bytes (* block block-bytes) e))
+                     (incf position))
+                   (dotimes (i (aref shape axis))
+                     (walk (1+ axis) (+ index (* i (aref strides axis))))))))
+      (walk 0 (ct:tensor-offset input)))))
+
+(defmethod ct:resolve-operation ((dtype packed-dtype) operation inputs options)
+  (case operation
+    (:matmul
+     (destructuring-bind (&optional x weight) inputs
+       (when (and (ct:tensorp x) (ct:tensorp weight)
+                  (eq (ct:tensor-dtype x) :f32) (= 2 (ct:tensor-rank x))
+                  (eq (ct:tensor-dtype weight) (ct:dtype-name dtype))
+                  (transposed-matrix-p (ct:tensor-shape weight) (ct:tensor-strides weight))
+                  (= (aref (ct:tensor-shape x) 1) (aref (ct:tensor-shape weight) 0)))
+         (values :f32 #'packed-matmul-executor))))
+    ((:convert :dequantize)
+     (when (and (eq (ct:tensor-dtype (first inputs)) (ct:dtype-name dtype))
+                (eq (getf options :dtype) :f32))
+       (values :f32 #'packed-dequantize-executor)))))
+
+(defmacro define-packed-dtype (name storage constructor accessor key elements bytes kernel)
+  `(progn
+     (defclass ,name (packed-dtype) ())
+     (defclass ,storage (packed-storage) ())
+     (defun ,constructor (bytes) (make-packed-storage ',storage ,key bytes))
+     (defun ,accessor (storage) (check-type storage ,storage) (packed-bytes storage))
+     (ct:register-dtype
+      (or (ignore-errors (ct:find-dtype ,key))
+          (make-instance ',name :name ,key :element-type 'single-float :storage-only t
+                               :block-size ,elements :block-bytes ,bytes
+                               :storage-class ',storage :matmul #',kernel)))
+     (defmethod gguf:gguf-type-storage ((type-key (eql ,key)) pointer element-count)
+       (values (,constructor (simd:make-vector-view pointer :u8 (* (floor element-count ,elements) ,bytes)))
+               ,key))))
+
+(define-packed-dtype q4-0 q4-0-storage make-q4-0-storage q4-0-storage-bytes :q4_0 32 18 simd:q4-0-matmul!)
+(define-packed-dtype q4-k q4-k-storage make-q4-k-storage q4-k-storage-bytes :q4_k 256 144 simd:q4-k-matmul!)
+(define-packed-dtype q6-k q6-k-storage make-q6-k-storage q6-k-storage-bytes :q6_k 256 210 simd:q6-k-matmul!)

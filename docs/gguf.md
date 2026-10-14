@@ -18,8 +18,8 @@ The file is mapped once, copy-on-write, and every tensor view points into the ma
 | Platform | Status |
 |---|---|
 | macOS, Linux | Supported |
-| BSD | Untested ([#21](https://github.com/communal-software/cl-inference/issues/21)) |
-| Windows | Signals an error at load ([#20](https://github.com/communal-software/cl-inference/issues/20)) |
+| BSD | Untested; see [limitations](#limitations) |
+| Windows | Signals an error at load; see [limitations](#limitations) |
 
 ## Tensor types
 
@@ -28,10 +28,10 @@ The file is mapped once, copy-on-write, and every tensor view points into the ma
 | F32, F64 | `:f32`, `:f64` view | yes |
 | F16, BF16 | `:f16`, `:bf16` view | yes |
 | I8, I16, I32, I64 | `:s8`, `:s16`, `:s32`, `:s64` view | yes |
-| Q8_0 | `:q8_0` view, with [`cl-inference/quant`](quant.md) loaded | yes |
+| Q8_0, Q4_0, Q4_K, Q6_K | Corresponding packed dtype view, with [`cl-inference/quant`](quant.md) loaded | yes |
 | Every other quantized type | `unsupported-weights-type` until a method exists | yes |
 
-All listed ggml types are bounds- and overlap-checked, so a file with Q4_K tensors opens and its other tensors are usable.[^types] Types that ggml has removed, and unknown ids, signal `gguf-error` at open.
+All listed ggml types are bounds- and overlap-checked, including formats without typed inference support.[^types] Types that ggml has removed, and unknown ids, signal `gguf-error` at open.
 
 Shapes are row-major: GGUF stores the innermost dimension first, so a tensor with dimensions `(3 2)` has shape `(2 3)`.
 
@@ -71,7 +71,6 @@ The file is unmapped again when any check fails.
 
 | Missing | Tracker |
 |---|---|
-| Q4_0, Q4_K, Q6_K views | [#14](https://github.com/communal-software/cl-inference/issues/14) |
 | Windows and BSD mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Split (multi-file) GGUF | not planned |
 

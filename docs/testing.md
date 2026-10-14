@@ -1,6 +1,6 @@
 # Testing
 
-The suite uses FiveAM.
+The suite uses FiveAM. [Runnable examples](examples.md#run-without-downloads) have an offline smoke-test system.
 
 ```sh
 sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference)'        # client
@@ -16,7 +16,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/backend.lisp` | Local client contract against a tiny GGUF; sampling, cache policies, tools, reasoning, parser chunk boundaries, deadlines and cancellation |
 | `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
-| `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16, bf16 or Q8_0 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
+| `tests/local/fixtures.lisp` | Shared model specs, GGUF files in floating-point and supported packed formats from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
 | `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
 | `tests/local/safetensors.lisp` | Offline Safetensors/config/index writers, dtypes, malformed inputs, shards, mapping cleanup, MLX storage and Llama/Qwen3 reference logits and cached decoding |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
@@ -29,6 +29,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
 | `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, tiled half-precision `linear`, per-layer traces, cache |
 | `tests/local/qwen3.lisp` | Shipped Qwen3 architecture: explicit head dimension, reference logits, cached decoding, required Q/K norms, tied head and template fallback with stop handling |
+| `tests/local/packed.lisp`, `quant-golden.lisp` | Q4_0/Q4_K/Q6_K against independently decoded llama.cpp blocks, packed views, gathers, mapped storage, mixed models and cached decoding |
 | `tests/local/quant.lisp` | The `:q8_0` dtype: whole-block views, `take`, dequantizing, matmul against the dequantized values, models with Q8_0 weights, GGUF tensors read in place |
 
 | File | Covers |
@@ -54,3 +55,5 @@ After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, 
 `cl-inference/local/acceptance` checks Llama 3.2 1B Instruct and Qwen3 0.6B in F16 and Q8_0 against a pinned llama.cpp reference. It compares metadata, prompt ids, layer outputs, final logits and greedy generation.
 
 Models and oracle dumps stay in gitignored `reference/`. Missing inputs skip individual cases; skips do not establish acceptance. See [Model acceptance](acceptance.md) for downloads, commands and numerical bounds.
+
+Q4_0, Q4_K_M and Q6_K real-model cases use a F32-dequantized reference. See [Q4/Q6 acceptance](quant-acceptance.md) for reproducible preparation and strict verification.

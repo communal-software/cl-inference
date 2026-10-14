@@ -75,7 +75,7 @@ Frequency `i` is `rope-theta^(-2i/rope-dims)` divided by element `i` of the opti
 | `layer-forward architecture blocks x &key start cache` | The residual stream after one layer |
 | `bind-block block architecture weights` | Reads the block's tensors and hparams |
 | `block-tensor block architecture weights suffix` | The tensor for `<slot>.<suffix>` |
-| `linear x weight` | `x · weightᵀ`; every projection goes through it. Half-precision weights are multiplied in row tiles[^tiles]; [Q8_0](quant.md) weights by a native kernel |
+| `linear x weight` | `x · weightᵀ`; every projection goes through it. Half-precision weights are multiplied in row tiles[^tiles]; [quantized weights](quant.md) by packed kernels |
 
 ## Mods
 

@@ -35,9 +35,11 @@
           collect (float (+ (if near-one 1.0 0.0) (* (if near-one 0.3 0.5) (sin (+ seed (* 1.3 i)))))
                          1f0))))
 
-(defun weight-dtype (spec shape)
-  "Matrices use the spec's :dtype (:f32, :f16, :bf16 or :q8_0); vectors stay f32, as in real files."
-  (if (rest shape) (or (spec-get spec :dtype) :f32) :f32))
+(defun weight-dtype (spec shape &optional name)
+  "Matrices use :tensor-dtypes overrides or :dtype; vectors stay f32."
+  (if (rest shape)
+      (or (cdr (assoc name (spec-get spec :tensor-dtypes) :test #'equal)) (spec-get spec :dtype) :f32)
+      :f32))
 
 (defun dtype-bits (dtype)
   (ecase dtype
@@ -60,6 +62,7 @@ quantized integers of each block."
   "VALUES as DTYPE stores them, so the reference sees what the file holds."
   (case dtype
     (:f32 values)
+    ((:q4_0 :q4_k :q6_k) (nth-value 1 (pack-test-values dtype values)))
     (:q8_0 (loop for (stored . quantized) in (q8-0-blocks values)
                  append (mapcar (lambda (q) (* q (f16-value stored))) quantized)))
     (t (multiple-value-bind (encode decode) (dtype-bits dtype)
@@ -75,16 +78,18 @@ quantized integers of each block."
 (defun dtype-octets (dtype values)
   (case dtype
     (:f32 (f32-octets values))
+    ((:q4_0 :q4_k :q6_k) (pack-test-values dtype values))
     (:q8_0 (q8-0-octets values))
     (t (u16-octets (mapcar (nth-value 0 (dtype-bits dtype)) values)))))
 
-(defun dtype-id (dtype) (ecase dtype (:f32 0) (:f16 1) (:q8_0 8) (:bf16 30)))
+(defun dtype-id (dtype)
+  (ecase dtype (:f32 0) (:f16 1) (:q4_0 2) (:q8_0 8) (:q4_k 12) (:q6_k 14) (:bf16 30)))
 
 (defun weight-table (spec)
   (let ((table (make-hash-table :test 'equal)))
     (loop for (name . shape) in (weight-shapes spec)
           do (setf (gethash name table)
-                   (cons shape (round-through (weight-dtype spec shape)
+                   (cons shape (round-through (weight-dtype spec shape name)
                                               (weight-values name shape)))))
     table))
 
@@ -103,7 +108,7 @@ quantized integers of each block."
                  (,(format nil "~a.rope.dimension_count" arch) 4 ,rope-dims)
                  ,@extra-metadata)
      :tensors (loop for (name . shape) in (weight-shapes spec)
-                    for dtype = (weight-dtype spec shape)
+                    for dtype = (weight-dtype spec shape name)
                     collect (list name (reverse shape) (dtype-id dtype)
                                   (dtype-octets dtype (cdr (gethash name table))))))))
 

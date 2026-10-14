@@ -1,0 +1,44 @@
+{
+  "llama-q4_0": {
+    "dtype": "q4_0",
+    "file": "Llama-3.2-1B-Instruct-Q4_0.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "8933f0dfee94ccb1306124977f233cee635f3d045a49300cbcb2fcdc1d5c653c",
+    "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
+  },
+  "llama-q4_k": {
+    "dtype": "q4_k",
+    "file": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "7f585aaf0c2a82755ae87489a5d299b12328b297ac024bc583247fcdf2d6387b",
+    "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
+  },
+  "llama-q6_k": {
+    "dtype": "q6_k",
+    "file": "Llama-3.2-1B-Instruct-Q6_K.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "377ad883dbf56404e1b69ad1c027fc2cdb70e3bde897681569760376eaaceeb6",
+    "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
+  },
+  "qwen-q4_0": {
+    "dtype": "q4_0",
+    "file": "Qwen3-0.6B-Q4_0.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "7db6aa51f413cb5096c33e123a5d879fbc491af9627a6c0f98afbaabaf64763a",
+    "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
+  },
+  "qwen-q4_k": {
+    "dtype": "q4_k",
+    "file": "Qwen3-0.6B-Q4_K_M.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "3a7e740a2d0a696f57f69bd27bc092ea1dbff21f60e1271fbea6e41a787d7499",
+    "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
+  },
+  "qwen-q6_k": {
+    "dtype": "q6_k",
+    "file": "Qwen3-0.6B-Q6_K.gguf",
+    "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+    "sha256": "7be8ff510d4f71f51a40ab5fd4eda6e8b562be056ead52fa9b0129c416b9a9b6",
+    "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
+  }
+}

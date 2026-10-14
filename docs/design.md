@@ -15,7 +15,8 @@
 | `cl-inference/safetensors` | [Safetensors files, HF configuration and sharded model directories](safetensors.md) |
 | `cl-inference/mapping` | Internal POSIX file mappings shared by the optional readers |
 | `cl-inference/mlx` | [Apple Silicon backend](mlx.md), using lazy MLX graphs and packed affine weights |
-| `cl-inference/quant` | [Quantized dtypes](quant.md) as cl-tensor extensions; the Q8_0 kernel is native code in trivial-simd |
+| `cl-inference/quant` | [Quantized dtypes](quant.md) as cl-tensor extensions; native kernels and Lisp fallbacks live in trivial-simd |
+| `cl-inference/examples` | [Runnable tutorials](examples.md), with separate offline smoke tests |
 
 Configure and register `:local` over [open weights](local-backend.md#configuration) before calling it.
 

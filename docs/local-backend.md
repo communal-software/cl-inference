@@ -4,7 +4,7 @@
 
 ```lisp
 (asdf:load-system :cl-inference/gguf)
-;; Load :cl-inference/quant as well for Q8_0 weights.
+;; Load :cl-inference/quant as well for Q8_0, Q4_0, Q4_K or Q6_K weights.
 
 (cl-inference/local:with-weights (weights "model.gguf")
   (let ((backend (cl-inference/local:make-local-backend weights :n-ctx 2048)))

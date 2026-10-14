@@ -95,5 +95,38 @@ A non-optional tensor missing from the file signals `weights-error`.
 
 Mods specialise methods on the architecture class, including with `:around`.
 
+## Extend from an application package
+
+An application uses exported classes and defines its own block subclass. This observer records attention output shapes and returns the original delta:
+
+```lisp
+(defpackage #:my-model
+  (:use #:cl)
+  (:local-nicknames (#:local #:cl-inference/local) (#:ct #:cl-tensor)))
+(in-package #:my-model)
+
+(defvar *observations* nil)
+(defclass observing-attention (local:attention) ())
+
+(defmethod local:block-forward :around
+    ((block observing-attention) x &key &allow-other-keys)
+  (let ((delta (call-next-method)))
+    (push (list :layer (local:block-layer block)
+                :shape (coerce (ct:tensor-shape delta) 'list))
+          *observations*)
+    delta))
+
+(local:define-architecture observed-llama (local:llama)
+  (:blocks (attn observing-attention))
+  (:format :gguf (:arch "observed-llama"))
+  (:format :safetensors (:arch nil)))
+```
+
+The child inherits hparams, tensor roles and the MLP. Its `attn` entry replaces the inherited entry even though the symbols belong to different packages.
+
+The unique GGUF selector matches an `observed-llama` fixture; inherited metadata templates read `observed-llama.embedding_length`, for example. Ordinary Llama files keep their existing selector. A child that retains `:arch "llama"` becomes the most specific selector for those files; unrelated matching children cause an ambiguity error. NIL disables the inherited Safetensors selector.
+
+[Runnable examples](examples.md#run-without-downloads) exercise this definition against a tiny fixture and verify unchanged logits. Specialize `layer-forward` on the child architecture when the modification changes how block outputs combine.
+
 [^blocks]: Block slots hold a class name and initargs; `load-model` instantiates them. See [blocks](blocks.md).
 [^rope]: GGUF `llama` permutes Q/K and uses adjacent-pair RoPE, HF safetensors uses rotate-half, and Qwen uses NeoX, so one architecture can need a different pairing per format.

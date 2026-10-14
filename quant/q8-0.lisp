@@ -92,7 +92,7 @@
          (exponent (ldb (byte 5 10) bits))
          (fraction (ldb (byte 10 0) bits)))
     (cond ((zerop exponent) (* sign (scale-float (float fraction 1f0) -24)))
-          ((= exponent 31) (error "Q8_0 scale is not finite"))
+          ((= exponent 31) (error "Quantized scale is not finite"))
           (t (* sign (scale-float (float (+ 1024 fraction) 1f0) (- exponent 25)))))))
 
 (defun dequantize-executor (out inputs options)

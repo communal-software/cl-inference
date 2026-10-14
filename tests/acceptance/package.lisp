@@ -8,6 +8,7 @@
 
 (defvar *hashes* (make-hash-table))
 (defvar *runs* (make-hash-table))
+(defvar *quant-manifest* nil)
 
 (def-suite :cl-inference/acceptance)
 

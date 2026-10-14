@@ -69,7 +69,7 @@
   :license "GPL-3.0-only"
   :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-tensor" "trivial-simd")
   :serial t
-  :components ((:file "quant/package") (:file "quant/q8-0")))
+  :components ((:file "quant/package") (:file "quant/q8-0") (:file "quant/packed")))
 
 (asdf:defsystem "cl-inference/local/tests"
   :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-inference/safetensors" "cl-inference/quant" "fiveam")
@@ -82,7 +82,9 @@
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/sampler")
-               (:file "tests/local/quant") (:file "tests/local/qwen3")
+               (:file "tests/local/quant") (:file "tests/local/quant-golden")
+               (:file "tests/local/packed-fixtures") (:file "tests/local/packed")
+               (:file "tests/local/qwen3")
                (:file "tests/local/safetensors") (:file "tests/local/hf-tokenizer")
                (:file "tests/local/backend"))
   :perform (asdf:test-op (op component)
@@ -95,11 +97,29 @@
   :depends-on ("cl-inference/local/tests" "uiop" "fiveam")
   :serial t
   :components ((:file "tests/acceptance/package") (:file "tests/acceptance/helpers")
-               (:file "tests/acceptance/llama") (:file "tests/acceptance/qwen3"))
+               (:file "tests/acceptance/llama") (:file "tests/acceptance/qwen3")
+               (:file "tests/acceptance/quant"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
                (error "cl-inference acceptance tests failed"))))
+
+(asdf:defsystem "cl-inference/examples"
+  :description "Runnable local inference and architecture extension examples"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/quant")
+  :serial t
+  :components ((:file "examples/package") (:file "examples/complete")
+               (:file "examples/weights") (:file "examples/architecture"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/examples/tests"))))
+
+(asdf:defsystem "cl-inference/examples/tests"
+  :depends-on ("cl-inference/examples" "cl-inference/local/tests")
+  :components ((:file "tests/examples"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/examples/tests :run-tests)
+               (error "cl-inference examples failed"))))
 
 (asdf:defsystem "cl-inference/mlx"
   :description "Apple Silicon inference on lazy MLX arrays"

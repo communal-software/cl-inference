@@ -4,6 +4,8 @@ The acceptance suite compares pinned Llama 3.2 1B and Qwen3 0.6B models against 
 
 The shared acceptance helpers use each case’s layer count, template arguments and generation horizon. Qwen3 uses the same numerical bounds as Llama except for the [two Q8_0 cases](#qwen3-reference-checks). All full-model inputs must be present when verifying a model; skips do not establish acceptance.
 
+Q4_0, Q4_K_M and Q6_K variants use [Q4/Q6 acceptance](quant-acceptance.md), with reproducible quantization from the pinned F16 inputs and a F32-dequantized oracle.
+
 ## Llama reference checks
 
 `cl-inference/local/acceptance` runs Llama 3.2 1B Instruct in F16 and Q8_0 against llama.cpp: metadata, prompt ids, the residual stream after each layer, the final logits and the greedy ids (at most 8). A plain prompt and a system + user chat run separately. The chat run compares our `llama3-chat` render with llama.cpp rendering the file's own template, and checks that the reply stops on `<|eot_id|>`. The suite also checks Qwen3 0.6B in both formats, with plain prompts and thinking enabled or disabled in chat. It skips every test when its inputs are missing. Cases without their model or dump skip individually.
