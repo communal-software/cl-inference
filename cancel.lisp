@@ -11,11 +11,19 @@
     (cancel-token-cancelled token)))
 
 (defun on-cancel (token function)
-  "Call FUNCTION when TOKEN is cancelled, at once if it already is."
-  (when (bt:with-lock-held ((cancel-token-lock token))
-          (or (cancel-token-cancelled token)
-              (progn (push function (cancel-token-actions token)) nil)))
-    (funcall function)))
+  "Call FUNCTION when TOKEN is cancelled, at once if it already is.
+Return an idempotent remover; an action already claimed by CANCEL may run."
+  (let ((registration (list function)))
+    (if (bt:with-lock-held ((cancel-token-lock token))
+          (if (cancel-token-cancelled token)
+              t
+              (progn (push registration (cancel-token-actions token)) nil)))
+        (progn (funcall function) (constantly nil))
+        (lambda ()
+          (bt:with-lock-held ((cancel-token-lock token))
+            (setf (cancel-token-actions token)
+                  (delete registration (cancel-token-actions token) :test #'eq)))
+          nil))))
 
 (defun cancel (token)
   "Cancel whatever TOKEN was passed to as :CANCEL. Idempotent; true the first
@@ -26,5 +34,5 @@ time."
                       (setf first t
                             (cancel-token-cancelled token) t)
                       (shiftf (cancel-token-actions token) nil)))))
-    (mapc #'funcall actions)
+    (dolist (registration actions) (funcall (car registration)))
     first))

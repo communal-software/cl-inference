@@ -101,16 +101,22 @@ on the exchange is closed."
   (when (and cancel (cancelled-p cancel))
     (return-from call-bounded (values nil :cancelled)))
   (let ((exchange (make-exchange :thread (bt:current-thread)))
-        (result nil))
+        (result nil)
+        (remove-action nil))
     (unwind-protect
          (progn
            (start-watcher exchange seconds)
            (when cancel
-             (on-cancel cancel (lambda () (abandon-exchange exchange :cancelled))))
+             (setf remove-action
+                   (on-cancel cancel (lambda () (abandon-exchange exchange :cancelled)))))
            (catch exchange
              (let ((*exchange* exchange))
+               (when (bt:with-lock-held ((exchange-lock exchange))
+                       (exchange-reason exchange))
+                 (throw exchange nil))
                (setf result (funcall function exchange)))))
       (finish-exchange exchange)
+      (when remove-action (funcall remove-action))
       (close-socket (exchange-socket exchange))
       (bt:signal-semaphore (exchange-ended exchange)))
     (let ((reason (exchange-reason exchange)))

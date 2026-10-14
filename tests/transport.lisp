@@ -50,6 +50,30 @@
 
 ;;; --- cancel tokens --------------------------------------------------------
 
+(defmacro with-replaced-function ((name function) &body body)
+  (let ((original (gensym "ORIGINAL")))
+    `(let ((,original (fdefinition ',name)))
+       (unwind-protect
+            (progn (setf (fdefinition ',name) ,function) ,@body)
+         (setf (fdefinition ',name) ,original)))))
+
+(test cancellation-during-registration-prevents-the-bounded-function
+  (let ((token (client:make-cancel-token))
+        (register (fdefinition 'client:on-cancel))
+        (ran nil))
+    (with-replaced-function
+        (client:on-cancel (lambda (token action)
+                            (client:cancel token)
+                            (funcall register token action)))
+      (is (equal '(nil :cancelled)
+                 (multiple-value-list
+                  (client::call-bounded 30 (lambda (exchange)
+                                            (declare (ignore exchange))
+                                            (setf ran t))
+                                        :cancel token)))))
+    (is-false ran)
+    (is (null (client::cancel-token-actions token)))))
+
 (test a-cancel-token-runs-its-actions-once
   (let ((token (client:make-cancel-token))
         (runs 0))
@@ -71,6 +95,69 @@
     (client:cancel token)
     (client:on-cancel token (lambda () (incf runs)))
     (is (= 1 runs))))
+
+(test removing-a-cancel-action-is-idempotent-and-specific
+  (let* ((token (client:make-cancel-token))
+         (runs 0)
+         (action (lambda () (incf runs)))
+         (remove-action (client:on-cancel token action)))
+    (client:on-cancel token action)
+    (funcall remove-action)
+    (funcall remove-action)
+    (is (= 1 (length (client::cancel-token-actions token))))
+    (client:cancel token)
+    (funcall remove-action)
+    (is (= 1 runs))))
+
+(test a-cancelled-token-returns-a-no-op-remover
+  (let ((token (client:make-cancel-token)) (runs 0))
+    (client:cancel token)
+    (let ((remove-action (client:on-cancel token (lambda () (incf runs)))))
+      (funcall remove-action)
+      (funcall remove-action))
+    (is (= 1 runs))
+    (is (null (client::cancel-token-actions token)))))
+
+(test removal-does-not-suppress-an-action-already-claimed-by-cancel
+  (let* ((token (client:make-cancel-token))
+         (claimed (bt:make-semaphore))
+         (resume (bt:make-semaphore))
+         (runs 0)
+         (remove-action (client:on-cancel token (lambda () (incf runs)))))
+    (client:on-cancel token (lambda ()
+                             (bt:signal-semaphore claimed)
+                             (bt:wait-on-semaphore resume :timeout 2)))
+    (let ((thread (bt:make-thread (lambda () (client:cancel token)))))
+      (unwind-protect
+           (progn
+             (is-true (bt:wait-on-semaphore claimed :timeout 2))
+             (funcall remove-action))
+        (bt:signal-semaphore resume)
+        (bt:join-thread thread)))
+    (is (= 1 runs))))
+
+(test bounded-runs-remove-their-cancel-actions-on-every-exit
+  (let ((token (client:make-cancel-token)))
+    (dotimes (i 100)
+      (client::call-bounded 30 (lambda (exchange) (declare (ignore exchange)) :ok)
+                            :cancel token))
+    (is (null (client::cancel-token-actions token)))
+    (signals error
+      (client::call-bounded 30 (lambda (exchange) (declare (ignore exchange)) (error "backend"))
+                            :cancel token))
+    (is (null (client::cancel-token-actions token)))
+    (is (equal '(nil :timeout)
+               (multiple-value-list
+                (client::call-bounded 0 (lambda (exchange) (declare (ignore exchange)) (sleep 2))
+                                      :cancel token))))
+    (is (null (client::cancel-token-actions token)))
+    (is (equal '(nil :cancelled)
+               (multiple-value-list
+                (client::call-bounded 30 (lambda (exchange)
+                                          (declare (ignore exchange))
+                                          (client:cancel token))
+                                      :cancel token))))
+    (is (null (client::cancel-token-actions token)))))
 
 ;;; --- the exchange's deadline -------------------------------------------------
 

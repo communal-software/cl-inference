@@ -146,6 +146,17 @@ Tool parameters are typed schemas: `string`, `number`, `boolean`, `(integer lo h
 
 For consumers that layer their own services over the client.
 
+`on-cancel` returns an idempotent, zero-argument remover. A cancelled token
+calls the action immediately. Removal prevents actions still registered on the
+token; an action already claimed by `cancel` may run. Completions remove their
+actions when they finish, so a token can be reused across calls until cancelled.
+
+```lisp
+(let ((remove-action (on-cancel token #'stop-work)))
+  (unwind-protect (do-work)
+    (funcall remove-action)))
+```
+
 | Symbol | Does |
 |---|---|
 | `tool-schema` | A tool metadata plist's `:params` |
@@ -172,7 +183,6 @@ For consumers that layer their own services over the client.
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |
-| Cancel-token actions are never removed | [#29](https://github.com/communal-software/cl-inference/issues/29) |
 | Socket leak window in `open-connection` | [#28](https://github.com/communal-software/cl-inference/issues/28) |
 
 [^retry]: `retry-after` is milliseconds, read from `retry-after-ms`, else `Retry-After` as seconds or an HTTP date.
