@@ -88,5 +88,4 @@ Every backend turn emits one closing `:done` when a sink is supplied. Its reason
 
 | Missing | Tracker |
 |---|---|
-| GGUF tensor loading on CCL and ECL; local inference is verified on SBCL | [#45](https://github.com/communal-software/cl-inference/issues/45) |
-| Identical seeded sampling on CCL | [#46](https://github.com/communal-software/cl-inference/issues/46) |
+| Prompt-prefix KV cache reuse between turns | [#16](https://github.com/communal-software/cl-inference/issues/16) |

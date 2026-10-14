@@ -22,7 +22,7 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 | `llama` | Llama 3.2 1B Instruct | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `llama-bpe`, `llama3-chat` |
 | `qwen3` | Qwen3 0.6B | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `qwen2`, `qwen3-chat` |
 
-Local inference is verified on SBCL. The architecture declarations cover these families; the acceptance suite establishes support for the listed model variants. Other sizes and variants require their own verification.
+CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verified on SBCL. The architecture declarations cover these families; the acceptance suite establishes support for the listed model variants. Other sizes and variants require their own verification.
 
 `define-architecture` describes the local engine's blocks and weight mappings. Remote providers are declared separately with `define-provider`. See [Architectures](architectures.md), [Tokenizers](tokenizers.md) and [Chat templates](chat-templates.md) for extension points.
 
