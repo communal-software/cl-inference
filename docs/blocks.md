@@ -75,7 +75,15 @@ Frequency `i` is `rope-theta^(-2i/rope-dims)` divided by element `i` of the opti
 | `layer-forward architecture blocks x &key start cache` | The residual stream after one layer |
 | `bind-block block architecture weights` | Reads the block's tensors and hparams |
 | `block-tensor block architecture weights suffix` | The tensor for `<slot>.<suffix>` |
-| `linear x weight` | `x · weightᵀ`; every projection goes through it. Half-precision weights are multiplied in row tiles[^tiles]; [quantized weights](quant.md) by packed kernels |
+| `linear x weight` | `x · weightᵀ`; every projection goes through it. [Half precision](#half-precision) selects encoded matmul or bounded tiles; [quantized weights](quant.md) use packed kernels |
+
+## Half precision
+
+F16 and BF16 projections take F32 matrix activations and produce F32 results. Direct encoded matmul reads compatible mapped weights in place, including offsets and padding between contiguous rows. Weight views remain valid only while their weights are open.
+
+The measured M1/SBCL profile selects direct execution for small activation batches and tiled BLAS for larger batches. Other configurations use tiled BLAS. See [Half-precision measurements](half-linear-performance.md) for thresholds and reproduction commands.
+
+The tiled path supports padded and strided views without expanding the whole weight matrix.[^tiles] Numerical comparisons use tolerances because accumulation order differs between paths.
 
 ## Mods
 
@@ -94,4 +102,4 @@ Specialise `block-forward`, including with `:around`, to observe or change a blo
 |---|---|
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |
 
-[^tiles]: `linear` converts 256 weight rows at a time to an f32 scratch and multiplies each tile with BLAS, so no more than a tile is ever f32. It converts with trivial-simd's flat `convert!`, which is far faster than `astype` on file-mapped storage.
+[^tiles]: Scratch contains at most `min(256, output-rows) × input-columns` F32 weights. Contiguous tiles use `trivial-simd:convert!`; strided tiles use `nd-convert!`. Contiguous mapped conversion, including `ct:astype`, uses the packed converter without a full input snapshot. Arbitrary layouts on the encoded path may require an encoded layout copy in cl-tensor.

@@ -36,22 +36,56 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
 (defconstant +tile-rows+ 256
   "Weight rows converted to f32 at a time by TILED-LINEAR.")
 
+(defvar *half-linear-path* :auto
+  "Internal path override for tests and whole-call measurements.")
+
+(defparameter *half-linear-thresholds* '((:f16 . 18) (:bf16 . 21))
+  "Contiguous counts with at least 10% savings across the measured shapes.")
+
+(defun half-linear-profile-p ()
+  (and (eq (uiop:operating-system) :macosx)
+       (equal (lisp-implementation-type) "SBCL")
+       (equal (lisp-implementation-version) "2.6.8")
+       (equal (machine-type) "ARM64")
+       (equal (machine-version) "Apple M1")
+       (eq (trivial-simd:backend) :native)
+       (null ct:*executor*)))
+
+(defun half-linear-path (x weight)
+  (unless (and (= (ct:tensor-rank x) 2) (= (ct:tensor-rank weight) 2)
+               (eq (ct:tensor-dtype x) :f32)
+               (= (aref (ct:tensor-shape x) 1) (aref (ct:tensor-shape weight) 1)))
+    (error "Half-precision linear requires matching f32 activation and weight matrices"))
+  (ecase *half-linear-path*
+    ((:encoded :tiled) *half-linear-path*)
+    (:auto
+     (if (and (half-linear-profile-p)
+              (trivial-simd:encoded-matmul-native-p)
+              (<= (aref (ct:tensor-shape x) 0)
+                  (cdr (assoc (ct:tensor-dtype weight) *half-linear-thresholds*))))
+         :encoded :tiled))))
+
 (defun tiled-linear (x weight)
-  "X · WEIGHTᵀ for a half-precision WEIGHT, converting +TILE-ROWS+ rows at a time so only a
-tile is ever f32. Uses the flat CONVERT!; ASTYPE is far slower on file-mapped storage."
-  (unless (ct:contiguous-p weight)
-    (error "Half-precision weight must be contiguous"))
+  "X · WEIGHTᵀ with at most +TILE-ROWS+ weight rows converted to f32."
   (destructuring-bind (rows columns) (coerce (ct:tensor-shape weight) 'list)
     (let* ((tile-rows (min +tile-rows+ rows))
            (tile (make-array (* tile-rows columns) :element-type 'single-float))
            (out (ct:make-tensor (list (aref (ct:tensor-shape x) 0) rows)))
-           (encoding (ct:tensor-dtype weight)))
+           (encoding (ct:tensor-dtype weight))
+           (strides (ct:tensor-strides weight)))
+      (when (or (zerop (ct:tensor-size out)) (zerop columns))
+        (return-from tiled-linear out))
       (loop for start from 0 below rows by tile-rows
             for end = (min rows (+ start tile-rows))
-            do (trivial-simd:convert! tile (ct:tensor-storage weight)
-                                      :input-encoding encoding
-                                      :input-start (+ (ct:tensor-offset weight) (* start columns))
-                                      :end (* (- end start) columns))
+            for offset = (+ (ct:tensor-offset weight) (* start (aref strides 0)))
+            do (if (ct:contiguous-p weight)
+                   (trivial-simd:convert! tile (ct:tensor-storage weight)
+                                         :input-encoding encoding :input-start offset
+                                         :end (* (- end start) columns))
+                   (trivial-simd:nd-convert! tile (ct:tensor-storage weight)
+                                            (list (- end start) columns)
+                                            :input-encoding encoding :input-start offset
+                                            :input-strides strides))
                (ct:matmul! (ct:slice out :selectors (list :all (list start end)))
                            x (ct:transpose (ct:make-tensor-view tile (list (- end start) columns)))))
       out)))
@@ -59,7 +93,10 @@ tile is ever f32. Uses the flat CONVERT!; ASTYPE is far slower on file-mapped st
 (defun linear (x weight)
   "X · WEIGHTᵀ for a WEIGHT of shape (out in). Every projection goes through here."
   (case (ct:tensor-dtype weight)
-    ((:f16 :bf16) (tiled-linear x weight))
+    ((:f16 :bf16)
+     (ecase (half-linear-path x weight)
+       (:encoded (ct:matmul x (ct:transpose weight)))
+       (:tiled (tiled-linear x weight))))
     (t (ct:matmul x (ct:transpose weight)))))
 
 (defun apply-rmsnorm (x weight epsilon)

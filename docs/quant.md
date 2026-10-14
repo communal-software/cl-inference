@@ -42,7 +42,7 @@ Mapped tensor storage is borrowed and remains valid only while the weights are o
 
 ## Execution and accuracy
 
-The new kernels decode only a block at a time, reuse it across activation rows, and produce F32 products. Native ARM64 execution uses NEON; other hosts use scalar native kernels. A Lisp fallback runs when the native symbol is absent or the Lisp backend is selected. Neither path expands the complete weight matrix.
+Packed kernels decode only a block at a time, reuse it across activation rows, and produce F32 products. Native ARM64 execution uses NEON; other hosts use scalar native kernels. A Lisp fallback runs when the native symbol is absent or the Lisp backend is selected. Neither path expands the complete weight matrix.
 
 [Q4/Q6 acceptance](quant-acceptance.md) compares real models with independently dequantized F32 llama.cpp execution. Native packed llama.cpp execution additionally quantizes activations and can differ more. Q8_0 retains its existing native-oracle bounds.[^q8]
 
@@ -50,6 +50,6 @@ The new kernels decode only a block at a time, reuse it across activation rows, 
 
 For existing Q8_0 prefill performance restrictions, see [Blocks](blocks.md#limitations).
 
-[^dispatch]: `linear` sends half-precision weights through [row tiles](blocks.md) and packed weights to `ct:matmul`, whose extension dtype selects a `trivial-simd` kernel. Native code lives in that dependency; `cl-inference` runtime code is Lisp.
+[^dispatch]: `linear` selects encoded matmul or bounded tiles for [half-precision weights](blocks.md#half-precision). Packed weights go to `ct:matmul`, whose extension dtype selects a `trivial-simd` kernel. Native code lives in that dependency; `cl-inference` runtime code is Lisp.
 [^layout]: Q4_0 stores an F16 scale and two halves of biased four-bit values. Q4_K adds packed six-bit subscales and minima. Q6_K combines low nibbles, upper two bits and signed subscales. K formats use 256-element superblocks.
 [^q8]: See [Model acceptance](acceptance.md) for the existing Q8_0 numerical comparisons.

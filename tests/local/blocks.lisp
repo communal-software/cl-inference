@@ -48,12 +48,16 @@
   (check-model "blk-llama" :adjacent (spec* :heads 4 :kv 4 :head-dim 2 :rope-dims 2)))
 
 (test blocks-match-reference-f16
-  (check-model "blk-llama" :adjacent (spec* :dtype :f16))
-  (check-model "blk-qwen" :neox (spec* :dtype :f16 :qk-norm t)))
+  (dolist (path '(:auto :encoded :tiled))
+    (let ((local::*half-linear-path* path))
+      (check-model "blk-llama" :adjacent (spec* :dtype :f16))
+      (check-model "blk-qwen" :neox (spec* :dtype :f16 :qk-norm t)))))
 
 (test blocks-match-reference-bf16
-  (check-model "blk-llama" :adjacent (spec* :dtype :bf16))
-  (check-model "blk-neox" :neox (spec* :dtype :bf16 :freqs t)))
+  (dolist (path '(:auto :encoded :tiled))
+    (let ((local::*half-linear-path* path))
+      (check-model "blk-llama" :adjacent (spec* :dtype :bf16))
+      (check-model "blk-neox" :neox (spec* :dtype :bf16 :freqs t)))))
 
 (test half-precision-encoders
   (is (= #x3c00 (f16-bits 1f0)))
@@ -83,17 +87,142 @@
     (values (ct:make-tensor-view raw (list rows columns) :dtype dtype)
             (ct:make-tensor-view floats (list rows columns)))))
 
-(test linear-over-half-precision-matches-f32
+(defun half-activations (rows columns)
+  (ct:from-data (loop for r below rows collect
+                 (loop for c below columns collect
+                   (* 0.1f0 (- (mod (+ (* r 5) (* c 3)) 11) 5))))))
+
+(defun check-half-linear (x weight decoded)
+  (let* ((values (mapcar (lambda (row) (mapcar (lambda (v) (coerce v 'double-float)) row))
+                        (tensor-rows decoded)))
+         (expected (mapcar (lambda (row)
+                             (ref-matvec values (mapcar (lambda (v) (coerce v 'double-float)) row)))
+                           (tensor-rows x))))
+    (dolist (path '(:encoded :tiled :auto))
+      (let* ((local::*half-linear-path* path) (result (local:linear x weight)))
+        (is (eq :f32 (ct:tensor-dtype result)))
+        (is (rows-close-p (tensor-rows result) expected)
+            "~S ~S ~S" path (ct:tensor-dtype weight) (ct:tensor-shape weight))))))
+
+(test linear-over-half-precision-matches-reference
   (dolist (dtype '(:f16 :bf16))
-    (dolist (rows (list 1 7 local::+tile-rows+ (+ local::+tile-rows+ 3) (* 2 local::+tile-rows+)))
-      (multiple-value-bind (weight expected) (half-weight rows 12 dtype)
-        (dolist (count '(1 5))
-          (let ((x (ct:from-data (loop for r below count
-                                       collect (loop for c below 12
-                                                     collect (* 0.1f0 (- (mod (+ (* r 12) c) 7) 3)))))))
-            (is (rows-close-p (tensor-rows (local::linear x weight))
-                              (tensor-rows (ct:matmul x (ct:transpose expected))))
-                "~S ~D rows, ~D in" dtype rows count)))))))
+    (dolist (rows '(1 7 255 256 257 512))
+      (dolist (columns '(1 7 33 65))
+        (multiple-value-bind (weight decoded) (half-weight rows columns dtype)
+          (dolist (count '(1 6 46))
+            (check-half-linear (half-activations count columns) weight decoded)))))))
+
+(test half-linear-offsets-and-strides
+  (dolist (dtype '(:f16 :bf16))
+    (multiple-value-bind (weight decoded) (half-weight 260 70 dtype)
+      (let ((x (ct:slice (half-activations 8 70) :selectors '((1 7) (2 67)))))
+        (check-half-linear x
+                           (ct:slice weight :selectors '((1 258) (2 67)))
+                           (ct:slice decoded :selectors '((1 258) (2 67)))))
+      (dolist (selectors '(((1 258) (2 67 2)) ((257 0 -1) (66 1 -2))))
+        (let ((view (ct:slice weight :selectors selectors))
+              (reference (ct:slice decoded :selectors selectors)))
+          (check-half-linear (half-activations 6 (aref (ct:tensor-shape view) 1)) view reference)))
+      (check-half-linear (half-activations 6 260) (ct:transpose weight) (ct:transpose decoded))
+      (check-half-linear (half-activations 6 65)
+                         (ct:make-tensor-view (ct:tensor-storage weight) '(257 65)
+                                             :dtype dtype :strides '(0 0))
+                         (ct:make-tensor-view (ct:tensor-storage decoded) '(257 65)
+                                             :strides '(0 0))))))
+
+(test half-linear-empty-and-invalid
+  (dolist (dtype '(:f16 :bf16))
+    (dolist (shape '((0 7 3) (6 0 3) (6 7 0)))
+      (destructuring-bind (count rows columns) shape
+        (dolist (path '(:encoded :tiled :auto))
+          (let* ((local::*half-linear-path* path)
+                 (result (local:linear (ct:make-tensor (list count columns))
+                                       (ct:make-tensor (list rows columns) :dtype dtype))))
+            (is (equalp (vector count rows) (ct:tensor-shape result)))
+            (is (eq :f32 (ct:tensor-dtype result)))
+            (is (every #'zerop (ct:tensor-storage result)))))))
+    (dolist (path '(:encoded :tiled :auto))
+      (let ((local::*half-linear-path* path))
+        (signals error (local:linear (ct:make-tensor '(2 4))
+                                     (ct:make-tensor '(3 5) :dtype dtype)))
+        (signals error (local:linear (ct:make-tensor '(2 4) :dtype :f64)
+                                     (ct:make-tensor '(3 4) :dtype dtype)))))))
+
+(defmacro with-function-wrapper ((name original wrapper) &body body)
+  `(let ((,original (fdefinition ,name)))
+     (unwind-protect
+          (progn (setf (fdefinition ,name) ,wrapper) ,@body)
+       (setf (fdefinition ,name) ,original))))
+
+(test half-linear-mapped-storage-and-scratch
+  (dolist (dtype '(:f16 :bf16))
+    (multiple-value-bind (weight decoded) (half-weight 260 70 dtype)
+      (declare (ignore weight))
+      (with-gguf-file (path (build-gguf :tensors
+                             (list (list "w" '(70 260) (dtype-id dtype)
+                                         (dtype-octets dtype (apply #'append (tensor-rows decoded)))))))
+        (local:with-weights (weights path)
+          (let* ((mapped (ct:slice (local:weights-tensor weights "w")
+                                   :selectors '((1 258) (2 67))))
+                 (x (half-activations 6 65))
+                 (function (ecase dtype (:f16 'trivial-simd:f16-matmul!)
+                                       (:bf16 'trivial-simd:bf16-matmul!)))
+                 (calls 0))
+            (with-function-wrapper
+                (function original
+                 (lambda (out activations storage n m k &rest options)
+                   (incf calls)
+                   (is (eq storage (ct:tensor-storage mapped)))
+                   (is (= (ct:tensor-offset mapped) (getf options :weights-start)))
+                   (is (= 70 (getf options :weights-stride)))
+                   (apply original out activations storage n m k options)))
+              (with-function-wrapper
+                  ('trivial-simd:convert! converter
+                   (lambda (&rest arguments)
+                     (declare (ignore arguments))
+                     (error "Encoded linear unexpectedly converts storage")))
+                (with-function-wrapper
+                    ('trivial-simd:nd-convert! nd-converter
+                     (lambda (&rest arguments)
+                       (declare (ignore arguments))
+                       (error "Encoded linear unexpectedly converts strided storage")))
+                  (let ((local::*half-linear-path* :encoded)) (local:linear x mapped)))))
+            (is (= 1 calls))
+            (with-function-wrapper
+                ('trivial-simd:nd-convert! original
+                 (lambda (destination input shape &rest options)
+                   (is (<= (length destination) (* local::+tile-rows+ 65)))
+                   (is (eq input (ct:tensor-storage mapped)))
+                   (apply original destination input shape options)))
+              (let ((local::*half-linear-path* :tiled)) (local:linear x mapped)))
+            (check-half-linear x mapped (ct:slice decoded :selectors '((1 258) (2 67))))))))))
+
+(test half-linear-profile-and-fallback
+  (multiple-value-bind (weight decoded) (half-weight 257 33 :f16)
+    (let ((x (half-activations 6 33)))
+      (with-function-wrapper
+          ('local::half-linear-profile-p original (constantly t))
+        (with-function-wrapper
+            ('trivial-simd:encoded-matmul-native-p capability (constantly t))
+            (let ((local::*half-linear-path* :auto)
+                (local::*half-linear-thresholds* '((:f16 . 6) (:bf16 . 1))))
+            (is (eq :encoded (local::half-linear-path x weight)))
+            (is (eq :tiled (local::half-linear-path (half-activations 7 33) weight))))))
+      (with-function-wrapper
+          ('trivial-simd:encoded-matmul-native-p capability (constantly nil))
+        (let ((local::*half-linear-path* :auto))
+          (is (eq :tiled (local::half-linear-path x weight)))))
+      (with-function-wrapper
+          ('local::half-linear-profile-p profile (constantly nil))
+        (let ((local::*half-linear-path* :auto))
+          (is (eq :tiled (local::half-linear-path x weight)))))
+      (let ((trivial-simd::*native-encoded-matmul-p* nil))
+        (check-half-linear x weight decoded))
+      (let ((trivial-simd::*backend* :lisp))
+        (check-half-linear x weight decoded))
+      (let ((ct:*executor* (lambda (count work) (funcall work 0 count))))
+        (is (not (local::half-linear-profile-p)))
+        (check-half-linear x weight decoded)))))
 
 (test blocks-qk-norm
   (check-model "blk-qwen" :neox (spec* :qk-norm t)))

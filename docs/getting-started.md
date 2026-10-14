@@ -15,7 +15,7 @@ cmake -S ~/common-lisp/trivial-simd -B ~/common-lisp/trivial-simd/build -DCMAKE_
 cmake --build ~/common-lisp/trivial-simd/build -j8
 ```
 
-The native library accelerates inference; quantized kernels have a slower Lisp fallback.[^kernels] In a fresh SBCL image with Quicklisp loaded:
+The native library accelerates inference; quantized kernels have a slower Lisp fallback.[^kernels] CPU inference requires the encoded matmul dependency interfaces.[^dependencies] In a fresh SBCL image with Quicklisp loaded:
 
 ```lisp
 (ql:quickload "cl-inference/quant")
@@ -62,3 +62,4 @@ Continue with [Examples](examples.md), [Local backend](local-backend.md), or [Ar
 Local inference is verified on SBCL. Other restrictions are listed in [Support](support.md#limitations).
 
 [^kernels]: `cl-inference` contains Lisp runtime code; native CPU kernels live in `trivial-simd`. Its library loads when present at startup, so restart Lisp after building it.
+[^dependencies]: Use `cl-tensor` revision [4c0bb8f](https://github.com/communal-software/cl-tensor/commit/4c0bb8f) or later for mixed F32/F16/BF16 matmul, and `trivial-simd` revision [04f5ff4](https://github.com/communal-software/trivial-simd/commit/04f5ff4fbf1475ef3d60c227384f685896d8b89f) or later for `encoded-matmul-native-p`. The clone commands use current trunk.

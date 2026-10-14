@@ -27,7 +27,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/vocab-fixtures.lisp` | Encode against llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures; skipped when `reference/` lacks them |
 | `tests/local/sampler.lisp` | Samplers: greedy equivalence, top-k and top-p, seeds and a golden sequence, raw SplitMix64 vectors and uniform draws, argument checks, non-finite logits, `generate` with a sampler |
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
-| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, f16 and bf16 weights, tiled half-precision `linear`, per-layer traces, cache |
+| `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, F16/BF16 encoded and tiled projections, SIMD tails, the 256-row boundary, offset/padded/strided views, mapped storage identity, bounded scratch, empty dimensions, missing-native fallback, per-layer traces, cache |
 | `tests/local/qwen3.lisp` | Shipped Qwen3 architecture: explicit head dimension, reference logits, cached decoding, required Q/K norms, tied head and template fallback with stop handling |
 | `tests/local/packed.lisp`, `quant-golden.lisp` | Q4_0/Q4_K/Q6_K against independently decoded llama.cpp blocks, packed views, gathers, mapped storage, mixed models and cached decoding |
 | `tests/local/quant.lisp` | The `:q8_0` dtype: whole-block views, `take`, dequantizing, matmul against the dequantized values, models with Q8_0 weights, GGUF tensors read in place |
@@ -45,6 +45,8 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 Live Ollama tests are skipped unless `CL_INFERENCE_OLLAMA_URL` (the `/v1` route) or `CL_INFERENCE_OLLAMA_NATIVE_URL` is set; `CL_INFERENCE_OLLAMA_MODEL` picks the model.
 
 Full-model checks compare against a dev-only reference kept in the gitignored `reference/` directory, which also holds llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures for the tokenizer. `reference/chat-templates.py` needs `jinja2` and the two official templates in `reference/templates/`; it regenerates the chat template expectations.
+
+[Half-precision measurements](half-linear-performance.md) benchmark complete `linear` calls, including conversion, result allocation and tensor metadata. Performance measurements run separately from test suites to avoid contention.
 
 ## MLX
 

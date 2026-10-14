@@ -7,7 +7,7 @@
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |
-| Adopt upstream half-precision matmul; `linear` converts tiles to f32 first | [#42](https://github.com/communal-software/cl-inference/issues/42) |
+| Half-precision direct dispatch has a measured M1/SBCL profile; other configurations use tiled BLAS | [Half-precision limitations](half-linear-performance.md#limitations) |
 | Chat templates: special-token text in messages, more families | [#37](https://github.com/communal-software/cl-inference/issues/37), [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Tokenizer gaps: files without `pre`, other `pre` types, SentencePiece, rule placement | [#32](https://github.com/communal-software/cl-inference/issues/32), [#33](https://github.com/communal-software/cl-inference/issues/33), [#34](https://github.com/communal-software/cl-inference/issues/34) |
 | Sampler sorts the whole vocabulary each token | [#40](https://github.com/communal-software/cl-inference/issues/40) |

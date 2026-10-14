@@ -1,0 +1,96 @@
+(require :asdf)
+(unless (find-package :ql)
+  (load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
+(let ((root (merge-pathnames "../" (uiop:pathname-directory-pathname *load-truename*)))
+      (simd (uiop:getenv "CL_INFERENCE_SIMD_SOURCE")))
+  (asdf:initialize-source-registry
+   `(:source-registry ,@(when simd `((:directory ,simd)))
+                     (:directory ,root) :inherit-configuration)))
+(asdf:load-system :cl-inference/gguf)
+
+(defpackage #:cl-inference/half-bench
+  (:use #:cl)
+  (:local-nicknames (#:local #:cl-inference/local) (#:ct #:cl-tensor)))
+(in-package #:cl-inference/half-bench)
+
+(defparameter *shapes*
+  '((8192 2048) (2048 8192) (512 2048) (2048 2048) (128256 2048)
+    (3072 1024) (1024 3072) (1024 1024) (1024 2048) (2048 1024) (151936 1024)))
+
+(defvar *result* nil)
+
+(defun batch-time (function iterations)
+  (let ((before (sb-ext:get-bytes-consed))
+        (start (get-internal-real-time)))
+    (dotimes (i iterations) (setf *result* (funcall function)))
+    (values (/ (- (get-internal-real-time) start) internal-time-units-per-second)
+            (- (sb-ext:get-bytes-consed) before))))
+
+(defun measure (function)
+  (funcall function)
+  (let ((iterations 1))
+    (loop while (< (batch-time function iterations) 0.01d0)
+          do (setf iterations (* iterations 2)))
+    (let ((samples (loop repeat 3 collect (multiple-value-list (batch-time function iterations)))))
+      (values (* 1000d0 (/ (second (sort (mapcar #'first samples) #'<)) iterations))
+              (/ (second (sort (mapcar #'second samples) #'<)) iterations)))))
+
+(defun mapped-input-file (directory encoding count)
+  (let ((path (merge-pathnames (format nil "half-linear-~(~A~).bin" encoding) directory)))
+    (unless (and (probe-file path)
+                 (with-open-file (stream path :element-type '(unsigned-byte 8))
+                   (= (* count 2) (file-length stream))))
+      (let ((block (make-array 65536 :element-type '(unsigned-byte 8)))
+            (bits (ecase encoding (:f16 '(#x3c00 #xb800)) (:bf16 '(#x3f80 #xbf00)))))
+        (loop for i from 0 below (length block) by 2
+              for value = (nth (mod (floor i 2) 2) bits)
+              do (setf (aref block i) (ldb (byte 8 0) value)
+                       (aref block (1+ i)) (ldb (byte 8 8) value)))
+        (with-open-file (stream path :direction :output :if-exists :supersede
+                                    :element-type '(unsigned-byte 8))
+          (loop for start from 0 below (* count 2) by (length block)
+                do (write-sequence block stream :end (min (length block) (- (* count 2) start)))))))
+    path))
+
+(defun run ()
+  (unless (local::half-linear-profile-p)
+    (error "This measurement requires the documented M1/SBCL profile"))
+  (unless (trivial-simd:encoded-matmul-native-p) (error "Encoded native kernel is unavailable"))
+  (let* ((directory (uiop:ensure-directory-pathname
+                     (or (uiop:getenv "CL_INFERENCE_HALF_BENCH_DIRECTORY")
+                         (uiop:temporary-directory))))
+         (counts (let ((value (uiop:getenv "CL_INFERENCE_HALF_BENCH_COUNTS")))
+                   (if value (mapcar #'parse-integer (uiop:split-string value :separator ","))
+                       (loop for i from 1 to 64 collect i))))
+         (paths (if (uiop:getenv "CL_INFERENCE_HALF_BENCH_AUTO")
+                    '(:auto) '(:encoded :tiled)))
+         (max-count (reduce #'max *shapes* :key (lambda (shape) (reduce #'* shape)))))
+    (format t "~&PROFILE ~S ~S ~S ~S ~S executor=~S native=~S~%"
+            (machine-version) (lisp-implementation-type) (lisp-implementation-version)
+            (asdf:component-pathname (asdf:find-system :trivial-simd))
+            (trivial-simd:backend) ct:*executor* (trivial-simd:encoded-matmul-native-p))
+    (dolist (encoding '(:f16 :bf16))
+      (let ((path (mapped-input-file directory encoding max-count)))
+        (multiple-value-bind (pointer bytes)
+            (cl-inference/mapping:map-file path 1 #'error)
+          (unwind-protect
+               (let ((storage (trivial-simd:make-vector-view pointer :u16 max-count)))
+                 (dolist (shape *shapes*)
+                   (destructuring-bind (rows columns) shape
+                     (let ((weight (ct:make-tensor-view storage shape :dtype encoding)))
+                       (dolist (count counts)
+                         (let ((x (ct:full (list count columns) 0.5f0)))
+                           (dolist (selected paths)
+                             (let* ((local::*half-linear-path* selected)
+                                    (function (lambda () (local:linear x weight)))
+                                    (result (funcall function)))
+                               (assert (eq :f32 (ct:tensor-dtype result)))
+                               (assert (= (* columns 0.125f0) (ct:tref result 0 0)
+                                          (ct:tref result (1- count) (1- rows))))
+                               (multiple-value-bind (ms allocation) (measure function)
+                                 (format t "~&CSV,~(~A~),~D,~D,~D,~(~A~),~,6F,~,0F~%"
+                                         encoding rows columns count selected ms allocation)
+                                 (finish-output))))))))))
+            (cl-inference/mapping:unmap-file pointer bytes #'error)))))))
+
+(run)
