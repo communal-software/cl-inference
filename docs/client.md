@@ -142,6 +142,11 @@ A provider is data layered under each request: a protocol, base URL, authenticat
 
 Tool parameters are typed schemas: `string`, `number`, `boolean`, `(integer lo hi)`, `(member :a :b)`, `(or null x)`, `(array-of x)`, `(map-of x)`, `(object ...)` and `any`. `schema->json-schema` renders one for a model, `json-schema->schema` reads one back, and `coerce-args` checks a model's arguments against one.
 
+`validate-schema` signals a definition error for malformed schemas. A conditional
+requirement uses `:required-when (:controller :value)` or
+`:required-when (:controller (:value ...))`; the controller is another member
+parameter in the same schema.
+
 ## Helpers
 
 For consumers that layer their own services over the client.

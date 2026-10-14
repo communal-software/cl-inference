@@ -125,6 +125,12 @@ object carries no key order."
                     ((:op (member :read :write) :required-when (:op :write)))))
     (signals error (client:validate-schema schema))))
 
+(test malformed-conditional-shapes-signal-schema-errors
+  (dolist (condition '(:write 7 "write" (:op) (:op . :write) (:op :write :extra)))
+    (signals simple-error
+      (client:validate-schema `((:op (member :read :write))
+                                 (:d string :required-when ,condition))))))
+
 (test required-when-renders-as-prose
   (let ((properties (gethash "properties" (rendered-schema
                                            '((:op (member :read :write))
