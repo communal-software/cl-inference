@@ -224,11 +224,23 @@ timeout, not a wedged caller. OPENER takes (request connect) and answers
 (values stream status headers), HEADERS being drakma's response alist and
 optional; READER takes (request stream status) and answers the reply. A
 request with a :STREAM sink ends it with exactly one :DONE."
+  (call-with-completion-deadline
+   request
+   (lambda ()
+     (attempt-completion request opener reader
+                         (lambda (url)
+                           (open-connection url *exchange*
+                                            (getf request :timeout +default-timeout+)))))))
+
+(defun call-with-completion-deadline (request function)
+  "Run zero-argument FUNCTION under REQUEST's deadline; emit one bounded closing event."
   (let ((sink (getf request :stream)))
     (multiple-value-bind (result reason)
-        (call-with-deadline
-         (getf request :timeout +default-timeout+)
-         (lambda (connect) (attempt-completion request opener reader connect))
+        (call-bounded
+         (/ (getf request :timeout +default-timeout+) 1000)
+         (lambda (exchange)
+           (declare (ignore exchange))
+           (funcall function))
          :cancel (getf request :cancel))
       (let ((result (case reason
                       (:timeout (fail :timeout))

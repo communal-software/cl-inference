@@ -18,6 +18,7 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 - [GGUF](docs/gguf.md)
 - [Quantized weights](docs/quant.md)
 - [Client](docs/client.md)
+- [Local backend](docs/local-backend.md)
 - [Testing](docs/testing.md)
 - [Limitations](docs/limitations.md)
 

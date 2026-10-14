@@ -102,7 +102,6 @@ are client tool metadata. The text carries no BOS token; `encode` adds it.")
       (when add-generation-prompt
         (write-string (render-generation-prompt template) out)))))
 
-;; TODO: parse tool calls and reasoning out of a reply (#36)
 ;; TODO: user text that spells a control token such as <|im_end|> encodes as that token (#37)
 (defun encode-chat (template tokenizer messages &rest keys &key &allow-other-keys)
   "MESSAGES rendered by TEMPLATE and encoded with its control tokens as single ids. KEYS go to

@@ -9,10 +9,11 @@ sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-in
 
 `asdf:test-system` signals an error if any check fails. From a REPL, `(cl-inference/tests:run-tests)` and `(cl-inference/local/tests:run-tests)` return true when every check passes.
 
-The [client](client.md) suite loads neither the engine nor cl-tensor and passes on SBCL, CCL and ECL.
+The [client](client.md) suite loads neither the engine nor cl-tensor and passes on SBCL, CCL and ECL. The local suite passes on SBCL; CCL/ECL engine checks encounter the [documented portability limitations](limitations.md). Reply-parser tests pass on all three.
 
 | File | Covers |
 |---|---|
+| `tests/local/backend.lisp` | Local client contract against a tiny GGUF; sampling, cache policies, tools, reasoning, parser chunk boundaries, deadlines and cancellation |
 | `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
 | `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16, bf16 or Q8_0 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |

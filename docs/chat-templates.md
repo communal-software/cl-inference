@@ -47,6 +47,22 @@ An assistant turn keeps its `<think>` block only after the last user query, and 
 (local:render-chat template messages :add-generation-prompt t :enable-thinking nil)
 ```
 
+## Reply parsing
+
+The [local backend](local-backend.md#tools-and-reasoning) parses generated output through a per-turn template parser. Plain ChatML passes text through; Qwen3 separates reasoning and tool blocks; Llama 3 reads JSON function calls and tagged Python code.
+
+| Function | Does |
+|---|---|
+| `make-reply-parser template &key tools sink ref` | Creates a parser; tool metadata supplies names and argument schemas |
+| `reply-parser-push parser text` | Feeds decoded text and emits text or validated tool deltas |
+| `reply-parser-finish parser` | Returns `(values text tool-calls reasoning)` and marks the parser finished |
+
+Control tokens must be present in parser input. `generate :special t` preserves them; stop ids still end generation without entering the text. The backend selects this option itself.
+
+Each tool call emits one complete argument fragment after validation. Parsers do not emit closing events; the backend closes the turn. Invalid tool output signals `reply-parser-error`, a `chat-template-error`. Calls to a finished parser also signal it.
+
+Custom templates specialise `make-reply-parser`; custom parser classes specialise `reply-parser-push` and `reply-parser-finish`.
+
 ## Selection
 
 `load-chat-template` tries two sources in order:
@@ -104,7 +120,6 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 
 | Missing | Tracker |
 |---|---|
-| Parsing tool calls and reasoning out of a reply | [#36](https://github.com/communal-software/cl-inference/issues/36) |
 | Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder and Qwen3.5 tool format, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Message text that spells a control token encodes as that token | [#37](https://github.com/communal-software/cl-inference/issues/37) |
 | Running the file's Jinja directly | not planned |

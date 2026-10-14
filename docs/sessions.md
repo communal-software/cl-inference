@@ -17,7 +17,7 @@ A session holds a model's KV cache and position. `generate` runs one turn on it:
 | Function | Does |
 |---|---|
 | `make-session model &key tokenizer chat-template n-ctx n-batch` | A session with an empty cache |
-| `generate session input &key sampler max-tokens stop stop-ids timeout cancel sink ref` | One turn; returns `(values text finish-reason token-ids usage)` |
+| `generate session input &key sampler max-tokens stop stop-ids timeout cancel sink ref special` | One turn; returns `(values text finish-reason token-ids usage)` |
 | `session-prefill session tokens &key check` | Feeds tokens `n-batch` at a time; returns the last position's logits |
 | `session-reset session` | Position 0; the cache buffers are kept |
 | `session-position session` | Tokens in the cache |
@@ -53,6 +53,8 @@ The deadline and token are checked before each prefill pass and each decoding st
 ## Events
 
 `:sink` receives the [client's events](client.md#events): a `:text-delta` for each released piece of text, then one `:done` whose `:reason` is the finish reason. `:ref` is stamped on each. Without a tokenizer there is no text and no deltas; `text` is `NIL`.
+
+`generate :special t` retains decoded control tokens for [reply parsing](chat-templates.md#reply-parsing). The default omits them. Stop ids never appear in text or returned ids.
 
 ## Cache state
 

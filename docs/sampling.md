@@ -46,5 +46,11 @@ The sampler holds its random stream. Reusing it continues the stream; a new samp
 
 `sampler-error` is a `session-error`. Every call to `sample` checks the logits first, whatever the sampler, so a function sampler is checked too.[^traps]
 
-[^prng]: The stream is splitmix64, so a seed gives the same ids on every Lisp implementation.
+## Limitations
+
+| Missing | Tracker |
+|---|---|
+| Seeded golden sequence differs on CCL arm64 | [#46](https://github.com/communal-software/cl-inference/issues/46) |
+
+[^prng]: The stream is splitmix64, so a seed repeats its stream; CCL has a [portability limitation](#limitations).
 [^traps]: SBCL traps floating-point invalid operations by default, so a NaN produced during the forward pass signals there. The check covers values that arrive without trapping, such as NaN weights read from a file.

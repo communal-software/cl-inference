@@ -1,6 +1,6 @@
 (defpackage #:cl-inference/local
   (:use #:cl)
-  (:local-nicknames (#:ci #:cl-inference) (#:ct #:cl-tensor) (#:mop #:closer-mop))
+  (:local-nicknames (#:ci #:cl-inference) (#:ct #:cl-tensor) (#:mop #:closer-mop) (#:bt #:bordeaux-threads-2))
   (:export
    ;; weights protocol
    #:open-weights #:close-weights #:with-weights #:register-weights-format
@@ -51,4 +51,6 @@
    #:sample #:sampler #:make-sampler #:sampler-temperature #:sampler-top-k #:sampler-top-p
    #:sampler-seed #:sampler-error
    ;; client backend
-   #:local-backend))
+   #:local-backend #:make-local-backend
+   #:reply-parser #:make-reply-parser #:reply-parser-push #:reply-parser-finish
+   #:reply-parser-error))

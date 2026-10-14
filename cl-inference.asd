@@ -35,7 +35,7 @@
                (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
                (:file "local/chat-template") (:file "local/tojson") (:file "local/chat-templates")
                (:file "local/blocks") (:file "local/architectures") (:file "local/session") (:file "local/sampler")
-               (:file "local/backend"))
+               (:file "local/reply-parser") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
 (asdf:defsystem "cl-inference/gguf"
@@ -66,7 +66,8 @@
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/sampler")
-               (:file "tests/local/quant") (:file "tests/local/qwen3"))
+               (:file "tests/local/quant") (:file "tests/local/qwen3")
+               (:file "tests/local/backend"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)

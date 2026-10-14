@@ -142,13 +142,14 @@ is the text before it."
 
 (defun generate (session input &key (sampler #'greedy-sampler) max-tokens stop
                                  (stop-ids (default-stop-ids session))
-                                 (timeout ci:+default-timeout+) cancel sink ref)
+                                 (timeout ci:+default-timeout+) cancel sink ref special)
   "Run one turn: feed INPUT, then sample until a stop id, a STOP string, MAX-TOKENS or a full
 context. INPUT is token ids, appended after the session's position, or messages, which reset it.
 SAMPLER is a sampler object or a function from the logits to an id. TIMEOUT (milliseconds, covering the whole turn) and CANCEL end
 the turn early. SINK receives client events: text deltas, then one :done.
 Returns (values text finish-reason token-ids usage). FINISH-REASON is :stop, :length or a
-failed result such as (:error :timeout). TEXT is NIL without a tokenizer."
+failed result such as (:error :timeout). TEXT is NIL without a tokenizer. SPECIAL retains control
+tokens in decoded output; stop ids still end the turn without appearing in TEXT."
   (let ((tokenizer (session-tokenizer session)))
     (when (and stop (null tokenizer)) (session-fail "Stop strings need a tokenizer"))
     (dolist (string stop)
@@ -156,7 +157,7 @@ failed result such as (:error :timeout). TEXT is NIL without a tokenizer."
         (session-fail "A stop string must be a non-empty string, not ~S" string)))
     (let* ((check (turn-check timeout cancel))
            (prompt (prompt-tokens session input))
-           (detokenizer (and tokenizer (make-detokenizer tokenizer)))
+           (detokenizer (and tokenizer (make-detokenizer tokenizer :special special)))
            (text (make-string-output-stream))
            (held "") (ids nil) (count 0) (logits nil) (finish nil) (matched nil))
       (when (zerop (length prompt)) (session-fail "Nothing to generate from"))

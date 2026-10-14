@@ -1,6 +1,6 @@
 # Client
 
-`cl-inference` is one synchronous `complete` contract for chat models, with HTTP backends and the [in-process `:local` backend](design.md) behind it. The system loads no cl-tensor, so HTTP-only consumers do not load the engine.
+`cl-inference` is one synchronous `complete` contract for chat models, with HTTP backends and the [in-process `:local` backend](local-backend.md) behind it. The system loads no cl-tensor, so HTTP-only consumers do not load the engine.
 
 ```lisp
 (asdf:load-system :cl-inference)
@@ -30,7 +30,7 @@ A plist. Unknown keys are ignored, so a caller may offer a superset.
 | `:messages` | Required. Plists with `:role` (`:system`, `:user`, `:assistant`, `:tool`), `:content`, and for tools `:tool-calls` / `:tool-call-id` |
 | `:model`, `:base-url`, `:headers` | Provider data; a [provider](#providers) fills them in |
 | `:tools` | Tool metadata: `:name`, `:summary`, `:params` (a [schema](#schemas)) |
-| `:temperature`, `:top-p`, `:max-tokens`, `:stop`, `:seed` | Sampling; each protocol advertises the ones it renders |
+| `:temperature`, `:top-p`, `:top-k`, `:max-tokens`, `:stop`, `:seed` | Sampling; each protocol advertises the ones it renders |
 | `:timeout` | Milliseconds for the whole exchange. Default 30000 |
 | `:cancel` | A token from `make-cancel-token`; `(cancel token)` ends the call |
 | `:stream` | A function called with each [event](#events) |
@@ -78,7 +78,7 @@ A turn ends with exactly one `:done`. The sink runs on the calling thread; a sin
 | `openai-backend` | `:protocol-openai` | OpenAI-compatible chat completions, SSE streaming |
 | `ollama-backend` | `:protocol-ollama` | Ollama native `/api/chat`, NDJSON streaming |
 | `scripted-backend` | not registered | Canned replies, for offline tests |
-| `local-backend` | `:local` | A model in this image; loaded by `cl-inference/local`, answers `:unavailable` until the backend lands |
+| `local-backend` | `:local` | A model in this image; configure with [`make-local-backend`](local-backend.md) |
 
 `describe-backend` returns a metadata plist (`:kind`, `:name`, `:summary`, ...). `(backends :kind :provider)` lists registered names.
 
@@ -134,6 +134,7 @@ For consumers that layer their own services over the client.
 | `untyped->json`, `json->arguments` | Render and read an argument plist without a schema |
 | `lisp-tool-name` | A wire tool name as a keyword |
 | `reply-prompt-tokens`, `done-reason` | Read a reply's prompt size and a result's finish reason |
+| `call-with-completion-deadline` | Run a zero-argument result function under a request's deadline, with one bounded closing event |
 | `call-with-deadline` | Run a function on this thread, bounded by milliseconds and a `:cancel` token |
 | `header-alist` | A header plist as a lower-cased alist |
 
@@ -145,7 +146,6 @@ For consumers that layer their own services over the client.
 
 | Missing | Tracker |
 |---|---|
-| `:local` backend over sessions | [#24](https://github.com/communal-software/cl-inference/issues/24) |
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |

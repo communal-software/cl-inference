@@ -23,7 +23,7 @@ Load `cl-inference/gguf` and, for Q8_0, `cl-inference/quant`. The `local` nickna
           (format t "Thinking ~S (~A): ~A~%" thinking finish text))))))
 ```
 
-Thinking is enabled by default. Disable it with `:enable-thinking nil` when encoding chat. The reply retains reasoning markers; parsing reasoning and tool calls is a [limitation](limitations.md). A short thinking run can finish with `:length` before producing its answer. End-of-turn tokens produce `:stop` and are omitted from returned text and ids.
+Thinking is enabled by default. Disable it with `:enable-thinking nil` when encoding chat. Direct `generate` returns raw decoded text. The [local client backend](local-backend.md) separates reasoning into metadata and parses tool calls. A short thinking run can finish with `:length` before producing its answer. End-of-turn tokens produce `:stop` and are omitted from returned text and ids.
 
 ## Acceptance inputs
 

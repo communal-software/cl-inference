@@ -34,4 +34,4 @@
    #:json->arguments #:lisp-tool-name
    #:reply-prompt-tokens #:done-reason
    ;; transport
-   #:+default-timeout+ #:*sink-grace* #:call-with-deadline #:header-alist))
+   #:+default-timeout+ #:*sink-grace* #:call-with-deadline #:call-with-completion-deadline #:header-alist))

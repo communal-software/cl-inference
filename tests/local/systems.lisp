@@ -6,7 +6,7 @@
   (dolist (name '("CL-INFERENCE" "CL-INFERENCE/LOCAL" "CL-INFERENCE/GGUF" "CL-INFERENCE/QUANT"))
     (is (find-package name))))
 
-(test the-local-backend-is-registered-but-unavailable
+(test the-unconfigured-local-backend-is-unavailable
   (is (member :local (ci:backends :kind :provider)))
   (is (eq :unavailable (getf (ci:describe-backend (ci:find-backend :local)) :status)))
   (is (equal '(:error :unavailable)
