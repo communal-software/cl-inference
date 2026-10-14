@@ -5,7 +5,6 @@
 | Local ONNX models | [#47](https://github.com/communal-software/cl-inference/issues/47) |
 | Local Gemma-family models | [#48](https://github.com/communal-software/cl-inference/issues/48) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
-| Seeded sampler sequence differs on CCL | [#46](https://github.com/communal-software/cl-inference/issues/46) |
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |
 | Adopt upstream half-precision matmul; `linear` converts tiles to f32 first | [#42](https://github.com/communal-software/cl-inference/issues/42) |

@@ -35,10 +35,10 @@
 
 (defun splitmix-next (state)
   "Returns (values output new-state)."
-  (declare (type u64 state) (optimize speed))
+  ;; CCL 1.13 arm64 miscompiles this mixing with u64 declarations.
+  (declare (optimize speed))
   (let* ((state (ldb (byte 64 0) (+ state #x9E3779B97F4A7C15)))
          (z state))
-    (declare (type u64 state z))
     (setf z (ldb (byte 64 0) (* (logxor z (ash z -30)) #xBF58476D1CE4E5B9)))
     (setf z (ldb (byte 64 0) (* (logxor z (ash z -27)) #x94D049BB133111EB)))
     (values (logxor z (ash z -31)) state)))

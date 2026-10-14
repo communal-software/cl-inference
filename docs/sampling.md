@@ -50,7 +50,7 @@ The sampler holds its random stream. Reusing it continues the stream; a new samp
 
 | Missing | Tracker |
 |---|---|
-| Seeded golden sequence differs on CCL arm64 | [#46](https://github.com/communal-software/cl-inference/issues/46) |
+| Sampler sorts the whole vocabulary each token | [#40](https://github.com/communal-software/cl-inference/issues/40) |
 
-[^prng]: The stream is splitmix64, so a seed repeats its stream; CCL has a [portability limitation](#limitations).
+[^prng]: The stream is splitmix64 with explicit 64-bit masking and generic integer arithmetic. Its output and uniform draws match on SBCL, CCL and ECL. Sampling also depends on the input logits and floating-point filtering.
 [^traps]: SBCL traps floating-point invalid operations by default, so a NaN produced during the forward pass signals there. The check covers values that arrive without trapping, such as NaN weights read from a file.

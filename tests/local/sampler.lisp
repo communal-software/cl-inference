@@ -80,6 +80,28 @@
   (is (equal '(2 0 1 1 0 3 0 3 1 2 0 1)
              (draws (local:make-sampler :seed 42) (log-logits 0.25 0.25 0.25 0.25) 12))))
 
+(test splitmix64-matches-integer-reference-vectors
+  (dolist (case '((0 #xE220A8397B1DCDAF #x9E3779B97F4A7C15)
+                  (42 #xBDD732262FEB6E95 #x9E3779B97F4A7C3F)
+                  (#x9E3779B97F4A7C3F #x28EFE333B266F103 #x3C6EF372FE94F854)
+                  (#xFFFFFFFFFFFFFFFF #xE4D971771B652C20 #x9E3779B97F4A7C14)
+                  (#x61C8864680B583EB 0 0)))
+    (destructuring-bind (seed expected-output expected-state) case
+      (multiple-value-bind (output state) (local::splitmix-next seed)
+        (is (= expected-output output))
+        (is (= expected-state state))))))
+
+(test sampler-uniform-draws-use-the-upper-53-bits
+  (dolist (seed '(0 42 #xFFFFFFFFFFFFFFFF #x61C8864680B583EB))
+    (let ((sampler (local:make-sampler :seed seed)))
+      (multiple-value-bind (output state) (local::splitmix-next seed)
+        (let ((draw (local::next-uniform sampler)))
+          (is (typep draw 'double-float))
+          (is (<= 0d0 draw))
+          (is (< draw 1d0))
+          (is (= (/ (ash output -11) (expt 2 53)) draw))
+          (is (= state (local::sampler-state sampler))))))))
+
 (test sampler-without-a-seed-reports-the-one-it-drew
   (let ((a (local:make-sampler)) (logits (log-logits 0.25 0.25 0.25 0.25)))
     (is (integerp (local:sampler-seed a)))
