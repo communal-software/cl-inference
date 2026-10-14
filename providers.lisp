@@ -1,12 +1,10 @@
 (in-package #:cl-inference)
 
-;;; Ollama's native chat endpoint. No key, so it is the provider a development
-;;; machine can run end to end -- and this route carries the usage counters
-;;; (eval_count, total_duration) and options (num_ctx, format, keep_alive) the
-;;; OpenAI-compatible /v1 route drops, in :protocol-ollama's :meta.
-;;;
-;;; The /v1 route stays reachable with no provider of its own:
-;;; :protocol-openai takes :base-url per request.
+(define-provider :openai
+  :protocol :protocol-openai
+  :base-url "https://api.openai.com/v1"
+  :auth '(:bearer :env "OPENAI_API_KEY")
+  :summary "OpenAI chat completions")
 
 (define-provider :ollama
   :protocol :protocol-ollama

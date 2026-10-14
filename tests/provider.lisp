@@ -350,3 +350,27 @@ is the one that counts."
               (progn
                 (is (eq :ok (first result)))
                 (is (plusp (length (client:content-text (getf (second result) :content)))))))))))
+
+(test openai-provider-declares-the-endpoint-and-authentication
+  (let ((metadata (client:describe-backend (client:find-backend :openai))))
+    (is (member :openai (client:providers)))
+    (is (eq :provider (getf metadata :kind)))
+    (is (eq :protocol-openai (getf metadata :protocol)))
+    (is (equal "https://api.openai.com/v1" (getf metadata :base-url)))
+    (is (equal '(:kind :bearer :env "OPENAI_API_KEY") (getf metadata :auth)))
+    (is (null (getf metadata :models)))))
+
+(test openai-provider-completes-with-instance-and-request-overrides
+  (with-providers ((json-response +hello-reply+))
+    (let* ((provider (instance :openai :model "instance-model" :api-key "sk-fake"))
+           (metadata (client:describe-backend provider))
+           (result (turn provider :model "request-model"
+                         :base-url (concatenate 'string (fake-http-url *backend*) "/v1"))))
+      (is (eq :ready (getf metadata :status)))
+      (is (null (search "sk-fake" (princ-to-string metadata))))
+      (is (eq :ok (first result)))
+      (is (equal "Bearer sk-fake" (sent-header "authorization")))
+      (is (equal "request-model" (gethash "model" (sent-body))))
+      (is (equal "/v1/chat/completions"
+                 (getf (first (fake-http-requests *backend*)) :path)))
+      (is (= 7 (getf (getf (getf (second result) :meta) :usage) :prompt-tokens))))))

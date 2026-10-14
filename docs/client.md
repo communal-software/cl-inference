@@ -95,6 +95,16 @@ Writing a backend means subclassing `backend` and adding a method:
 
 A provider is data layered under each request: a protocol, base URL, authentication, model catalogue and quirks.
 
+| Built-in | Base URL | Authentication |
+|---|---|---|
+| `:openai` | `https://api.openai.com/v1` | Bearer key from `OPENAI_API_KEY` or `:api-key` |
+| `:ollama` | `http://127.0.0.1:11434` | None |
+
+```lisp
+(complete :openai :model "your-model-id"
+                 :messages '((:role :user :content "Reply with ok.")))
+```
+
 ```lisp
 (define-provider :ollama
   :protocol :protocol-ollama

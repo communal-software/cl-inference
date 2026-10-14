@@ -37,7 +37,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/schema.lisp` | Parameter schemas: coercion, JSON Schema in both directions |
 | `tests/transport.lisp` | Retry-After, cancel tokens, the exchange deadline |
 | `tests/openai.lisp`, `ollama.lisp` | Wire request and reply, streaming, deadlines and cancellation against a fake HTTP server |
-| `tests/provider.lisp` | Declarations, credentials, layering, quirks |
+| `tests/provider.lisp` | Built-in providers, declarations, credentials, layering, quirks |
 | `tests/scripted.lisp` | `complete` / `complete*` contract and the scripted backend |
 | `tests/systems.lisp` | The client depends on neither the engine nor cl-tensor |
 | `tests/fake-http.lisp` | Offline HTTP server used by the above |
