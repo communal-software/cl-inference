@@ -175,3 +175,111 @@
     (is (= 2 (length slots)))
     (is (equal '(local:attention :qk-norm t)
                (local:architecture-block-spec 'cross-package-child 'attn)))))
+
+(local:define-architecture toy-removed (toy-llama toy-heads)
+  (:hparams (:remove :dim))
+  (:blocks (:remove :mlp) (:remove absent))
+  (:model-blocks (:remove :head))
+  (:format :gguf
+    (:arch "toy-removed")
+    (:remove :tensor output)
+    (:remove :option :rope-pairing)
+    (:remove :hparam rope-theta)))
+
+(test architecture-removes-every-entry-kind
+  (is (equal '(n-layers rope-theta)
+             (mapcar #'car (local:architecture-hparam-specs 'toy-removed))))
+  (is (equal '(attn) (local:architecture-block-slots 'toy-removed)))
+  (is (null (local:architecture-block-spec 'toy-removed :mlp)))
+  (is (equal '(token) (local:architecture-model-block-slots 'toy-removed)))
+  (is (null (local:architecture-model-block-spec 'toy-removed :head)))
+  (is (equal '(:fallback nil)
+             (multiple-value-list
+              (local:architecture-format-option 'toy-removed :gguf :rope-pairing :fallback))))
+  (with-toy (w "toy-removed" :metadata '(("toy-removed.rope.freq_base" 6 42f0)))
+    (let ((arch (local:load-architecture w)))
+      (is (= 2 (local:hparam arch :n-layers)))
+      (is (= 10000f0 (local:hparam arch :rope-theta)))
+      (signals local:architecture-error (local:hparam arch :dim))
+      (signals local:architecture-error (local:architecture-tensor-name arch :output)))))
+
+(local:define-architecture toy-required ()
+  (:hparams required)
+  (:format :gguf (:arch "toy-required") (:hparam required "required"))
+  (:format :safetensors (:hparam required "required_hf")))
+
+(local:define-architecture toy-without-required (toy-required)
+  (:hparams (:remove :required))
+  (:format :gguf (:arch "toy-without-required")))
+
+(local:define-architecture toy-required-restored (toy-without-required)
+  (:hparams (required :default 9)))
+
+(test architecture-removal-cascades-to-all-hparam-mappings
+  (dolist (format '(:gguf :safetensors))
+    (is (null (local::architecture-hparam-keys
+               (find-class 'toy-without-required) format)))
+    (is (= 1 (length (local::architecture-hparam-keys
+                      (find-class 'toy-required-restored) format)))))
+  (with-gguf-file (path (build-gguf :metadata
+                                  '(("general.architecture" 8 "toy-without-required"))))
+    (local:with-weights (w path)
+      (is (typep (local:load-architecture w) 'toy-required-restored))))
+  (let ((arch (make-instance 'toy-without-required :required 7)))
+    (signals local:architecture-error (local:hparam arch :required))))
+
+(local:define-architecture toy-removal-first (toy-llama)
+  (:blocks (:remove attn))
+  (:format :gguf (:arch nil)))
+
+(local:define-architecture toy-removal-wins (toy-removal-first toy-bias))
+(local:define-architecture toy-attn-parent () (:blocks (attn toy-attention)))
+(local:define-architecture toy-declaration-wins (toy-attn-parent toy-removal-first))
+
+(test architecture-removal-follows-parent-precedence
+  (is (equal '(mlp) (local:architecture-block-slots 'toy-removal-wins)))
+  (is (equal '(mlp attn) (local:architecture-block-slots 'toy-declaration-wins))))
+
+(local:define-architecture toy-ordered-removals (toy-llama)
+  (:hparams (extra :default 1) (:remove extra) (extra :default 2))
+  (:blocks (:remove attn) (attn toy-other-attention) (:remove mlp))
+  (:format :gguf
+    (:arch nil)
+    (:remove :tensor attn.q)
+    (:tensor attn.q "restored.weight")
+    (:rope-pairing :neox)
+    (:remove :option :rope-pairing))
+  (:format :gguf (:rope-pairing :adjacent)))
+
+(test architecture-removals-and-restoration-follow-declaration-order
+  (is (equal '(attn) (local:architecture-block-slots 'toy-ordered-removals)))
+  (is (equal '(toy-other-attention)
+             (local:architecture-block-spec 'toy-ordered-removals :attn)))
+  (is (= 2 (getf (cdr (assoc 'extra (local:architecture-hparam-specs 'toy-ordered-removals)))
+                :default)))
+  (is (eq :adjacent (local:architecture-format-option
+                    'toy-ordered-removals :gguf :rope-pairing)))
+  (is (equal "restored.weight"
+             (local:architecture-tensor-name
+              (make-instance 'toy-ordered-removals :format :gguf) :attn.q))))
+
+(test architecture-removal-survives-parent-redefinition
+  (eval '(local:define-architecture removal-base () (:blocks (attn old-attention))))
+  (eval '(local:define-architecture removal-child (removal-base)
+          (:blocks (:remove :attn))))
+  (eval '(local:define-architecture removal-base ()
+          (:blocks (attn new-attention) (mlp new-mlp))))
+  (is (equal '(mlp) (local:architecture-block-slots 'removal-child)))
+  (is (equal '(attn mlp) (local:architecture-block-slots 'removal-base))))
+
+(test architecture-rejects-malformed-removals
+  (dolist (section '((:hparams (:remove x . y))
+                     (:format :gguf (:remove :tensor . role))
+                     (:hparams (:remove)) (:hparams (:remove x y))
+                     (:blocks (:remove "x")) (:model-blocks (:remove nil))
+                     (:format :gguf (:remove :unknown x))
+                     (:format :gguf (:remove :tensor))
+                     (:format :gguf (:remove :option x))
+                     (:format :gguf (:remove :hparam "x"))))
+    (signals local:architecture-error
+      (macroexpand-1 `(local:define-architecture bad-removal () ,section)))))

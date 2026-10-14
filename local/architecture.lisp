@@ -21,7 +21,18 @@
 ;;;   :hparams (name . plist)  :blocks (slot class . initargs)
 ;;;   :formats (format-key :options alist :hparam-keys alist :tensors alist)
 
+(defun parse-removal (form)
+  (unless (and (alexandria:proper-list-p form) (= (length form) 2)
+               (symbolp (second form)) (second form))
+    (architecture-fail 'architecture-error "Bad removal ~S" form))
+  (make-section-removal :name (second form)))
+
+(defun removal-form-p (form)
+  (and (consp form) (eq (first form) :remove)))
+
 (defun parse-hparam (form)
+  (when (removal-form-p form)
+    (return-from parse-hparam (parse-removal form)))
   (destructuring-bind (name &rest plist) (if (consp form) form (list form))
     (unless (and (symbolp name) (null (set-difference (loop for key in plist by #'cddr
                                                             collect key)
@@ -30,15 +41,29 @@
     (cons name plist)))
 
 (defun parse-block (form)
+  (when (removal-form-p form)
+    (return-from parse-block (parse-removal form)))
   (unless (and (consp form) (symbolp (first form)) (second form) (symbolp (second form)))
     (architecture-fail 'architecture-error "Bad block ~S, expected (slot class . initargs)" form))
   form)
 
 (defun parse-format-entry (entry options hparam-keys tensors)
   (flet ((bad () (architecture-fail 'architecture-error "Bad format entry ~S" entry)))
-    (unless (and (consp entry) (keywordp (first entry))) (bad))
+    (unless (and (consp entry) (alexandria:proper-list-p entry)
+                 (keywordp (first entry))) (bad))
     (destructuring-bind (head &rest args) entry
       (case head
+        (:remove
+         (unless (and (= (length args) 2)
+                      (member (first args) '(:tensor :hparam :option))
+                      (symbolp (second args)) (second args)
+                      (or (not (eq (first args) :option)) (keywordp (second args))))
+           (bad))
+         (let ((removal (make-section-removal :name (second args))))
+           (case (first args)
+             (:tensor (push removal tensors))
+             (:hparam (push removal hparam-keys))
+             (:option (push removal options)))))
         (:hparam (unless (and (= (length args) 2) (symbolp (first args)) (stringp (second args)))
                    (bad))
          (push (cons (first args) (second args)) hparam-keys))
@@ -90,11 +115,11 @@
 
 (defmacro define-architecture (name (&rest parents) &body sections)
   "Define architecture NAME inheriting from PARENTS. Sections: (:hparams ...),
-(:blocks ...), and (:format key ...); a child overrides entries by name."
+(:blocks ...), and (:format key ...); a child overrides or removes entries by name."
   (let ((spec (parse-sections sections)))
     `(progn
        (defclass ,name ,(or parents '(architecture))
-         ,(mapcar #'hparam-slot (getf spec :hparams))
+         ,(mapcar #'hparam-slot (merge-section-entries (getf spec :hparams) nil))
          (:metaclass architecture-class))
        (setf (class-sections (find-class ',name)) ',spec)
        (check-architecture (find-class ',name))
@@ -111,8 +136,8 @@
 (defun check-architecture (class)
   (let ((hparams (mapcar #'car (merged-entries class (lambda (s) (getf s :hparams))))))
     (loop for (format . spec) in (getf (class-sections class) :formats)
-          do (loop for (name) in (getf spec :hparam-keys)
-                   unless (member name hparams)
+          do (loop for (name) in (merge-section-entries (getf spec :hparam-keys) nil)
+                   unless (member name hparams :test #'same-key-p)
                      do (architecture-fail 'architecture-error
                                            "~S maps ~S for format ~S, which is not a declared hparam"
                                            (class-name class) name format)))))
@@ -149,6 +174,9 @@
 
 (defun hparam (architecture name)
   "Value of hparam NAME; names are matched by symbol name, so any package works."
+  (unless (assoc name (architecture-hparam-specs architecture) :test #'same-key-p)
+    (architecture-fail 'architecture-error "~S has no hparam ~S"
+                       (class-name (class-of architecture)) name))
   (let ((slot (find (symbol-name name) (mop:class-slots (class-of architecture))
                     :key (lambda (slot) (symbol-name (mop:slot-definition-name slot)))
                     :test #'string=)))
@@ -199,10 +227,15 @@
 (defgeneric normalize-hparam-value (weights value)
   (:method (weights value) (declare (ignore weights)) value))
 
+(defun architecture-hparam-keys (class format)
+  (let ((hparams (architecture-hparam-specs class)))
+    (remove-if-not (lambda (entry) (assoc (car entry) hparams :test #'same-key-p))
+                   (format-entries class format :hparam-keys))))
+
 (defun hparam-initargs (class weights format arch-name)
-  (let ((keys (format-entries class format :hparam-keys)))
+  (let ((keys (architecture-hparam-keys class format)))
     (loop for (name . options) in (architecture-hparam-specs class)
-          for template = (cdr (assoc name keys))
+          for template = (cdr (assoc name keys :test #'same-key-p))
           for (value present) = (multiple-value-list
                                  (if template
                                      (weights-metadata weights (format nil template arch-name))

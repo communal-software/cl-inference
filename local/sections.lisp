@@ -21,16 +21,27 @@
   (or (eql a b)
       (and (symbolp a) (symbolp b) (string= (symbol-name a) (symbol-name b)))))
 
-(defun merged-entries (class reader)
-  "Entries from READER over CLASS's lineage, parents first; a later entry replaces an earlier
-one with the same key in place."
-  (let (result)
-    (dolist (ancestor (class-lineage class) result)
-      (dolist (entry (funcall reader (class-sections ancestor)))
+(defstruct section-removal name)
+
+(defmethod make-load-form ((removal section-removal) &optional environment)
+  (make-load-form-saving-slots removal :environment environment))
+
+(defun merge-section-entries (entries result)
+  (dolist (entry entries result)
+    (if (section-removal-p entry)
+        (setf result (remove (section-removal-name entry) result
+                             :key #'car :test #'same-key-p))
         (let ((cell (assoc (car entry) result :test #'same-key-p)))
           (if cell
               (setf (cdr cell) (cdr entry))
-              (setf result (append result (list (cons (car entry) (cdr entry)))))))))))
+              (setf result (append result (list (cons (car entry) (cdr entry))))))))))
+
+(defun merged-entries (class reader)
+  "Merge entries in class precedence order; removals discard matching names."
+  (let (result)
+    (dolist (ancestor (class-lineage class) result)
+      (setf result (merge-section-entries
+                    (funcall reader (class-sections ancestor)) result)))))
 
 (defun format-entries (class format kind)
   (merged-entries class (lambda (sections)

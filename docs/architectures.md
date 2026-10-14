@@ -58,7 +58,23 @@ Llama and Qwen3 provide `:gguf` and `:safetensors` mappings. HF values keep thei
 
 ## Inheritance
 
-Entries merge by symbol name, so a child in another package overrides what it inherits, along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
+Entries merge by symbol name, so a child in another package overrides what it inherits, along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. With several parents, the earlier parent wins.
+
+Remove inherited entries with `(:remove name)` in `:hparams`, `:blocks` or `:model-blocks`. Inside a format, name the kind:
+
+```lisp
+(local:define-architecture trimmed-model (local:llama)
+  (:hparams (:remove rope-theta))
+  (:blocks (:remove mlp))
+  (:format :gguf
+    (:remove :tensor head.output)
+    (:remove :hparam head-dim)
+    (:remove :option :rope-pairing)))
+```
+
+Declarations and removals follow the same precedence and declaration order. Removing an absent name is a no-op; a later declaration restores it. Removed tensor roles are unknown; removed options return the caller's default and a false presence value.
+
+Removing an hparam excludes it from loading and `hparam` lookup, and hides its metadata mappings in every format. Restoring it restores inherited mappings unless those mappings are explicitly removed.[^removed-slots]
 
 Merging happens on lookup, so redefining a parent updates its children.
 
@@ -130,3 +146,5 @@ The unique GGUF selector matches an `observed-llama` fixture; inherited metadata
 
 [^blocks]: Block slots hold a class name and initargs; `load-model` instantiates them. See [blocks](blocks.md).
 [^rope]: GGUF `llama` permutes Q/K and uses adjacent-pair RoPE, HF safetensors uses rotate-half, and Qwen uses NeoX, so one architecture can need a different pairing per format.
+
+[^removed-slots]: CLOS retains inherited slots internally; their presence does not make a removed hparam public.
