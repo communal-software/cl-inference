@@ -83,3 +83,14 @@
         (is (equalp #(264 259) (local:encode (local:load-tokenizer w) "hello"))))
       (write-hf-json directory "tokenizer_config.json" (ci::json-object "bos_token" "</s>"))
       (local:with-weights (w directory) (signals local:tokenizer-error (local:load-tokenizer w))))))
+
+(test hf-tokenizer-malformed-nested-values
+  (with-hf-directory (directory)
+    (write-hf-model directory "llama" (spec*) (weight-table (spec*)))
+    (dolist (key '("model" "added_tokens" "post_processor"))
+      (let ((object (hf-tokenizer-fixture "llama")))
+        (setf (ci::json-get object key)
+              (if (equal key "added_tokens") #(0) (ci::json-object "type" "TemplateProcessing" "single" #(0 1))))
+        (write-hf-json directory "tokenizer.json" object)
+        (local:with-weights (w directory)
+          (signals local:tokenizer-error (local:load-tokenizer w)))))))

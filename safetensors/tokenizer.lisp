@@ -178,3 +178,13 @@
       (unless (and (stringp source) (local::detected-chat-template-class source))
         (local::chat-template-fail "Unsupported HF chat_template"))
       source)))
+
+(defmethod local:tokenizer-selector :around ((format (eql :safetensors)) weights)
+  (handler-case (call-next-method)
+    (local:tokenizer-error (e) (error e))
+    (error (e) (local::tokenizer-fail 'local:tokenizer-error "Malformed HF tokenizer: ~A" e))))
+
+(defmethod local:tokenizer-load :around ((tokenizer local:byte-level-bpe) (format (eql :safetensors)) weights)
+  (handler-case (call-next-method)
+    (local:tokenizer-error (e) (error e))
+    (error (e) (local::tokenizer-fail 'local:tokenizer-error "Malformed HF tokenizer: ~A" e))))

@@ -2,7 +2,7 @@
   :description "Model client for Common Lisp: one contract for hosted and local models"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :version "0.0.0"
+  :version "0.0.1"
   :depends-on ("alexandria" "bordeaux-threads" "com.inuoe.jzon" "drakma" "flexi-streams"
                "usocket" "puri" "chunga" "cl+ssl" "uiop")
   :serial t
