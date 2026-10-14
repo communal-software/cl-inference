@@ -51,8 +51,7 @@
     table)
   "ggml type id → block geometry. Ids absent here (removed or unknown) are rejected.")
 
-(defstruct (gguf-tensor (:include local:tensor-info)
-                        (:constructor make-gguf-tensor (name shape format-type byte-count offset)))
+(defstruct (gguf-tensor (:include local:tensor-info))
   (offset 0 :type (integer 0) :read-only t))
 
 (defstruct (cursor (:constructor make-cursor (base limit)))
@@ -138,10 +137,10 @@
         (unless (zerop (mod (first dims) (ggml-type-block-size type)))
           (gguf-fail "Tensor ~A row length ~D is not a multiple of ~D"
                      name (first dims) (ggml-type-block-size type)))
-        (make-gguf-tensor name (reverse dims) (ggml-type-key type)
-                          (* (/ (reduce #'* dims) (ggml-type-block-size type))
-                             (ggml-type-block-bytes type))
-                          offset)))))
+        (make-gguf-tensor :name name :shape (reverse dims) :format-type (ggml-type-key type)
+                          :byte-count (* (/ (reduce #'* dims) (ggml-type-block-size type))
+                                         (ggml-type-block-bytes type))
+                          :offset offset)))))
 
 (defun validate-alignment (alignment)
   (unless (and (integerp alignment) (<= 1 alignment +max-alignment+)

@@ -35,6 +35,8 @@ All listed ggml types are bounds- and overlap-checked, including formats without
 
 Shapes are row-major: GGUF stores the innermost dimension first, so a tensor with dimensions `(3 2)` has shape `(2 3)`.
 
+Tensor metadata and fixture-model loading are verified on SBCL, CCL and ECL.
+
 Another system adds a typed view by specializing `gguf-type-storage`, which returns storage and a dtype:
 
 ```lisp

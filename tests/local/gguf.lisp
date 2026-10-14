@@ -64,6 +64,16 @@
           (is (equalp #(#(1) #(2 3)) (m "nested"))))
         (is (equal '("u8" "i8") (subseq (local:weights-metadata-keys w) 0 2)))))))
 
+(test gguf-tensor-constructor-populates-inherited-fields
+  (let ((tensor (gguf::make-gguf-tensor :name "weights" :shape '(2 3)
+                                        :format-type :f32 :byte-count 24 :offset 32)))
+    (is (typep tensor 'local:tensor-info))
+    (is (string= "weights" (local:tensor-info-name tensor)))
+    (is (equal '(2 3) (local:tensor-info-shape tensor)))
+    (is (eq :f32 (local:tensor-info-format-type tensor)))
+    (is (= 24 (local:tensor-info-byte-count tensor)))
+    (is (= 32 (gguf::gguf-tensor-offset tensor)))))
+
 (test gguf-tensor-listing-and-shape
   (with-sample (w)
     (is (equal '("f32" "f16" "bf16" "q8" "q4k") (local:weights-tensor-names w)))

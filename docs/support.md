@@ -65,7 +65,6 @@ Load `cl-inference/gguf` for a GGUF model and `cl-inference/quant` for supported
 | Local ONNX models; execution approach remains undecided | [#47](https://github.com/communal-software/cl-inference/issues/47) |
 | Local Gemma-family models; initial version and modalities remain undecided | [#48](https://github.com/communal-software/cl-inference/issues/48) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
-| GGUF tensor loading on CCL and ECL | [#45](https://github.com/communal-software/cl-inference/issues/45) |
 | Identical seeded sampling on CCL | [#46](https://github.com/communal-software/cl-inference/issues/46) |
 
 Other engine and tokenizer gaps are listed in [Limitations](limitations.md).
