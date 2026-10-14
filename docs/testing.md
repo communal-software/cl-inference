@@ -47,7 +47,7 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 ## MLX
 
-After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model and client fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Qwen models with a pinned Python MLX oracle. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.
+After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, client and acceptance-harness fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Llama and Qwen models with a pinned Python MLX oracle. Set `CL_INFERENCE_MLX_ACCEPTANCE_STRICT=1` to require every reference input and case; absent inputs skip in ordinary runs, while hash mismatches fail. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.
 
 ## Acceptance
 

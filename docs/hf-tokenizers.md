@@ -20,13 +20,15 @@
 
 Merges accept strings or two-element arrays. Added-token IDs must agree with vocabulary entries; gaps and conflicting IDs are rejected. Added tokens with word-boundary, trimming or normalization options are unsupported.
 
+BPE decoding preserves spaces and punctuation, including when `clean_up_tokenization_spaces` is enabled. Explicit forced BPE cleanup is unsupported.[^cleanup]
+
 A Llama postprocessor adds only one BOS token to single-sequence inputs. Its name and ID must match the vocabulary and configuration. Unsupported normalizers, pre-tokenizers, decoders, padding, truncation and postprocessors signal `tokenizer-error`.
 
 ## Chat templates
 
 Known template markers select the existing Llama or Qwen3 renderer. An explicitly supplied unknown template signals `chat-template-error`; an absent template uses the architecture's declared fallback. The reader does not execute Jinja.
 
-Token IDs, Unicode normalization and rendered prompts are checked against the pinned Qwen acceptance reference. [Tokenizer operations](tokenizers.md) and [chat rendering](chat-templates.md) describe the shared APIs.
+Token IDs, Unicode handling and rendered prompts are checked against the pinned Llama and Qwen acceptance references. Llama checks include BOS insertion and a fixed chat date; Qwen checks include NFC normalization. [Tokenizer operations](tokenizers.md) and [chat rendering](chat-templates.md) describe the shared APIs.
 
 ## Limitations
 
@@ -37,3 +39,5 @@ Token IDs, Unicode normalization and rendered prompts are checked against the pi
 | Control-token spelling in message text | [#37](https://github.com/communal-software/cl-inference/issues/37) |
 
 Paired inputs and arbitrary Jinja execution are outside this reader's coverage.
+
+[^cleanup]: This matches the pinned Transformers BPE decoder. `clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=true` signals `tokenizer-error`.

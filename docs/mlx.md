@@ -27,7 +27,7 @@ The model directory contains Safetensors weights, `config.json`, `tokenizer.json
 | Attention | Causal GQA; Qwen3 Q/K normalization |
 | RoPE | Ordinary and Llama 3 scaling; HF split-half pairing |
 | Tokenizer and chat | [Shipped HF byte-level BPE pipelines](hf-tokenizers.md) and existing renderers |
-| Real-model acceptance | Qwen3 0.6B BF16 and affine 4-bit |
+| Real-model acceptance | Llama 3.2 1B Instruct and Qwen3 0.6B, BF16 and affine 4-bit |
 
 Quantized projections and tied output heads use packed matmul. Quantized embeddings dequantize only selected rows. Computation, caches, scales and quantization biases use F32; full packed matrices stay packed. Tiny fixtures cover both architectures, mixed weights and tied output heads.
 
@@ -53,7 +53,6 @@ The [acceptance instructions](mlx-acceptance.md) describe the pinned reference a
 |---|---|
 | Cache updates avoiding full-capacity memory traffic | [#49](https://github.com/communal-software/cl-inference/issues/49) |
 | Additional quantization widths and modes | [#50](https://github.com/communal-software/cl-inference/issues/50) |
-| Real Llama model acceptance | [#51](https://github.com/communal-software/cl-inference/issues/51) |
 | Custom GPU kernels | [#44](https://github.com/communal-software/cl-inference/issues/44) |
 | Other HF tokenizer pipelines and templates | [HF limitations](hf-tokenizers.md#limitations) |
 

@@ -60,7 +60,7 @@ The shipped Llama and Qwen3 architectures map HF tensor names and configuration 
 
 CPU fixtures verify F32/F16/BF16 logits and cached decoding for both architectures. Ordinary RoPE and `rope_scaling` with `rope_type="llama3"` are supported.[^rope] Unsupported scaling, bias, activation and sliding-window variants signal `architecture-error` during model loading.
 
-Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. The [HF tokenizer reader](hf-tokenizers.md) supplies Llama/Qwen3 chat setup. The [MLX backend](mlx.md) executes packed affine 4-bit models.
+Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. The [HF tokenizer reader](hf-tokenizers.md) supplies Llama/Qwen3 chat setup. The [MLX backend](mlx.md) executes packed affine 4-bit models. Its [real-model acceptance](mlx-acceptance.md) verifies Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form.
 
 ## Validation
 
@@ -71,7 +71,6 @@ Malformed files signal `safetensors-error`, a `weights-error` subclass. Validati
 | Missing | Tracker |
 |---|---|
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
-| Real Llama Safetensors acceptance | [#51](https://github.com/communal-software/cl-inference/issues/51) |
 | Additional RoPE modes and encodings | Outside the documented coverage |
 | Windows mapping; BSD verification | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 

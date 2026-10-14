@@ -148,8 +148,9 @@
 (defmethod local:tokenizer-load ((tokenizer local:byte-level-bpe) (format (eql :safetensors)) weights)
   (let* ((object (hf-sidecar weights "tokenizer.json" t))
          (config (or (hf-sidecar weights "tokenizer_config.json") (make-hash-table :test 'equal))))
+    ;; HF BPE decoding ignores ordinary whitespace cleanup.
     (when (or (gethash "add_prefix_space" config) (gethash "split_special_tokens" config)
-              (gethash "clean_up_tokenization_spaces" config))
+              (gethash "clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output" config))
       (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF tokenizer configuration"))
     (multiple-value-bind (tokens types) (hf-vocabulary object)
       (setf (slot-value tokenizer 'local::tokens) tokens (slot-value tokenizer 'local::types) types)

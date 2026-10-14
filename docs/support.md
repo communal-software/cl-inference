@@ -33,12 +33,12 @@ Local inference is verified on SBCL. The architecture declarations cover these f
 | GGUF v3, little-endian | `cl-inference/gguf` | Model metadata and mapped tensor views |
 | Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3 fixtures, ordinary and Llama 3 RoPE; HF tokenizers and chat setup |
 | F32, F16, BF16 inference weights | `cl-inference/local` and the format loader | Offline model/block fixtures; F16 also has real-model acceptance |
-| MLX float and affine 4-bit inference | `cl-inference/mlx` | Apple Silicon; Qwen3 0.6B real-model acceptance, Llama/Qwen3 fixtures |
+| MLX float and affine 4-bit inference | `cl-inference/mlx` | Apple Silicon; Llama 3.2 1B Instruct and Qwen3 0.6B real-model acceptance |
 | Q8_0 inference weights | `cl-inference/quant` | Quantized dtype and matmul; real-model acceptance |
 
 Reading a GGUF file does not establish inference support for every tensor encoding. The reader exposes additional scalar tensor types and raw bytes for other quantized types; see [GGUF](gguf.md#tensor-types). Other quantizations and formats are [limitations](#limitations).
 
-[Safetensors](safetensors.md) exposes configuration and tensor storage independently of execution. Llama/Qwen3 CPU models accept F32/F16/BF16 weights; quantized configurations are rejected. The shipped [HF tokenizers](hf-tokenizers.md) configure Llama/Qwen3 chat for CPU and MLX backends. [MLX acceptance](mlx-acceptance.md) covers Qwen3 BF16 and affine 4-bit; other real Safetensors variants remain unverified.
+[Safetensors](safetensors.md) exposes configuration and tensor storage independently of execution. Llama/Qwen3 CPU models accept F32/F16/BF16 weights; quantized configurations are rejected. The shipped [HF tokenizers](hf-tokenizers.md) configure Llama/Qwen3 chat for CPU and MLX backends. [MLX acceptance](mlx-acceptance.md) covers Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form; other real Safetensors variants remain unverified.
 
 ## Choose a backend
 

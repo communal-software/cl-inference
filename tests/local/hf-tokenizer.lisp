@@ -52,6 +52,22 @@
           (is (typep template (if (equal arch "llama") 'local:llama3-chat 'local:qwen3-chat)))
           (is (plusp (length (local:encode-chat template tokenizer '((:role :user :content "hi")))))))))))
 
+(test hf-bpe-cleanup-configuration
+  (dolist (arch '("llama" "qwen3"))
+    (with-hf-directory (directory)
+      (write-hf-model directory arch (spec*) (weight-table (spec*)))
+      (write-hf-tokenizer-fixture directory arch)
+      (let ((config (ci::json-object "clean_up_tokenization_spaces" t))
+            (text "hello ,  world !"))
+        (write-hf-json directory "tokenizer_config.json" config)
+        (local:with-weights (w directory)
+          (let ((tokenizer (local:load-tokenizer w)))
+            (is (equal text (local:decode tokenizer (local:encode tokenizer text))))))
+        (setf (ci::json-get config "clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output") t)
+        (write-hf-json directory "tokenizer_config.json" config)
+        (local:with-weights (w directory)
+          (signals local:tokenizer-error (local:load-tokenizer w)))))))
+
 (test hf-tokenizer-rejects-unsupported-files
   (with-hf-directory (directory)
     (write-hf-model directory "qwen3" (spec*) (weight-table (spec*)))

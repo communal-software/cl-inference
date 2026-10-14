@@ -112,7 +112,8 @@
 (asdf:defsystem "cl-inference/mlx/tests"
   :depends-on ("cl-inference/mlx" "cl-inference/local/tests")
   :serial t
-  :components ((:file "tests/mlx/package") (:file "tests/mlx/model") (:file "tests/mlx/backend"))
+  :components ((:file "tests/mlx/package") (:file "tests/mlx/model") (:file "tests/mlx/backend")
+               (:file "tests/mlx/acceptance-support") (:file "tests/mlx/acceptance-harness"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/mlx/tests :run-tests)
