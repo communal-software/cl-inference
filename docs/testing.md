@@ -18,6 +18,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
 | `tests/local/fixtures.lisp` | Shared model specs, GGUF files in f32, f16, bf16 or Q8_0 from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |
 | `tests/local/gguf.lisp` | GGUF metadata, tensor views, half precision, copy-on-write and every rejection case |
+| `tests/local/safetensors.lisp` | Offline Safetensors/config/index writers, dtypes, malformed inputs, shards, mapping cleanup, MLX storage and Llama/Qwen3 reference logits and cached decoding |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 | `tests/local/architecture.lisp` | Architecture DSL: inheritance, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
 | `tests/local/tokenizer.lisp` | Tokenizer DSL, both pre-tokenizers against llama.cpp's patterns, BPE merging, special tokens, streaming decode, malformed vocabularies |

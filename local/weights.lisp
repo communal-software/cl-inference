@@ -72,12 +72,12 @@ OPEN is (lambda (path)) → a weights instance."
       (weights-fail 'unknown-weights-format "Unknown weights format ~S" key)))
 
 (defun detect-weights-format (path)
-  (let ((header (read-header-octets path)))
+  (let ((header (if (uiop:directory-exists-p path) #() (read-header-octets path))))
     (or (find-if (lambda (entry) (funcall (second entry) path header)) *weights-formats*)
         (weights-fail 'unknown-weights-format "No weights format recognises ~A" path))))
 
 (defun open-weights (path &key format)
-  "Open the weights file at PATH. FORMAT names a registered format; NIL detects it."
+  "Open weights at PATH. FORMAT names a registered format; NIL detects it."
   (let ((entry (if format (find-weights-format format) (detect-weights-format path))))
     (funcall (third entry) path)))
 

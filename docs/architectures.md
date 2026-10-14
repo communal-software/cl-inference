@@ -12,7 +12,11 @@ The [support overview](support.md#local-architectures) lists the shipped and ver
     (:rope-pairing :neox)
     (:chat-template qwen3-chat)
     (:tensor attn.q-norm "blk.~d.attn_q_norm.weight")
-    (:tensor attn.k-norm "blk.~d.attn_k_norm.weight")))
+    (:tensor attn.k-norm "blk.~d.attn_k_norm.weight"))
+  (:format :safetensors
+    (:arch "qwen3")
+    (:tensor attn.q-norm "model.layers.~d.self_attn.q_norm.weight")
+    (:tensor attn.k-norm "model.layers.~d.self_attn.k_norm.weight")))
 ```
 
 The definition above uses the library's package. Applications refer to the shipped classes as `local:llama` and `local:qwen3`, or declare their own child:
@@ -41,19 +45,24 @@ Qwen3 normalizes each Q/K head before NeoX RoPE. Its head dimension comes from G
 | `(:hparams ...)` | `name` or `(name :default value)` | A hyperparameter, stored in a slot of the same name. No default makes it required |
 | `(:blocks ...)` | `(slot class . initargs)` | A block that runs once per layer[^blocks] |
 | `(:model-blocks ...)` | `(slot class . initargs)` | A block that runs once per model, such as the embedding and LM head |
-| `(:format key ...)` | `(:arch "name")` | The `general.architecture` value that selects this architecture |
+| `(:format key ...)` | `(:arch "name")` | The name returned by `weights-architecture-name`: GGUF `general.architecture` or HF `model_type` |
 | | `(:hparam name "template")` | Metadata key for an hparam; `~a` is the `:arch` name |
 | | `(:tensor role "template" [:optional t] [:fallback role])` | Tensor name for a role; `~d` is the layer index. `:fallback` reads another role when the file lacks this tensor |
+| | `(:tensor role nil :optional t)` | This format has no stored tensor for the role; tensor lookup returns NIL |
 | | `(:chat-template name)` | The [chat template](chat-templates.md) to use when the file carries no recognisable one |
 | | `(:option value)` | Any other keyword, e.g. `:rope-pairing`; read with `architecture-format-option` |
 
 Each format has its own section, so tensor names, metadata keys and RoPE pairing belong to the architecture and the format together.[^rope]
+
+Llama and Qwen3 provide `:gguf` and `:safetensors` mappings. HF values keep their configuration names, including `hidden_size`, `num_hidden_layers`, `head_dim` and `rope_scaling`; JSON null becomes NIL in hparams. See [Safetensors](safetensors.md#model-loading) for CPU model coverage and configuration restrictions.
 
 ## Inheritance
 
 Entries merge by symbol name, so a child in another package overrides what it inherits, along the class precedence list: hparam name, block slot, model-block slot, tensor role, format option, format hparam key. A child entry replaces the parent entry with the same name and leaves the rest alone. A child cannot remove an inherited entry ([limitation](limitations.md)). With several parents, the earlier parent wins.
 
 Merging happens on lookup, so redefining a parent updates its children.
+
+A child inherits selectors for every format. `(:format :safetensors (:arch nil))` disables automatic Safetensors selection for that child while retaining the inherited mappings.
 
 Because `~a` is the architecture's own `:arch`, `qwen3` reuses the `llama` key templates without repeating them.
 
@@ -66,7 +75,7 @@ Because `~a` is the architecture's own `:arch`, `qwen3` reuses the `llama` key t
 | `load-architecture weights` | An instance of the most specific architecture whose `:arch` matches the file, with hparams filled from metadata |
 | `hparam arch name` | An hparam value |
 | `architecture-format arch` | The weights format the instance was loaded for |
-| `architecture-tensor-name arch role &optional layer` | The file's tensor name |
+| `architecture-tensor-name arch role &optional layer` | The file's tensor name, or NIL for an explicitly unstored optional role |
 | `architecture-tensor arch weights role &optional layer` | Tensor view, the `:fallback` role's view when absent, or NIL when `:optional` and absent |
 | `architecture-format-option arch format option &optional default` | Option value and whether it was declared |
 | `architecture-block-slots arch` / `architecture-block-spec arch slot` | Block slot names / `(class . initargs)` |

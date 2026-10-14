@@ -31,10 +31,13 @@ Local inference is verified on SBCL. The architecture declarations cover these f
 | Support | System | Coverage |
 |---|---|---|
 | GGUF v3, little-endian | `cl-inference/gguf` | Model metadata and mapped tensor views |
+| Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3 fixtures, ordinary and Llama 3 RoPE; packed MLX storage for inspection |
 | F32, F16, BF16 inference weights | `cl-inference/local` and the format loader | Offline model/block fixtures; F16 also has real-model acceptance |
 | Q8_0 inference weights | `cl-inference/quant` | Quantized dtype and matmul; real-model acceptance |
 
 Reading a GGUF file does not establish inference support for every tensor encoding. The reader exposes additional scalar tensor types and raw bytes for other quantized types; see [GGUF](gguf.md#tensor-types). Other quantizations and formats are [limitations](#limitations).
+
+[Safetensors](safetensors.md) exposes configuration and tensor storage independently of execution. Llama/Qwen3 CPU models accept F32/F16/BF16 weights; quantized configurations are rejected. HF tokenizer files and template detection are [limitations](#limitations), so opening an HF directory does not configure `make-local-backend` for chat. Safetensors fixtures do not establish real-model acceptance.
 
 ## Choose a backend
 
@@ -60,7 +63,7 @@ Load `cl-inference/gguf` for a GGUF model and `cl-inference/quant` for Q8_0. The
 |---|---|
 | Local ONNX models; execution approach remains undecided | [#47](https://github.com/communal-software/cl-inference/issues/47) |
 | Local Gemma-family models; initial version and modalities remain undecided | [#48](https://github.com/communal-software/cl-inference/issues/48) |
-| Safetensors and HF config.json loader | [#13](https://github.com/communal-software/cl-inference/issues/13) |
+| HF tokenizer files, template detection and MLX quantized execution | [#43](https://github.com/communal-software/cl-inference/issues/43) |
 | Q4_0, Q4_K and Q6_K inference | [#14](https://github.com/communal-software/cl-inference/issues/14) |
 | GGUF tensor loading on CCL and ECL | [#45](https://github.com/communal-software/cl-inference/issues/45) |
 | Identical seeded sampling on CCL | [#46](https://github.com/communal-software/cl-inference/issues/46) |

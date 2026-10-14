@@ -1,6 +1,6 @@
 # Weights
 
-Open a weight file in any registered format and read its tensors as cl-tensor views.
+Open weights in any registered format and read tensors as cl-tensor views. [GGUF](gguf.md) accepts a single file; [Safetensors](safetensors.md) accepts files, indexes and model directories.
 
 ```lisp
 (local:with-weights (w "model.gguf")
@@ -13,10 +13,10 @@ Open a weight file in any registered format and read its tensors as cl-tensor vi
 
 | Function | Returns |
 |---|---|
-| `open-weights path &key format` | A `weights` object; `format` NIL detects it from the file header |
+| `open-weights path &key format` | A `weights` object; `format` NIL detects it from the path and file header |
 | `close-weights weights` | Nothing; repeat calls are harmless |
 | `with-weights (var path &key format) body` | Runs `body`, then closes |
-| `weights-format weights` | Format key, e.g. `:gguf` |
+| `weights-format weights` | Format key, e.g. `:gguf` or `:safetensors` |
 | `weights-metadata weights key &optional default` | Value (or `default`) and whether `key` was present |
 | `weights-metadata-keys weights` | All metadata keys |
 | `weights-tensor-names weights` | Tensor names in file order |
@@ -60,6 +60,6 @@ Subclass `weights`, implement the generics, and register the format.
   :open   (lambda (path) (make-instance 'my-weights :format :my-format :path path)))
 ```
 
-The first 16 bytes of the file are passed to `:detect`. Formats are tried in registration order. See [GGUF](gguf.md) for the built-in format.
+The first 16 bytes of a file are passed to `:detect`; directories receive an empty vector. Formats are tried in registration order. Detection selects a reader; opening validates the input. Load the optional [GGUF](gguf.md) or [Safetensors](safetensors.md) system to register its reader.
 
 [^views]: Views are ordinary tensors over storage the caller owns, so cl-tensor's [foreign storage rules](https://github.com/communal-software/cl-tensor/blob/trunk/docs/design.md) apply.

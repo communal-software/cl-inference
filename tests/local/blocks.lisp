@@ -3,7 +3,8 @@
 (in-suite :cl-inference/local)
 
 (local:define-architecture blk-llama (local:llama)
-  (:format :gguf (:arch "blk-llama")))
+  (:format :gguf (:arch "blk-llama"))
+  (:format :safetensors (:arch nil)))
 
 (local:define-architecture blk-neox (blk-llama)
   (:format :gguf (:arch "blk-neox") (:rope-pairing :neox)))

@@ -12,6 +12,8 @@
 | `cl-inference` | [Model client contract](client.md) and HTTP backends; no cl-tensor |
 | `cl-inference/local` | [Local backend](local-backend.md), [weights protocol](weights.md), [architectures](architectures.md), [tokenizers](tokenizers.md), [chat templates](chat-templates.md), [blocks](blocks.md), [sessions](sessions.md), [sampling](sampling.md) |
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
+| `cl-inference/safetensors` | [Safetensors files, HF configuration and sharded model directories](safetensors.md) |
+| `cl-inference/mapping` | Internal POSIX file mappings shared by the optional readers |
 | `cl-inference/quant` | [Quantized dtypes](quant.md) as cl-tensor extensions; the Q8_0 kernel is native code in trivial-simd |
 
 Configure and register `:local` over [open weights](local-backend.md#configuration) before calling it.

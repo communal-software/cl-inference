@@ -42,8 +42,11 @@
         (:hparam (unless (and (= (length args) 2) (symbolp (first args)) (stringp (second args)))
                    (bad))
          (push (cons (first args) (second args)) hparam-keys))
-        (:tensor (unless (and (>= (length args) 2) (symbolp (first args)) (stringp (second args))
+        (:tensor (unless (and (>= (length args) 2) (symbolp (first args))
                               (evenp (length args))
+                              (or (stringp (second args))
+                                  (and (null (second args)) (getf (cddr args) :optional)
+                                       (not (getf (cddr args) :fallback))))
                               (null (set-difference (loop for key in (cddr args) by #'cddr
                                                           collect key)
                                                     '(:optional :fallback)))
@@ -167,14 +170,16 @@
 (defun architecture-tensor-name (architecture role &optional layer)
   "The file's name for tensor ROLE; LAYER fills ~d in per-layer templates."
   (let ((template (first (architecture-tensor-spec architecture role))))
-    (if layer (format nil template layer) (format nil template))))
+    (when template (if layer (format nil template layer) (format nil template)))))
 
 (defun architecture-tensor (architecture weights role &optional layer)
   "Tensor ROLE as a view. When absent, its :fallback role's tensor, or NIL if :optional."
   (let* ((name (architecture-tensor-name architecture role layer))
          (options (rest (architecture-tensor-spec architecture role)))
          (fallback (getf options :fallback)))
-    (cond ((weights-tensor-info-ref (ensure-open weights) name) (weights-tensor weights name))
+    (ensure-open weights)
+    (cond ((null name) nil)
+          ((weights-tensor-info-ref weights name) (weights-tensor weights name))
           (fallback (architecture-tensor architecture weights fallback layer))
           ((getf options :optional) nil)
           (t (weights-tensor weights name)))))
@@ -191,6 +196,9 @@
                                         "Architectures ~{~S~^, ~} all declare ~S for ~S"
                                         (mapcar #'class-name leaves) name format))))
 
+(defgeneric normalize-hparam-value (weights value)
+  (:method (weights value) (declare (ignore weights)) value))
+
 (defun hparam-initargs (class weights format arch-name)
   (let ((keys (format-entries class format :hparam-keys)))
     (loop for (name . options) in (architecture-hparam-specs class)
@@ -203,7 +211,7 @@
             do (architecture-fail 'architecture-error "~S needs hparam ~S, missing from ~A"
                                   (class-name class) name (weights-path weights))
           append (list (intern (symbol-name name) :keyword)
-                       (if present value (getf options :default))))))
+                       (if present (normalize-hparam-value weights value) (getf options :default))))))
 
 (defun load-architecture (weights)
   "Instantiate the architecture WEIGHTS declares, with its hparams read from metadata."

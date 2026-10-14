@@ -176,6 +176,28 @@ frequency i = THETA^(-2i/ROPE-DIMS) / FACTORS[i]."
    (rope-theta :accessor attn-rope-theta) (rope-pairing :accessor attn-rope-pairing)
    (epsilon :accessor attn-epsilon)))
 
+(defun llama3-rope-factors (dims theta scaling)
+  (let ((mode (and (hash-table-p scaling)
+                   (or (gethash "rope_type" scaling) (gethash "type" scaling)))))
+    (when (equal mode "default") (return-from llama3-rope-factors nil))
+    (unless (equal mode "llama3")
+      (architecture-fail 'architecture-error "Unsupported RoPE scaling ~S" mode))
+    (let ((factor (gethash "factor" scaling)) (low (gethash "low_freq_factor" scaling))
+          (high (gethash "high_freq_factor" scaling))
+          (context (gethash "original_max_position_embeddings" scaling)))
+      (unless (and (realp factor) (>= factor 1) (realp low) (plusp low)
+                   (realp high) (> high low) (integerp context) (plusp context))
+        (architecture-fail 'architecture-error "Invalid Llama 3 RoPE scaling parameters"))
+      (let ((factors (ct:make-tensor (list (floor dims 2)))))
+        (dotimes (i (floor dims 2) factors)
+          (let* ((frequency (expt (coerce theta 'double-float) (/ (* -2d0 i) dims)))
+                 (wavelength (/ (* 2 pi) frequency))
+                 (smooth (/ (- (/ context wavelength) low) (- high low)))
+                 (multiplier (cond ((< wavelength (/ context high)) 1d0)
+                                   ((> wavelength (/ context low)) (/ 1d0 factor))
+                                   (t (+ (/ (- 1 smooth) factor) smooth)))))
+            (setf (ct:tref factors i) (coerce (/ 1d0 multiplier) 'single-float))))))))
+
 (defmethod bind-block ((block attention) architecture weights)
   (flet ((tensor (suffix) (block-tensor block architecture weights suffix)))
     (let* ((n-heads (hparam architecture 'n-heads))
@@ -193,6 +215,10 @@ frequency i = THETA^(-2i/ROPE-DIMS) / FACTORS[i]."
                                        architecture (architecture-format architecture)
                                        :rope-pairing :adjacent)
             (attn-epsilon block) (hparam architecture 'rms-epsilon))
+      (let ((scaling (hparam-or architecture 'rope-scaling nil)))
+        (when scaling
+          (setf (attn-rope-freqs block)
+                (llama3-rope-factors (attn-rope-dims block) (attn-rope-theta block) scaling))))
       (when (attention-qk-norm block)
         (setf (attn-q-norm block) (tensor "q-norm") (attn-k-norm block) (tensor "k-norm"))))))
 
@@ -263,10 +289,14 @@ holds the positions from START; without, X attends only to itself."
       (bind-block block architecture weights)
       block)))
 
+(defgeneric validate-model-weights (weights architecture)
+  (:method (weights architecture) (declare (ignore weights architecture)) nil))
+
 (defun load-model (weights)
   "Build the architecture WEIGHTS declares and bind its blocks. Valid until WEIGHTS closes."
   (let* ((architecture (load-architecture weights))
          (slots (architecture-block-slots architecture)))
+    (validate-model-weights weights architecture)
     (make-model architecture
                 (loop for layer below (hparam architecture 'n-layers)
                       collect (loop for slot in slots

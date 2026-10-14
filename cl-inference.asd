@@ -38,11 +38,26 @@
                (:file "local/reply-parser") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
+(asdf:defsystem "cl-inference/mapping"
+  :description "Internal POSIX copy-on-write file mappings"
+  :license "GPL-3.0-only"
+  :depends-on ("cffi")
+  :serial t
+  :components ((:file "mapping/package") (:file "mapping/posix")))
+
+(asdf:defsystem "cl-inference/safetensors"
+  :description "Safetensors and Hugging Face configuration reader"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/local" "cl-inference/mapping" "trivial-simd" "babel")
+  :serial t
+  :components ((:file "safetensors/package") (:file "safetensors/reader")
+               (:file "safetensors/weights") (:file "safetensors/model")))
+
 (asdf:defsystem "cl-inference/gguf"
   :description "GGUF weight-file reader for cl-inference/local"
   :author "George Watson"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference/local" "cl-tensor" "trivial-simd" "cffi" "babel")
+  :depends-on ("cl-inference/local" "cl-inference/mapping" "cl-tensor" "trivial-simd" "babel")
   :serial t
   :components ((:file "gguf/package") (:file "gguf/errors") (:file "gguf/posix")
                (:file "gguf/reader") (:file "gguf/weights")))
@@ -56,7 +71,7 @@
   :components ((:file "quant/package") (:file "quant/q8-0")))
 
 (asdf:defsystem "cl-inference/local/tests"
-  :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-inference/quant" "fiveam")
+  :depends-on ("cl-inference/local" "cl-inference/gguf" "cl-inference/safetensors" "cl-inference/quant" "fiveam")
   :serial t
   :components ((:file "tests/local/package") (:file "tests/local/systems")
                (:file "tests/local/weights") (:file "tests/local/gguf-writer")
@@ -67,6 +82,7 @@
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/sampler")
                (:file "tests/local/quant") (:file "tests/local/qwen3")
+               (:file "tests/local/safetensors")
                (:file "tests/local/backend"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))

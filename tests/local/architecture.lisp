@@ -167,7 +167,8 @@
 
 (local:define-architecture cross-package-child (local:llama)
   (:blocks (attn local:attention :qk-norm t))
-  (:format :gguf (:arch "cross-package-child")))
+  (:format :gguf (:arch "cross-package-child"))
+  (:format :safetensors (:arch nil)))
 
 (test child-in-another-package-overrides-an-inherited-block
   (let ((slots (local:architecture-block-slots 'cross-package-child)))

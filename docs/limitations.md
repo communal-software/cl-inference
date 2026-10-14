@@ -4,7 +4,7 @@
 |---|---|
 | Local ONNX models | [#47](https://github.com/communal-software/cl-inference/issues/47) |
 | Local Gemma-family models | [#48](https://github.com/communal-software/cl-inference/issues/48) |
-| Safetensors and HF config.json loader | [#13](https://github.com/communal-software/cl-inference/issues/13) |
+| HF tokenizer files, template detection and MLX quantized execution | [#43](https://github.com/communal-software/cl-inference/issues/43) |
 | GGUF tensor fields are lost on CCL and ECL; use SBCL for local inference | [#45](https://github.com/communal-software/cl-inference/issues/45) |
 | Seeded sampler sequence differs on CCL | [#46](https://github.com/communal-software/cl-inference/issues/46) |
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |

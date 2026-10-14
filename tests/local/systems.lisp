@@ -3,7 +3,8 @@
 (in-suite :cl-inference/local)
 
 (test packages-load
-  (dolist (name '("CL-INFERENCE" "CL-INFERENCE/LOCAL" "CL-INFERENCE/GGUF" "CL-INFERENCE/QUANT"))
+  (dolist (name '("CL-INFERENCE" "CL-INFERENCE/LOCAL" "CL-INFERENCE/GGUF" "CL-INFERENCE/QUANT"
+                 "CL-INFERENCE/SAFETENSORS" "CL-INFERENCE/MAPPING"))
     (is (find-package name))))
 
 (test the-unconfigured-local-backend-is-unavailable
