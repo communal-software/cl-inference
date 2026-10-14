@@ -14,11 +14,11 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 | Local formats | GGUF v3; Safetensors with HF configuration and indexed shards |
 | Inference weights | F32, F16, BF16 and Q8_0 |
 
-Local inference is verified on SBCL; the HTTP client runs on SBCL, CCL and ECL. Safetensors CPU models are fixture-tested; HF chat setup remains incomplete. See [Support](docs/support.md) for configuration, verified variants and limitations. Local Gemma and ONNX models are planned.
+Local inference is verified on SBCL; the HTTP client runs on SBCL, CCL and ECL. Safetensors CPU models are fixture-tested; the optional MLX backend has Qwen3 float and 4-bit acceptance. See [Support](docs/support.md) for configuration, verified variants and limitations. Local Gemma and ONNX models are planned.
 
 ## Docs
 
-- Calling models: [Client](docs/client.md), [Local backend](docs/local-backend.md)
+- Calling models: [Client](docs/client.md), [Local backend](docs/local-backend.md), [MLX](docs/mlx.md)
 - Extending models: [Architectures](docs/architectures.md), [Tokenizers](docs/tokenizers.md), [Chat templates](docs/chat-templates.md), [Blocks](docs/blocks.md)
 - Generation: [Sessions](docs/sessions.md), [Sampling](docs/sampling.md)
 - Storage: [Weights](docs/weights.md), [GGUF](docs/gguf.md), [Safetensors](docs/safetensors.md), [Quantized weights](docs/quant.md)

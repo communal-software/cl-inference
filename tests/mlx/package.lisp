@@ -1,0 +1,10 @@
+(defpackage #:cl-inference/mlx/tests
+  (:use #:cl #:fiveam)
+  (:local-nicknames (#:local #:cl-inference/local) (#:mlx #:cl-inference/mlx)
+                    (#:mx #:cl-mlx) (#:ct #:cl-tensor) (#:ci #:cl-inference)
+                    (#:f #:cl-inference/local/tests) (#:st #:cl-inference/safetensors)
+                    (#:bt #:bordeaux-threads-2))
+  (:export #:run-tests #:run-acceptance))
+(in-package #:cl-inference/mlx/tests)
+(def-suite :cl-inference/mlx)
+(defun run-tests () (run! :cl-inference/mlx))

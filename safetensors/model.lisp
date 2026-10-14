@@ -7,18 +7,20 @@
   (let ((value (local:weights-metadata weights key)))
     (and value (not (eq value 'cl:null)))))
 
-(defmethod local::validate-model-weights ((weights safetensors-weights) (architecture local:llama))
+(defun validate-hf-model (weights architecture &key quantized)
   (flet ((reject (control &rest args)
            (apply #'local::architecture-fail 'local:architecture-error control args)))
     (dolist (key '("quantization" "quantization_config" "attention_bias" "mlp_bias"
                    "use_sliding_window" "sliding_window" "rope_parameters"))
-      (when (configured-p weights key) (reject "CPU HF model loading does not support ~A" key)))
+      (when (and (configured-p weights key)
+                 (not (and quantized (member key '("quantization" "quantization_config") :test #'equal))))
+        (reject "HF model loading does not support ~A" key)))
     (multiple-value-bind (activation present) (local:weights-metadata weights "hidden_act")
       (when (and present (not (equal activation "silu")))
-        (reject "CPU HF model loading requires hidden_act=silu")))
+        (reject "HF model loading requires hidden_act=silu")))
     (multiple-value-bind (partial present) (local:weights-metadata weights "partial_rotary_factor")
       (when (and present (not (and (realp partial) (= partial 1))))
-        (reject "CPU HF model loading requires full rotary dimensions")))
+        (reject "HF model loading requires full rotary dimensions")))
     (dolist (name '(local::n-layers local::dim local::n-heads local::n-kv-heads))
       (unless (typep (local:hparam architecture name) '(integer 1))
         (reject "HF hparam ~A must be a positive integer" name)))
@@ -41,7 +43,10 @@
     (dolist (info (local:weights-tensor-info-list weights))
       (let ((name (local:tensor-info-name info)))
         (when (and (>= (length name) 5) (string= ".bias" name :start2 (- (length name) 5)))
-          (reject "CPU HF model loading does not support bias tensor ~A" name))
-        (unless (member (local:tensor-info-format-type info) '(:f32 :f16 :bf16))
-          (reject "CPU HF model loading requires F32/F16/BF16 tensors; ~A is ~A"
+          (reject "HF model loading does not support bias tensor ~A" name))
+        (unless (member (local:tensor-info-format-type info) (if quantized '(:f32 :f16 :bf16 :u32) '(:f32 :f16 :bf16)))
+          (reject "Unsupported HF tensor type for ~A: ~A"
                   name (local:tensor-info-format-type info)))))))
+
+(defmethod local::validate-model-weights ((weights safetensors-weights) (architecture local:llama))
+  (validate-hf-model weights architecture))

@@ -51,7 +51,8 @@
   :depends-on ("cl-inference/local" "cl-inference/mapping" "trivial-simd" "babel")
   :serial t
   :components ((:file "safetensors/package") (:file "safetensors/reader")
-               (:file "safetensors/weights") (:file "safetensors/model")))
+               (:file "safetensors/weights") (:file "safetensors/model")
+               (:file "safetensors/tokenizer")))
 
 (asdf:defsystem "cl-inference/gguf"
   :description "GGUF weight-file reader for cl-inference/local"
@@ -82,7 +83,7 @@
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/sampler")
                (:file "tests/local/quant") (:file "tests/local/qwen3")
-               (:file "tests/local/safetensors")
+               (:file "tests/local/safetensors") (:file "tests/local/hf-tokenizer")
                (:file "tests/local/backend"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
@@ -99,3 +100,30 @@
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
                (error "cl-inference acceptance tests failed"))))
+
+(asdf:defsystem "cl-inference/mlx"
+  :description "Apple Silicon inference on lazy MLX arrays"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/safetensors" "cl-mlx")
+  :serial t
+  :components ((:file "mlx/package") (:file "mlx/model") (:file "mlx/backend"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/mlx/tests"))))
+
+(asdf:defsystem "cl-inference/mlx/tests"
+  :depends-on ("cl-inference/mlx" "cl-inference/local/tests")
+  :serial t
+  :components ((:file "tests/mlx/package") (:file "tests/mlx/model") (:file "tests/mlx/backend"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/mlx/tests :run-tests)
+               (error "cl-inference/mlx tests failed"))))
+
+(asdf:defsystem "cl-inference/mlx/acceptance"
+  :description "Qwen3 float and 4-bit against a pinned Python MLX reference"
+  :depends-on ("cl-inference/mlx/tests")
+  :serial t
+  :components ((:file "tests/mlx/acceptance"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/mlx/tests :run-acceptance)
+               (error "cl-inference/mlx acceptance tests failed"))))

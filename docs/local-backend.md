@@ -15,6 +15,8 @@
 
 Keep weights open until every completion finishes. The backend does not close them. Calling a backend after its weights close returns `(:error :unavailable)`.
 
+HF model directories use the shipped [HF tokenizer reader](hf-tokenizers.md). For Apple Silicon execution and packed affine weights, use the [MLX backend](mlx.md).
+
 ## Configuration
 
 | Constructor option | Default | Meaning |

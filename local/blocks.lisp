@@ -320,7 +320,9 @@ holds the positions from START; without, X attends only to itself."
       (architecture-fail 'architecture-error "~S has no ~S block"
                          (class-name (class-of (model-architecture model))) type)))
 
-(defun model-forward (model tokens &key (start 0) cache all-logits)
+(defgeneric model-forward (model tokens &key start cache all-logits))
+
+(defmethod model-forward ((model model) tokens &key (start 0) cache all-logits)
   "Logits for TOKENS (a list or integer vector) at positions START.. Only the last position's
 unless ALL-LOGITS."
   (let ((x (block-forward (model-block-of-type model 'embedding)
@@ -328,3 +330,9 @@ unless ALL-LOGITS."
     (dolist (blocks (model-layers model))
       (setf x (layer-forward (model-architecture model) blocks x :start start :cache cache)))
     (block-forward (model-block-of-type model 'lm-head) x :last-only (not all-logits))))
+
+(defgeneric model-ready-p (model)
+  (:method (model) (declare (ignore model)) t))
+
+(defgeneric close-model (model)
+  (:method (model) (declare (ignore model)) nil))

@@ -115,6 +115,10 @@ Rules merge by kind along the class precedence list. A child's rule replaces the
 
 Both use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it sets both options itself.
 
+## HF files
+
+The optional Safetensors system reads the shipped Llama and Qwen3 `tokenizer.json` pipelines and special-token configuration. See [HF tokenizers](hf-tokenizers.md) for input validation and coverage.
+
 ## Errors
 
 | Condition | Signalled when |

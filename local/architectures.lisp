@@ -36,6 +36,7 @@
     (:tensor head.output "output.weight" :fallback token.embd))
   (:format :safetensors
     (:arch "llama")
+    (:chat-template llama3-chat)
     (:rope-pairing :neox)
     (:hparam n-layers "num_hidden_layers")
     (:hparam dim "hidden_size")
@@ -70,5 +71,6 @@
     (:tensor attn.k-norm "blk.~d.attn_k_norm.weight"))
   (:format :safetensors
     (:arch "qwen3")
+    (:chat-template qwen3-chat)
     (:tensor attn.q-norm "model.layers.~d.self_attn.q_norm.weight")
     (:tensor attn.k-norm "model.layers.~d.self_attn.k_norm.weight")))

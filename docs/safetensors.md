@@ -60,7 +60,7 @@ The shipped Llama and Qwen3 architectures map HF tensor names and configuration 
 
 CPU fixtures verify F32/F16/BF16 logits and cached decoding for both architectures. Ordinary RoPE and `rope_scaling` with `rope_type="llama3"` are supported.[^rope] Unsupported scaling, bias, activation and sliding-window variants signal `architecture-error` during model loading.
 
-Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. Loading tensors or running token IDs does not establish full HF chat support; see [limitations](#limitations).
+Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. The [HF tokenizer reader](hf-tokenizers.md) supplies Llama/Qwen3 chat setup. The [MLX backend](mlx.md) executes packed affine 4-bit models.
 
 ## Validation
 
@@ -70,8 +70,9 @@ Malformed files signal `safetensors-error`, a `weights-error` subclass. Validati
 
 | Missing | Tracker |
 |---|---|
-| HF tokenizer files, template detection and MLX quantized execution | [#43](https://github.com/communal-software/cl-inference/issues/43) |
-| Real-model Safetensors acceptance; additional RoPE modes and encodings | Not verified; only the documented fixtures and encodings are covered |
+| Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
+| Real Llama Safetensors acceptance | [#51](https://github.com/communal-software/cl-inference/issues/51) |
+| Additional RoPE modes and encodings | Outside the documented coverage |
 | Windows mapping; BSD verification | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 
 [^mapping]: The optional internal `cl-inference/mapping` system shares POSIX `mmap` helpers with GGUF. Zero-copy typed access assumes a little-endian host.

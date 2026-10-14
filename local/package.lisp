@@ -42,8 +42,9 @@
    #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head
    #:model #:model-architecture #:model-layers #:model-model-blocks #:load-model
-   #:layer-forward #:model-forward
+   #:layer-forward #:model-forward #:model-ready-p #:close-model
    ;; sessions
+   #:make-model-cache #:close-cache #:close-session
    #:kv-cache #:make-kv-cache #:make-session #:session #:session-model #:session-tokenizer
    #:session-chat-template #:session-n-ctx #:session-n-batch #:session-position #:session-reset
    #:session-prefill #:generate #:greedy-sampler #:stop-split
@@ -51,6 +52,6 @@
    #:sample #:sampler #:make-sampler #:sampler-temperature #:sampler-top-k #:sampler-top-p
    #:sampler-seed #:sampler-error
    ;; client backend
-   #:local-backend #:make-local-backend
+   #:local-backend #:make-local-backend #:close-local-backend
    #:reply-parser #:make-reply-parser #:reply-parser-push #:reply-parser-finish
    #:reply-parser-error))

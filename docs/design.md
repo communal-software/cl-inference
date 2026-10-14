@@ -14,6 +14,7 @@
 | `cl-inference/gguf` | [GGUF weight-file reader](gguf.md) |
 | `cl-inference/safetensors` | [Safetensors files, HF configuration and sharded model directories](safetensors.md) |
 | `cl-inference/mapping` | Internal POSIX file mappings shared by the optional readers |
+| `cl-inference/mlx` | [Apple Silicon backend](mlx.md), using lazy MLX graphs and packed affine weights |
 | `cl-inference/quant` | [Quantized dtypes](quant.md) as cl-tensor extensions; the Q8_0 kernel is native code in trivial-simd |
 
 Configure and register `:local` over [open weights](local-backend.md#configuration) before calling it.
@@ -30,7 +31,7 @@ Architectures are declared with `define-architecture`, a CLOS-backed macro. A ch
   (:format :gguf (:arch "qwen3") (:rope-pairing :neox)))
 ```
 
-This repository is pure Lisp on cl-tensor and trivial-simd. Native kernels, such as the Q8_0 matmul, live in trivial-simd.
+The CPU engine uses cl-tensor and trivial-simd. Its native kernels, such as Q8_0 matmul, live in trivial-simd. The optional MLX backend uses native MLX operations through the separate cl-mlx bindings.
 
 ## Tokenizers
 

@@ -159,10 +159,13 @@ only when SPECIAL; user-defined tokens always do."
 (defun special-id (tokenizer key)
   (getf (tokenizer-special-ids tokenizer) key))
 
+(defgeneric normalize-tokenizer-text (tokenizer text)
+  (:method (tokenizer text) (declare (ignore tokenizer)) text))
+
 (defun encode (tokenizer text &key special (add-bos (tokenizer-add-bos-p tokenizer)))
   "Token ids for TEXT. ADD-BOS defaults to the file's add_bos_token. SPECIAL also matches
 control and unknown tokens in TEXT; user-defined tokens always match."
-  (let ((text (coerce-text text)) (work (make-bpe-work))
+  (let ((text (coerce-text (normalize-tokenizer-text tokenizer text))) (work (make-bpe-work))
         (out (make-array 0 :element-type '(unsigned-byte 32) :adjustable t :fill-pointer 0))
         (segment 0) (position 0))
     (when add-bos

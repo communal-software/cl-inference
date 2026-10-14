@@ -45,6 +45,10 @@ Live Ollama tests are skipped unless `CL_INFERENCE_OLLAMA_URL` (the `/v1` route)
 
 Full-model checks compare against a dev-only reference kept in the gitignored `reference/` directory, which also holds llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures for the tokenizer. `reference/chat-templates.py` needs `jinja2` and the two official templates in `reference/templates/`; it regenerates the chat template expectations.
 
+## MLX
+
+After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model and client fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Qwen models with a pinned Python MLX oracle. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.
+
 ## Acceptance
 
 `cl-inference/local/acceptance` checks Llama 3.2 1B Instruct and Qwen3 0.6B in F16 and Q8_0 against a pinned llama.cpp reference. It compares metadata, prompt ids, layer outputs, final logits and greedy generation.

@@ -44,6 +44,12 @@
       (values (ct:slice keys :selectors (list (list 0 end)))
               (ct:slice values :selectors (list (list 0 end)))))))
 
+(defgeneric make-model-cache (model n-ctx)
+  (:method (model n-ctx) (declare (ignore model)) (make-kv-cache n-ctx)))
+
+(defgeneric close-cache (cache)
+  (:method (cache) (declare (ignore cache)) nil))
+
 ;;; Sessions
 
 (defconstant +default-context-cap+ 4096
@@ -63,7 +69,12 @@ up to 4096 by default. N-BATCH is the most tokens one prefill pass feeds."
   (let ((n-ctx (or n-ctx (default-n-ctx model))))
     (unless (and (integerp n-ctx) (plusp n-ctx) (integerp n-batch) (plusp n-batch))
       (session-fail "n-ctx and n-batch must be positive integers"))
-    (%make-session model tokenizer chat-template n-ctx n-batch (make-kv-cache n-ctx))))
+    (%make-session model tokenizer chat-template n-ctx n-batch (make-model-cache model n-ctx))))
+
+(defun close-session (session)
+  "Release a session's execution cache."
+  (close-cache (session-cache session))
+  nil)
 
 (defun session-reset (session)
   "Forget every position. The cache buffers are kept."

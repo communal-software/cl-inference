@@ -33,7 +33,8 @@
 (defmethod ci:describe-backend ((backend local-backend))
   (let ((weights (backend-weights backend)))
     (list :kind :provider :name (ci:backend-name backend) :summary "In-process model"
-          :status (if (and weights (not (weights-closed-p weights))) :ready :unavailable)
+          :status (if (and weights (not (weights-closed-p weights))
+                           (model-ready-p (backend-model backend))) :ready :unavailable)
           :session-policy (backend-session-policy backend)
           :params '((:temperature number) (:top-p number) (:top-k (integer 1))
                     (:seed integer) (:max-tokens (integer 0)) (:stop (ci:array-of string))))))
@@ -100,7 +101,9 @@
 
 (defun local-session-completion (backend request)
   (if (eq (backend-session-policy backend) :per-call)
-      (local-generate backend (backend-new-session backend) request)
+      (let ((session (backend-new-session backend)))
+        (unwind-protect (local-generate backend session request)
+          (close-session session)))
       (if (member backend *active-local-backends*)
           (ci:bad-request "Reentrant completion needs :session-policy :per-call")
           (bt:with-lock-held ((backend-session-lock backend))
@@ -114,7 +117,9 @@
                                                  request)))
                      (setf success (not (ci:result-error-p result)))
                      result)
-                (unless success (setf (backend-session backend) nil))))))))
+                (unless success
+                  (when (backend-session backend) (close-session (backend-session backend)))
+                  (setf (backend-session backend) nil))))))))
 
 (defmethod ci:backend-complete ((backend local-backend) request)
   (let ((problem (handler-case (local-request-check request)
@@ -128,7 +133,8 @@
    request
    (lambda ()
      (handler-case
-         (if (and (backend-weights backend) (not (weights-closed-p (backend-weights backend))))
+         (if (and (backend-weights backend) (not (weights-closed-p (backend-weights backend)))
+                  (model-ready-p (backend-model backend)))
              (local-session-completion backend request)
              (ci:fail :unavailable))
        (reply-parser-error (e) (ci:backend-error :invalid-output (princ-to-string e)))
@@ -136,5 +142,13 @@
        (session-error (e) (ci:bad-request "~A" e))
        (chat-template-error (e) (ci:bad-request "~A" e))
        (error (e) (ci:backend-error :inference (princ-to-string e)))))))
+
+(defun close-local-backend (backend)
+  "Release BACKEND's model and cache without closing its borrowed weights."
+  (bt:with-lock-held ((backend-session-lock backend))
+    (when (backend-session backend) (close-session (backend-session backend)))
+    (setf (backend-session backend) nil)
+    (when (slot-boundp backend 'model) (close-model (backend-model backend))))
+  nil)
 
 (ci:register-backend (make-instance 'local-backend :name :local))

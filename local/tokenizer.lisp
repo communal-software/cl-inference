@@ -111,12 +111,17 @@ and (:format key (:model \"name\") (:pre \"alias\"...)); a child overrides entri
                                      "Tokenizers ~{~S~^, ~} all declare model ~S, pre ~S for ~S"
                                      (mapcar #'class-name leaves) model pre format))))
 
+(defgeneric tokenizer-class-for-weights (format weights model pre)
+  (:method (format weights model pre)
+    (declare (ignore weights))
+    (find-tokenizer-class format model pre)))
+
 (defun load-tokenizer (weights)
   "Instantiate the tokenizer WEIGHTS declares and load its vocabulary."
   (ensure-open weights)
   (let ((format (weights-format weights)))
     (multiple-value-bind (model pre) (tokenizer-selector format weights)
-      (let ((tokenizer (make-instance (find-tokenizer-class format model pre) :format format)))
+      (let ((tokenizer (make-instance (tokenizer-class-for-weights format weights model pre) :format format)))
         (tokenizer-load tokenizer format weights)
         tokenizer))))
 
