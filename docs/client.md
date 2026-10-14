@@ -35,6 +35,7 @@ A plist. Unknown keys are ignored, so a caller may offer a superset.
 | `:cancel` | A token from `make-cancel-token`; `(cancel token)` ends the call |
 | `:stream` | A function called with each [event](#events) |
 | `:ref` | Stamped on every event |
+| `:include-usage` | OpenAI-compatible streams: T (default) requests token usage; NIL omits the streaming option |
 
 `:content` is a string or a list of blocks, `(:type :text :text "...")`.
 
@@ -44,6 +45,18 @@ A plist. Unknown keys are ignored, so a caller may offer a superset.
 (:role :assistant :content <blocks or nil> :tool-calls <calls> :done t
  :meta (:finish-reason :stop :usage (:prompt-tokens 7 ...) :id "..."))
 ```
+
+OpenAI-compatible streams request usage and collect the trailing usage chunk into `:meta :usage`. A server that omits usage leaves it absent. The reader waits through `[DONE]` or EOF after the finish reason, within the request deadline.[^stream-usage]
+
+For a compatible server that rejects `stream_options`, pass `:include-usage nil`:
+
+```lisp
+(complete :protocol-openai :base-url "http://127.0.0.1:8080/v1"
+          :model "local-model" :messages '((:role :user :content "Hello"))
+          :include-usage nil :stream #'print)
+```
+
+A provider may set `:defaults '(:include-usage nil)`; an explicit request value wins. With NIL, the reader returns at the finish reason. Non-streamed requests omit `stream_options`.
 
 A tool call is `(:id "c9" :name :tool-shell :arguments (:cmd "ls") :schema ...)`: a keyword name and an argument plist.
 
@@ -164,3 +177,5 @@ For consumers that layer their own services over the client.
 
 [^retry]: `retry-after` is milliseconds, read from `retry-after-ms`, else `Retry-After` as seconds or an HTTP date.
 [^sink]: Deltas are delivered inside the deadline, so a sink blocked on one is unwound when the deadline passes. The closing `:done` is delivered under its own bound, `*sink-grace*` seconds (default 5), so `complete` returns within `:timeout` plus `*sink-grace*`. The deadline is a watcher thread that shuts the socket down and interrupts the calling thread out of the exchange.
+
+[^stream-usage]: A stalled trailer times out even after a finish reason; cancellation also remains active. No usage is invented and rejected requests are not retried. The [OpenAI API reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) describes the empty-choices usage chunk before `[DONE]`.

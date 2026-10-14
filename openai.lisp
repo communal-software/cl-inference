@@ -39,6 +39,8 @@ problem string. The shared CHECK-REQUEST stays neutral, so this runs on top."
       ((not (named-p base-url)) ":base-url is required, naming the backend")
       ((not (http-url-p base-url)) ":base-url must be an http or https URL")
       ((not (named-p model)) ":model is required")
+      ((not (member (getf request :include-usage t) '(t nil)))
+       ":include-usage must be T or NIL")
       (t nil))))
 
 (defun completion-url (base-url)
@@ -54,6 +56,8 @@ problem string. The shared CHECK-REQUEST stays neutral, so this runs on top."
                                               (message->json message tools))
                                             (getf request :messages))
                             "stream" streaming)))
+    (when (and streaming (getf request :include-usage t))
+      (setf (json-get json "stream_options") (json-object "include_usage" t)))
     (when tools
       (setf (json-get json "tools") (tools->json tools)))
     (dolist (param +openai-params+ json)
@@ -173,17 +177,19 @@ list arrives as \"\" as readily as \"{}\"."
         (calls '())
         (reason nil)
         (meta '())
-        (ended nil))
+        (ended nil)
+        (include-usage (getf request :include-usage t)))
     (loop
       (multiple-value-bind (data eof) (read-sse-event stream)
         (when data
           (if (string= data "[DONE]")
-              (setf ended t)
+              (progn (setf ended t) (return))
               (let ((chunk (json:parse data)))
-                (setf meta (or (reply-meta chunk) meta))
+                (loop for (key value) on (reply-meta chunk) by #'cddr
+                      do (setf (getf meta key) value))
                 (multiple-value-setq (calls reason ended)
                   (absorb-chunk chunk sink ref text calls reason ended)))))
-        (when (or eof ended) (return))))
+        (when (or eof (and ended (not include-usage))) (return))))
     ;; Neither a [DONE] nor a finish_reason means the stream stopped early.
     (unless ended
       (return-from read-streamed-completion

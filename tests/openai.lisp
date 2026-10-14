@@ -320,7 +320,7 @@ needs and a user message."
         (is (equal "ls" (getf (getf call :arguments) :cmd)))))))
 
 (test a-stream-ending-at-eof-without-done-still-finishes
-  ;; Not every backend sends [DONE]; a finish_reason ends the turn too.
+  ;; EOF after a finish reason succeeds even without [DONE].
   (with-openai ((sse-response
                  "{\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}"
                  "{\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}"))
@@ -574,3 +574,96 @@ CL_INFERENCE_OLLAMA_MODEL has not been pulled."
                   (is (plusp (count :text-delta events
                                     :key (lambda (event) (getf event :type)))))
                   (is (eq :done (getf (first events) :type))))))))))
+
+(defparameter +stream-finish+
+  "{\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}")
+
+(defparameter +stream-usage+
+  "{\"choices\":[],\"usage\":{\"prompt_tokens\":7,\"completion_tokens\":2,\"total_tokens\":9}}")
+
+(test openai-stream-usage-is-requested-by-default
+  (with-openai ((sse-response +stream-finish+ +stream-usage+ "[DONE]"))
+    (multiple-value-bind (events result) (collect-stream)
+      (is (eq t (gethash "include_usage" (gethash "stream_options" (sent-body)))))
+      (is (eq :ok (first result)))
+      (is (= 7 (client:reply-prompt-tokens (second result))))
+      (is (= 9 (getf (getf (getf (second result) :meta) :usage) :total-tokens)))
+      (is (= 1 (length (done-events events))))
+      (is (eq :stop (getf (first (done-events events)) :reason))))))
+
+(test openai-stream-metadata-survives-later-chunks
+  (with-openai ((sse-response
+                 "{\"id\":\"cmpl-stream\",\"usage\":null,\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}"
+                 +stream-finish+ +stream-usage+
+                 "{\"id\":\"cmpl-stream\",\"usage\":null,\"choices\":[]}"
+                 "[DONE]"))
+    (multiple-value-bind (events result) (collect-stream)
+      (let ((reply (second result)))
+        (is (equal "hello" (client:content-text (getf reply :content))))
+        (is (equal "cmpl-stream" (getf (getf reply :meta) :id)))
+        (is (= 7 (client:reply-prompt-tokens reply)))
+        (is (equal '(:text-delta :done) (mapcar (lambda (e) (getf e :type)) events)))))))
+
+(test openai-tool-stream-collects-trailing-usage
+  (with-openai ((sse-response
+                 "{\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"c1\",\"function\":{\"name\":\"tool-shell\",\"arguments\":\"{}\"}}]}}]}"
+                 "{\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}"
+                 +stream-usage+ "[DONE]"))
+    (multiple-value-bind (events result) (collect-stream)
+      (is (= 7 (client:reply-prompt-tokens (second result))))
+      (is (equal "c1" (getf (first (getf (second result) :tool-calls)) :id)))
+      (is (= 1 (length (done-events events))))
+      (is (eq :tool-calls (getf (first (done-events events)) :reason))))))
+
+(test openai-stream-usage-options-are-omitted-when-disabled-or-not-streaming
+  (with-openai ((sse-response +stream-finish+ "[DONE]"))
+    (collect-stream :include-usage nil)
+    (is (null (nth-value 1 (gethash "stream_options" (sent-body))))))
+  (with-openai ((json-response +hello-reply+))
+    (ask :include-usage t)
+    (is (null (nth-value 1 (gethash "stream_options" (sent-body)))))))
+
+(test openai-rejects-invalid-include-usage-before-the-wire
+  (with-openai ((json-response +hello-reply+))
+    (dolist (value '(1 "true" :yes))
+      (is (eq :bad-request (first (client:result-error (ask :include-usage value))))))
+    (is (null (fake-http-requests *backend*)))))
+
+(test openai-finished-stream-without-usage-still-succeeds
+  (dolist (trailer '(nil "[DONE]"))
+    (with-openai ((apply #'sse-response
+                        (append (list +stream-finish+) (when trailer (list trailer)))))
+      (multiple-value-bind (events result) (collect-stream)
+        (is (eq :ok (first result)))
+        (is (null (getf (getf (second result) :meta) :usage)))
+        (is (= 1 (length (done-events events))))))))
+
+(test openai-usage-at-eof-is-collected
+  (with-openai ((sse-response +stream-finish+ +stream-usage+))
+    (multiple-value-bind (events result) (collect-stream)
+      (is (= 7 (client:reply-prompt-tokens (second result))))
+      (is (= 1 (length (done-events events)))))))
+
+(test openai-stalled-usage-trailer-honours-deadline-and-opt-out
+  (dolist (include-usage '(t nil))
+    (with-openai ((stalled-stream "text/event-stream" (sse-body +stream-finish+)))
+      (with-hold
+        (multiple-value-bind (events result)
+            (collect-stream :include-usage include-usage :timeout 400)
+          (if include-usage
+              (is (eq :timeout (client:result-error result)))
+              (is (eq :ok (first result))))
+          (is (= 1 (length (done-events events))))
+          (is-true (eventually #'watchers-idle-p)))))))
+
+(test openai-stalled-usage-trailer-can-be-cancelled
+  (with-openai ((stalled-stream "text/event-stream" (sse-body +stream-finish+)))
+    (with-hold
+      (let* ((token (client:make-cancel-token))
+             (canceller (cancel-after token 0.3)))
+        (unwind-protect
+             (multiple-value-bind (events result) (collect-stream :cancel token :timeout 3000)
+               (is (eq :cancelled (client:result-error result)))
+               (is (= 1 (length (done-events events))))
+               (is-true (eventually #'watchers-idle-p)))
+          (bt:join-thread canceller))))))

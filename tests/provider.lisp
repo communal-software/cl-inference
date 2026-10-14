@@ -374,3 +374,25 @@ is the one that counts."
       (is (equal "/v1/chat/completions"
                  (getf (first (fake-http-requests *backend*)) :path)))
       (is (= 7 (getf (getf (getf (second result) :meta) :usage) :prompt-tokens))))))
+
+(client:define-provider :test-no-stream-usage
+  :protocol :protocol-openai
+  :base-url "http://127.0.0.1:1"
+  :defaults '(:include-usage nil))
+
+(test provider-stream-usage-defaults-yield-to-the-caller
+  (dolist (override '(nil t))
+    (with-providers ((sse-response +stream-finish+ +stream-usage+ "[DONE]"))
+      (let* ((provider (instance :test-no-stream-usage :model "test-model"))
+             (result (apply #'turn provider :stream (lambda (e) (declare (ignore e)))
+                            (when override '(:include-usage t)))))
+        (is (eq :ok (first result)))
+        (is (eq override (nth-value 1 (gethash "stream_options" (sent-body)))))
+        (when override (is (= 7 (client:reply-prompt-tokens (second result)))))))))
+
+(test openai-provider-streams-trailing-usage
+  (with-providers ((sse-response +stream-finish+ +stream-usage+ "[DONE]"))
+    (let ((result (turn (instance :openai :model "test-model" :api-key "sk-fake")
+                        :stream (lambda (e) (declare (ignore e))))))
+      (is (eq :ok (first result)))
+      (is (= 7 (client:reply-prompt-tokens (second result)))))))
