@@ -2,7 +2,7 @@
 
 Prioritize safe inference, additional model families and usable model formats. Child-repository work moves up when it enables those outcomes. Small optimizations and peripheral platforms stay at the bottom.
 
-Audit snapshot: **15 October 2026 · 148 open GitHub issues · four repositories**. Tiers are planning recommendations, not changes to GitHub labels. Every inventory row starts open; no issue is closed or edited by this audit.[^scope] Status notes include later completed work; counts retain the audit snapshot.
+Audit snapshot: **15 October 2026 · 148 open GitHub issues · four repositories**. Tiers are planning recommendations, not changes to GitHub labels. Every inventory row starts open; the initial audit does not change GitHub.[^scope] Status notes include later completed work; counts retain the audit snapshot.
 
 ## Priority rules
 
@@ -56,19 +56,19 @@ The inventory does not certify runtime correctness or performance. Validation re
 
 ### Tracker reconciliation
 
-Follow-up outside the snapshot; the original inventory counts remain unchanged:
+Follow-up outside the snapshot; the original inventory counts remain unchanged. Live count check after this batch on **15 October 2026**: cl-inference **23**, cl-tensor **18**, cl-gpu **43**, trivial-simd **62** — **146 open issues** total:
 
 | Ticket | State | Planning note |
 |---|---|---|
 | [cl-inference #53 — HF Qwen empty-string encoding](https://github.com/communal-software/cl-inference/issues/53) | Closed: 2026-10-15 | Owner: Codex. Empty HF Qwen text bypasses NFC normalization and follows the shared BOS policy. HF Qwen/Llama fixtures cover configured and missing BOS, defaults and overrides; combining-character and chat-provenance checks pass. SBCL: 9,584 local checks and 527 client checks pass; three optional live client checks skip. Pinned Qwen empty-input checks pass. See [tokenizer behavior](tokenizers.md#functions). Next: select remaining tokenizer coverage from the inventory. |
-| [cl-inference #54 — ECL half-linear profile call](https://github.com/communal-software/cl-inference/issues/54) | Active | Owner: Codex. The failure reproduces with unchanged compiled baseline code; interpreted source passes. A `notinline` declaration preserves fixture replacement, and the ECL local suite passes. Next: publish and close after final validation. |
+| [cl-inference #54 — ECL half-linear profile call](https://github.com/communal-software/cl-inference/issues/54) | Closed: 2026-10-15 | Owner: Codex. The failure reproduces with unchanged compiled baseline code; interpreted source passes. A `notinline` declaration preserves fixture replacement; the isolated fixture and all three local suites pass. Next: preserve cross-Lisp regression coverage in CI. |
 | [cl-inference #55 — Parallel half-weight dispatch](https://github.com/communal-software/cl-inference/issues/55) | Open | Owner: unassigned. P2 follow-up for measured executor-bound F16/BF16 tiled conversion overhead. The source TODO names the ceiling and encoded-dispatch upgrade path. Next: establish complete-call parallel dispatch profiles, retaining mapped/strided coverage and serial/parallel acceptance. |
 | [cl-inference #56 — Ambiguous function-wrapper scalar values](https://github.com/communal-software/cl-inference/issues/56) | Open | Owner: unassigned. P2 follow-up for untyped/nullable scalar type loss and unescaped delimiters in the pinned format. Ordinary typed values and untyped text/JSON are supported. The parser TODO names explicit codecs as the upgrade path. Next: choose a per-tool codec or explicit ambiguity policy and add collision round trips. |
 
 | Finding | Evidence and next action |
 |---|---|
-| Parallel inference has a stale blocker | [cl-inference #17](https://github.com/communal-software/cl-inference/issues/17) waits on [cl-tensor #2](https://github.com/communal-software/cl-tensor/issues/2), closed on 13 October. The [executor contract](https://github.com/communal-software/cl-tensor/blob/trunk/docs/execution.md) exists. Keep inference integration open; remove the obsolete wait when selecting it. |
-| Template detection work is partially complete | [cl-inference #38](https://github.com/communal-software/cl-inference/issues/38) records implemented exclusion rules in its discussion. Track remaining family renderers, not reimplementation of exclusion. |
+| Parallel inference integration is complete | [cl-inference #17](https://github.com/communal-software/cl-inference/issues/17) and its [threading prerequisite](https://github.com/communal-software/cl-tensor/issues/2) are closed. Caller-owned head/row scheduling follows the [executor contract](parallel-inference.md). Half-weight dispatch remains a separate measured follow-up. |
+| Pinned template-family coverage is complete | [cl-inference #38](https://github.com/communal-software/cl-inference/issues/38) is closed with native family renderers/parsers and strict supplied-source handling. Unlisted variants and raw scalar/delimiter ambiguity remain explicit [limits](chat-families.md#limitations). |
 | Tensor GPU prerequisites mix completed groundwork and open scope | [cl-tensor #12](https://github.com/communal-software/cl-tensor/issues/12) comments confirm bulk transfers and array views exist. [cl-gpu #58](https://github.com/communal-software/cl-gpu/issues/58) and [#59](https://github.com/communal-software/cl-gpu/issues/59) remain open. Software f64 is optional for an explicitly restricted dtype backend. |
 | MLX custom-kernel issues carry an old low-priority recommendation | [cl-inference #44](https://github.com/communal-software/cl-inference/issues/44) and [cl-gpu #20](https://github.com/communal-software/cl-gpu/issues/20) say low priority. P1 here is conditional on using them for unsupported model formats; keep experimental sampling/fusion tuning P3. |
 | Tensor uniqueness work overlaps upstream | [cl-tensor #5](https://github.com/communal-software/cl-tensor/issues/5) and [trivial-simd #63](https://github.com/communal-software/trivial-simd/issues/63) cover related proof workspace. Coordinate upstream before downstream cleanup. |
@@ -79,7 +79,7 @@ Follow-up outside the snapshot; the original inventory counts remain unchanged:
 
 ### Selected implementation review
 
-Review date: **15 October 2026**. Owner: Codex. The user approved the design for both selected issues. Implementation, correctness acceptance and performance measurements are complete; publication and issue closure are pending. Snapshot counts remain historical.[^selected-review]
+Review date: **15 October 2026**. Owner: Codex. Both selected issues are closed after implementation, correctness acceptance and performance measurements. [Implementation `d99c2c4`](https://github.com/communal-software/cl-inference/commit/d99c2c4) is published to origin and mirror. Snapshot counts remain historical.[^selected-review]
 
 | Validation | Passing checks | Skips |
 |---|---:|---:|
@@ -89,7 +89,7 @@ Review date: **15 October 2026**. Owner: Codex. The user approved the design for
 | MLX fixtures / strict four-model acceptance | 198 / 164 | 0 |
 | Pinned CPU acceptance: serial / two workers / four workers | 1,499 / 535 / 535 | 0 |
 
-#### Parallel inference plan
+#### Parallel inference
 
 [#17 — Parallel matmul and attention](https://github.com/communal-software/cl-inference/issues/17) uses caller-owned `ct:*executor*` for tensor rows and independent attention heads. Head results retain order, callbacks inherit backend/FMA bindings, and nested tensor scheduling is disabled. NIL preserves serial execution. Cache writes precede head work; the executor joins callbacks before returning or propagating an error.
 
@@ -101,7 +101,7 @@ Review date: **15 October 2026**. Owner: Codex. The user approved the design for
 
 Pinned CPU acceptance passes for serial, two- and four-worker execution, including serial/parallel logits and greedy output. Fixtures cover floating and packed weights, prefill/decode, bindings, range validation, worker errors, cancellation and deadlines. The [executor example and measurement commands](parallel-inference.md) describe ownership and scheduling policy. The [recorded profile](parallel-inference.md#measured-profile) includes 180 single-native-thread rows and 108 native-default synthetic rows. Longer F16 prefills benefit; F16 decode regresses and Q8 throughput remains near serial. Half-weight dispatch tuning is tracked separately below.
 
-#### Template family plan
+#### Template families
 
 [#38 — Chat templates: more families and stricter detection](https://github.com/communal-software/cl-inference/issues/38) uses native family classes and the existing exclusion mechanism. Supplied unknown source signals `unknown-chat-template`; architecture fallback applies only when source is absent. Caller text retains segment provenance.
 
@@ -125,7 +125,7 @@ The pinned 12-template matrix passes 477 prompt/error parity checks and 24 detec
 | cl-inference | [#32 — Tokenizer: default pre-tokenizer for GGUF files without tokenizer.ggml.pre](https://github.com/communal-software/cl-inference/issues/32) | Open | Loads otherwise rejected older GGUF tokenizer metadata. |
 | cl-inference | [#33 — Tokenizer: more pre types and SentencePiece models](https://github.com/communal-software/cl-inference/issues/33) | Open | Tokenizer algorithms and pre-types unlock additional model families; select the first family. |
 | cl-inference | [#34 — Tokenizer: insert a child's pre-tokenizer rule before an inherited rule](https://github.com/communal-software/cl-inference/issues/34) | Open | Enables tokenizer inheritance where rule order matters; do alongside a model that needs it. |
-| cl-inference | [#38 — Chat templates: more families and stricter detection](https://github.com/communal-software/cl-inference/issues/38) | Active | Owner: Codex. Native family renderers, matching parsers and strict source fallback are implemented. See [selected plan](#template-family-plan). Next: finish regression/acceptance checks and record closure. |
+| cl-inference | [#38 — Chat templates: more families and stricter detection](https://github.com/communal-software/cl-inference/issues/38) | Closed: 2026-10-15 | Owner: Codex. Native family renderers, matching parsers and strict source fallback pass the pinned reference matrix, provenance/client fixtures and CPU/MLX acceptance. See [implementation review](#template-families). Next: choose explicit codecs for the remaining format ambiguity tracked in the reconciliation table. |
 | cl-inference | [#44 — Custom GPU kernels for the MLX backend via cl-gpu](https://github.com/communal-software/cl-inference/issues/44) | Open | Enables GGUF quant kernels in MLX; requires cl-gpu embeddable output. Conditional on format scope. |
 | cl-inference | [#47 — Local ONNX model support](https://github.com/communal-software/cl-inference/issues/47) | Open | Adds a model/export execution route; runtime/import approach requires user design approval. |
 | cl-inference | [#48 — Local Gemma-family support](https://github.com/communal-software/cl-inference/issues/48) | Open | Adds an architecture family; choose one Gemma version/variant and reference acceptance. |
@@ -144,7 +144,7 @@ The pinned 12-template matrix passes 477 prompt/error parity checks and 24 detec
 | Repository | Ticket | State | Planning note |
 |---|---|---|---|
 | cl-inference | [#1 — cl-inference roadmap: general-purpose inference on cl-tensor](https://github.com/communal-software/cl-inference/issues/1) | Open | Coordination umbrella, not a separate implementation; reconcile its completed children. |
-| cl-inference | [#17 — Parallel matmul and attention](https://github.com/communal-software/cl-inference/issues/17) | Active | Owner: Codex. Caller-owned execution schedules tensor rows and attention heads. See [selected plan](#parallel-inference-plan). Next: complete pinned parallel acceptance and measurements. |
+| cl-inference | [#17 — Parallel matmul and attention](https://github.com/communal-software/cl-inference/issues/17) | Closed: 2026-10-15 | Owner: Codex. Caller-owned execution schedules tensor rows and attention heads; serial/parallel correctness and measured limits are recorded. See [implementation review](#parallel-inference). Next: profile half-weight parallel dispatch through the reconciliation follow-up. |
 | cl-inference | [#19 — CI](https://github.com/communal-software/cl-inference/issues/19) | Open | Automates fixture checks; keep real-model acceptance opt-in. |
 | cl-inference | [#41 — Q8_0 prefill: dequantize tiles and use BLAS for many activation rows](https://github.com/communal-software/cl-inference/issues/41) | Open | Measured long-prompt prefill bottleneck; preserve the fast single-row path. |
 | cl-inference | [#49 — MLX KV cache: avoid full-capacity slice updates](https://github.com/communal-software/cl-inference/issues/49) | Open | Context-sized cache traffic can limit long-context decode; measure donation/chunking. |
