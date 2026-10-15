@@ -26,7 +26,7 @@ A Llama postprocessor adds only one BOS token to single-sequence inputs. Its nam
 
 ## Chat templates
 
-Known template markers select the existing Llama or Qwen3 renderer. An explicitly supplied unknown template signals `chat-template-error`; an absent template uses the architecture's declared fallback. The reader does not execute Jinja.
+Known markers select a [supported native template family](chat-families.md). An explicitly supplied unknown template signals `chat-template-error`; an absent template uses the architecture's declared fallback. The reader does not execute Jinja.
 
 Token IDs, Unicode handling and rendered prompts are checked against the pinned Llama and Qwen acceptance references. Llama checks include BOS insertion and a fixed chat date; Qwen checks include NFC normalization. [Tokenizer operations](tokenizers.md) and [chat rendering](chat-templates.md) describe the shared APIs.
 
@@ -35,7 +35,7 @@ Token IDs, Unicode handling and rendered prompts are checked against the pinned 
 | Deferred capability | Tracker |
 |---|---|
 | Other HF tokenizer pipelines and SentencePiece | [#33](https://github.com/communal-software/cl-inference/issues/33) |
-| Additional templates and stricter detection | [#38](https://github.com/communal-software/cl-inference/issues/38) |
+| Template variants outside the pinned text coverage | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 
 Paired inputs and arbitrary Jinja execution are outside this reader's coverage.
 

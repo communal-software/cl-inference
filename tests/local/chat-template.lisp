@@ -240,8 +240,8 @@
 
 (test chat-template-falls-back-to-the-architectures
   (is (eq 'local:chatml (loaded-chat-template-class :architecture "chatfallback")))
-  (is (eq 'local:chatml (loaded-chat-template-class :architecture "chatfallback"
-                                                    :template "{{ unrecognised }}")))
+  (signals local:unknown-chat-template
+    (loaded-chat-template-class :architecture "chatfallback" :template "{{ unrecognised }}"))
   (is (eq 'test-child-chat (loaded-chat-template-class :architecture "chatprivate"))))
 
 (test chat-template-detection-beats-the-architectures
@@ -268,11 +268,11 @@
     (if (not (probe-file directory))
         (skip "reference/templates is absent")
         (loop for (file class) in '(("meta-llama-Llama-3.2-3B-Instruct" local:llama3-chat)
-                                    ("meta-llama-Llama-3.1-8B-Instruct" local:llama3-chat)
+                                    ("meta-llama-Llama-3.1-8B-Instruct" local:llama31-chat)
                                     ("Qwen-Qwen3-0.6B" local:qwen3-chat)
-                                    ("Qwen-QwQ-32B" local:chatml)
-                                    ("Qwen3.5-4B" nil)
-                                    ("Qwen3-Coder" nil))
+                                    ("Qwen-QwQ-32B" local:qwq-chat)
+                                    ("Qwen3.5-4B" local:qwen35-chat)
+                                    ("Qwen3-Coder" local:qwen3-coder-chat))
               for path = (fixture-path (format nil "templates/~A.jinja" file))
               when (probe-file path)
                 do (is (eq class (let ((found (local::detected-chat-template-class (fixture-text path))))

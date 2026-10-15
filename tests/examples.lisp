@@ -34,3 +34,9 @@
                    observations))))))
 
 (defun run-tests () (run! :cl-inference/examples))
+
+(test executor-pool-adapter
+  (let ((seen (make-array 7 :initial-element nil)))
+    (funcall (examples:pool-executor 3 (lambda (pool job) (dotimes (id pool) (funcall job id pool))))
+             7 (lambda (start end) (loop for i from start below end do (setf (aref seen i) t))))
+    (is (every #'identity seen))))

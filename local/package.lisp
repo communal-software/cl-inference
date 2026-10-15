@@ -39,6 +39,8 @@
    #:render-chat #:encode-chat #:chat-template-stop-ids #:chat-template-source
    #:chat-template-error #:chat-template-error-message #:unknown-chat-template
    #:unknown-chat-template-source #:llama3-chat #:chatml #:qwen3-chat
+   #:llama30-chat #:llama31-chat #:qwen25-chat #:qwq-chat #:r1-chat #:r1-llama-chat
+   #:qwen3-coder-chat #:qwen35-chat #:hermes-chat
    ;; blocks and models
    #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head

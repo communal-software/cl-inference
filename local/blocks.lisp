@@ -42,6 +42,9 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
 (defparameter *half-linear-thresholds* '((:f16 . 18) (:bf16 . 21))
   "Contiguous counts with at least 10% savings across the measured shapes.")
 
+;; Preserve profile replacement in compiled ECL fixtures (#54).
+(declaim (notinline half-linear-profile-p))
+
 (defun half-linear-profile-p ()
   (and (eq (uiop:operating-system) :macosx)
        (equal (lisp-implementation-type) "SBCL")
@@ -49,6 +52,7 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
        (equal (machine-type) "ARM64")
        (equal (machine-version) "Apple M1")
        (eq (trivial-simd:backend) :native)
+       ;; TODO: executor-bound half decode uses tiled scratch; profile encoded dispatch (#55).
        (null ct:*executor*)))
 
 (defun half-linear-path (x weight)
@@ -270,20 +274,41 @@ when nothing is masked."
             (setf masked t))))
     (and masked mask)))
 
+(defun call-with-head-ranges (count function)
+  (let ((executor ct:*executor*)
+        (backend trivial-simd::*backend*)
+        (fma trivial-simd::*fma-mode*))
+    (unless (or (null executor) (functionp executor))
+      (error "Executor must be a function or NIL"))
+    (flet ((work (start end)
+             (unless (and (integerp start) (integerp end) (<= 0 start end count))
+               (error "Invalid attention head range [~S,~S) for ~D heads" start end count))
+             (let ((ct:*executor* nil)
+                   (trivial-simd::*backend* backend)
+                   (trivial-simd::*fma-mode* fma))
+               (funcall function start end))))
+      (cond ((zerop count) nil)
+            ((or (null executor) (= count 1)) (work 0 count))
+            (t (funcall executor count #'work))))))
+
 (defun attend (q keys values mask n-heads n-kv-heads head-dim)
   "Grouped-query attention of Q (positions heads head-dim) over KEYS and VALUES."
   (let ((group (floor n-heads n-kv-heads))
-        (scale (/ 1.0 (sqrt (coerce head-dim 'single-float)))))
-    (ct:concatenate
-     (loop for head below n-heads
-           for kv = (floor head group)
-           for scores = (ct:multiply
-                         (ct:matmul (ct:slice q :selectors (list :all head))
-                                    (ct:transpose (ct:slice keys :selectors (list :all kv))))
-                         scale)
-           for masked = (if mask (ct:select mask scores -1f30) scores)
-           collect (ct:matmul (ct:softmax masked) (ct:slice values :selectors (list :all kv))))
-     :axis 1)))
+        (scale (/ 1.0 (sqrt (coerce head-dim 'single-float))))
+        (results (make-array n-heads)))
+    (call-with-head-ranges
+     n-heads
+     (lambda (start end)
+       (loop for head from start below end
+             for kv = (floor head group)
+             for scores = (ct:multiply
+                           (ct:matmul (ct:slice q :selectors (list :all head))
+                                      (ct:transpose (ct:slice keys :selectors (list :all kv))))
+                           scale)
+             for masked = (if mask (ct:select mask scores -1f30) scores)
+             do (setf (aref results head)
+                      (ct:matmul (ct:softmax masked) (ct:slice values :selectors (list :all kv)))))))
+    (ct:concatenate (coerce results 'list) :axis 1)))
 
 (defmethod block-forward ((block attention) x &key (start 0) cache &allow-other-keys)
   "Residual delta of attention over X. With CACHE, K and V go through KV-CACHE-UPDATE and X

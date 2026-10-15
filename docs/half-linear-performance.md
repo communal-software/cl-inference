@@ -52,7 +52,7 @@ Set `CL_INFERENCE_HALF_BENCH_FULL_SWEEP=1` for all counts through 64. The benchm
 
 This profile covers one hardware/runtime configuration and the listed model shapes. It does not establish a speedup for every shape. Tile boundaries make performance nonmonotonic; larger counts can occasionally benefit from direct dispatch without satisfying the contiguous-prefix rule.
 
-Other machines, runtimes and executor configurations need independent whole-call measurements. Larger-batch native kernels and x86 tuning are tracked in [trivial-simd issue 74](https://github.com/communal-software/trivial-simd/issues/74).
+Other machines, runtimes and executor configurations need independent whole-call measurements. Executor-bound decode dispatch is tracked in [parallel half-weight dispatch](https://github.com/communal-software/cl-inference/issues/55). Larger-batch native kernels and x86 tuning are tracked in [trivial-simd issue 74](https://github.com/communal-software/trivial-simd/issues/74).
 
 [^inputs]: Synthetic mapped weights alternate 1 and −0.5, with activations 0.5 and checked F32 outputs. Mapping initialization is outside timing. Weight shapes are 8192×2048, 2048×8192, 512×2048, 2048×2048, 128256×2048, 3072×1024, 1024×3072, 1024×1024, 1024×2048, 2048×1024 and 151936×1024, covering the Llama and Qwen projection/head dimensions.
 

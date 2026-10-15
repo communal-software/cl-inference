@@ -33,7 +33,8 @@
   :components ((:file "local/package") (:file "local/weights") (:file "local/sections")
                (:file "local/architecture") (:file "local/tokenizer")
                (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
-               (:file "local/chat-template") (:file "local/tojson") (:file "local/chat-templates")
+               (:file "local/chat-template") (:file "local/tojson")
+               (:file "local/chat-templates") (:file "local/chat-families")
                (:file "local/blocks") (:file "local/architectures") (:file "local/session") (:file "local/sampler")
                (:file "local/reply-parser") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
@@ -86,7 +87,8 @@
                (:file "tests/local/packed-fixtures") (:file "tests/local/packed")
                (:file "tests/local/qwen3")
                (:file "tests/local/safetensors") (:file "tests/local/hf-tokenizer")
-               (:file "tests/local/backend"))
+               (:file "tests/local/backend") (:file "tests/local/execution")
+               (:file "tests/local/chat-families-expected") (:file "tests/local/chat-families"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)
@@ -110,7 +112,7 @@
   :depends-on ("cl-inference/quant")
   :serial t
   :components ((:file "examples/package") (:file "examples/complete")
-               (:file "examples/weights") (:file "examples/architecture"))
+               (:file "examples/weights") (:file "examples/architecture") (:file "examples/executor"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/examples/tests"))))
 
 (asdf:defsystem "cl-inference/examples/tests"

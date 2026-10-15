@@ -48,6 +48,16 @@ Full-model checks compare against a dev-only reference kept in the gitignored `r
 
 [Half-precision measurements](half-linear-performance.md) benchmark complete `linear` calls, including conversion, result allocation and tensor metadata. Performance measurements run separately from test suites to avoid contention.
 
+## Template and executor checks
+
+The offline family suite compares prompts and errors with the vendored, hash-pinned template matrix.[^template-data] Regenerate expectations with development-only Jinja2:
+
+```sh
+uv run --with-requirements tools/chat-template-requirements.txt python tools/chat-template-reference.py
+```
+
+`tests/local/chat-families.lisp` checks detection, stream boundaries, schema validation, client round trips, BOS/stop IDs and control-token provenance. `tests/local/execution.lisp` compares serial execution with reversed partitions and a reusable three-worker pool, including cache/greedy results, bindings, errors and cancellation. [Parallel acceptance and measurements](parallel-inference.md#measurement) run separately.
+
 ## MLX
 
 After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, client and acceptance-harness fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Llama and Qwen models with a pinned Python MLX oracle. Set `CL_INFERENCE_MLX_ACCEPTANCE_STRICT=1` to require every reference input and case; absent inputs skip in ordinary runs, while hash mismatches fail. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.
@@ -59,3 +69,5 @@ After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, 
 Models and oracle dumps stay in gitignored `reference/`. Missing inputs skip individual cases; skips do not establish acceptance. See [Model acceptance](acceptance.md) for downloads, commands and numerical bounds.
 
 Q4_0, Q4_K_M and Q6_K real-model cases use a F32-dequantized reference. See [Q4/Q6 acceptance](quant-acceptance.md) for reproducible preparation and strict verification.
+
+[^template-data]: Template and golden-fixture whitespace is literal data. Git preserves LF and excludes those files from whitespace-error checks.

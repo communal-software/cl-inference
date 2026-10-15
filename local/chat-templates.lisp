@@ -10,13 +10,15 @@
 
 (define-chat-template chatml ()
   (:detect "<|im_start|>")
-  (:exclude "<function=")
+  (:exclude "<function=" "You are Qwen, created by Alibaba Cloud."
+            "enable_thinking" "pydantic model" "multi_step_tool")
   (:message "<|im_start|>~a~%~a<|im_end|>~%")
   (:generation-prompt "<|im_start|>assistant~%")
   (:stop "<|im_end|>" "<|endoftext|>"))
 
 (define-chat-template qwen3-chat (chatml)
-  (:detect "<|im_start|>" "multi_step_tool"))
+  (:detect "<|im_start|>" "multi_step_tool")
+  (:exclude "<function="))
 
 (defun python-space-p (char)
   (or (space-p char) (<= #x1c (char-code char) #x1f)))

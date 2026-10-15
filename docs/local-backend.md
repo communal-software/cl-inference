@@ -62,10 +62,16 @@ Replies carry the client's assistant content, tool calls, `:done t`, and `:meta`
 | Template | Generated output |
 |---|---|
 | Plain ChatML | Text; tool requests and tool history are unsupported |
-| Qwen3 | Text, `<tool_call>` JSON blocks, and leading `<think>` reasoning |
-| Llama 3 | Text, declared JSON function calls, or tagged Python code |
+| Qwen2.5 and Hermes | Text and validated JSON tool calls |
+| Qwen3 and QwQ | JSON tool calls and reasoning |
+| Qwen3-Coder and Qwen3.5 | Function/parameter calls; Qwen3.5 reasoning |
+| R1 distills | DeepSeek tool groups and reasoning |
+| Llama 3.0 | Text only |
+| Llama 3.1/3.2 | Declared JSON calls, tagged Python; explicit builtin mode for 3.1 |
 
-Qwen3 reasoning is kept in `:meta :reasoning` and omitted from text deltas. An unfinished thinking block at a length limit remains reasoning. Direct `generate` calls return raw text; use this backend for parsed replies.
+Parsed reasoning is kept in `:meta :reasoning` and omitted from text deltas. An unfinished thinking block at a length limit remains reasoning. Direct `generate` calls return raw text; use this backend for parsed replies.
+
+The local request forwards `:date`, `:enable-thinking`, `:builtin-tools` and `:tools-in-user-message` consistently to rendering and parsing. [Family options](chat-families.md) describe defaults and restrictions.
 
 Llama Python output requires a declared tool:
 

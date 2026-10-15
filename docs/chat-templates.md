@@ -21,7 +21,7 @@ A chat template turns client messages into the prompt text a model was trained o
 | `encode-chat template tokenizer messages &rest keys` | Unsigned-32 token vector; template controls become single ids and the generation prompt is added |
 | `chat-template-stop-ids template tokenizer` | Ids that end a reply |
 
-`messages` are the [client's](client.md) message plists and `tools` its tool metadata. `render-chat` and `encode-chat` also take `:date` (Llama 3) and `:enable-thinking` (Qwen3).
+`messages` are the [client's](client.md) message plists and `tools` its tool metadata. `render-chat` and `encode-chat` also take `:date` (dated Llama templates), `:enable-thinking` (reasoning templates), and the [Llama 3.1 builtin options](chat-families.md#llama-builtin-tools).
 
 `encode-chat` adds BOS once when the file's `add_bos_token` asks for it, including an empty prompt. All rendering keywords are forwarded, and `:add-generation-prompt nil` disables its default generation prefix.
 
@@ -44,33 +44,15 @@ This boundary prevents data from contributing control IDs. Semantic prompt injec
 
 ## Standard templates
 
-| Template | Detected by | Format | Tools |
-|---|---|---|---|
-| `llama3-chat` | `<\|start_header_id\|>` and `Cutting Knowledge Date` | Llama 3.2 Instruct | In the first user message; tool results use the `ipython` role; one call per message |
-| `chatml` | `<\|im_start\|>`, not `<function=` | Plain `<\|im_start\|>role` turns | Rejected |
-| `qwen3-chat` | `<\|im_start\|>` and `multi_step_tool`, not `<function=` | Qwen3 | In the system turn; calls as `<tool_call>` blocks; consecutive results share one `<tool_response>` user turn |
-
-`llama3-chat` and `qwen3-chat` match the official Jinja templates byte for byte.[^jinja]
-
-### Llama 3
-
-Every prompt opens with a system turn holding `Cutting Knowledge Date: December 2023` and `Today Date: ...`. `:date` sets the second line (`"26 Jul 2024"`) and defaults to today. Message text is trimmed.
-
-### Qwen3
-
-Thinking is enabled by default. Short generation limits can end with `:length` before an answer. An assistant turn keeps its `<think>` block only after the last user query, and always when it is the final message. `:enable-thinking nil` ends the generation prompt with an empty `<think></think>` block.
-
-```lisp
-(local:render-chat template messages :add-generation-prompt t :enable-thinking nil)
-```
+[Family coverage](chat-families.md) lists the native Llama, Qwen, QwQ, R1 and Hermes classes, their pinned references, tools and reasoning options. `chatml` renders plain turns and rejects tools. The renderers match the pinned Jinja prompt bytes; the library does not execute Jinja.[^jinja]
 
 ## Reply parsing
 
-The [local backend](local-backend.md#tools-and-reasoning) parses generated output through a per-turn template parser. Plain ChatML passes text through; Qwen3 separates reasoning and tool blocks; Llama 3 reads JSON function calls and tagged Python code.
+The [local backend](local-backend.md#tools-and-reasoning) parses generated output through a per-turn template parser. Plain ChatML passes text through. Family parsers separate reasoning, JSON or function/parameter tool calls, R1 tool groups, and Llama builtin calls or tagged Python code.
 
 | Function | Does |
 |---|---|
-| `make-reply-parser template &key tools sink ref` | Creates a parser; tool metadata supplies names and argument schemas |
+| `make-reply-parser template &key tools sink ref &allow-other-keys` | Creates a parser; tool metadata supplies names and argument schemas |
 | `reply-parser-push parser text` | Feeds decoded text and emits text or validated tool deltas |
 | `reply-parser-finish parser` | Returns `(values text tool-calls reasoning)` and marks the parser finished |
 
@@ -82,14 +64,14 @@ Custom templates specialise `make-reply-parser`; custom parser classes specialis
 
 ## Selection
 
-`load-chat-template` tries two sources in order:
+`load-chat-template` uses supplied source text when present. Architecture fallback applies only when source is absent:
 
 | Source | Match |
 |---|---|
 | The file's `tokenizer.chat_template` | Every `:detect` marker of a template occurs in it and no `:exclude` marker does; the most specific template wins |
-| The architecture's `(:chat-template name)` format option | The template class named `name`, in any package |
+| No source; the architecture's `(:chat-template name)` option | The template class named `name`, in any package |
 
-A file that matches neither signals `unknown-chat-template`.
+An unrecognized supplied source, including an empty string, signals `unknown-chat-template` even when the architecture declares a fallback. Its source text remains available on the condition.
 
 ## Declaring a template
 
@@ -141,16 +123,16 @@ A custom method returns `(values prompt segments)`. Each segment is made with `l
 | Condition | Signalled when |
 |---|---|
 | `chat-template-error` | Malformed definition, tools given to a template without tool support, a second tool call in one Llama 3 message, unsupported message-format directives, invalid rendering segments, or several templates matching one file |
-| `unknown-chat-template` | No template matches the file or its architecture; `unknown-chat-template-source` returns the file's text |
+| `unknown-chat-template` | Supplied source is unrecognized, or absent source has no architecture fallback; `unknown-chat-template-source` returns the file's text |
 
 ## Limitations
 
 | Missing | Tracker |
 |---|---|
-| Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder and Qwen3.5 tool format, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
+| Variants outside the [pinned text-family coverage](chat-families.md#limitations) | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Semantic prompt injection and textual tool-wrapper imitation | Outside the token-encoding boundary |
 | Running the file's Jinja directly | not planned |
 
-[^jinja]: The tests compare both against `meta-llama/Llama-3.2-3B-Instruct` and `Qwen/Qwen3-0.6B` as rendered by transformers, tool definitions included. Tool JSON is written the way Python's `json.dumps(ensure_ascii=False)` does, including float spelling such as `1e-05`.
+[^jinja]: The tests compare all listed families against the [hash-pinned Jinja matrix](../tools/chat-template-manifest.json), with tool definitions, calls, results and reasoning cases. Existing Llama 3.2 and Qwen3 golden prompts remain covered. Tool JSON is written the way Python's `json.dumps(ensure_ascii=False)` does, including float spelling such as `1e-05`.
 
 [^encoding]: Encoding finds special tokens wholly inside markup segments and encodes the intervening spans with `:special nil` and `:add-bos nil`. Ordinary spans cross segment boundaries, preserving BPE, whitespace handling and NFC normalization. Control and unknown tokens do not match message data; user-defined tokens still do, as documented for [tokenizers](tokenizers.md).

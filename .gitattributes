@@ -1,0 +1,2 @@
+tests/local/chat-families-expected.lisp text eol=lf -whitespace
+tests/local/templates/*.jinja text eol=lf -whitespace

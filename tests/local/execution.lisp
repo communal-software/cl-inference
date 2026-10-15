@@ -1,0 +1,128 @@
+(in-package #:cl-inference/local/tests)
+(in-suite :cl-inference/local)
+
+(defstruct test-pool
+  (lock (bt:make-lock :name "inference test pool"))
+  (wake (bt:make-condition-variable)) (done (bt:make-condition-variable))
+  threads job errors (generation 0) (finished 0) stopped)
+
+(defun test-pool-worker (pool id)
+  (let ((seen 0))
+    (loop
+      (let ((job
+              (bt:with-lock-held ((test-pool-lock pool))
+                (loop while (and (not (test-pool-stopped pool)) (= seen (test-pool-generation pool)))
+                      do (bt:condition-wait (test-pool-wake pool) (test-pool-lock pool)))
+                (when (test-pool-stopped pool) (return-from test-pool-worker))
+                (setf seen (test-pool-generation pool))
+                (test-pool-job pool))))
+        (handler-case (funcall job id)
+          (error (condition) (setf (aref (test-pool-errors pool) id) condition)))
+        (bt:with-lock-held ((test-pool-lock pool))
+          (incf (test-pool-finished pool))
+          (bt:condition-notify (test-pool-done pool)))))))
+
+(defun make-threaded-test-executor (workers)
+  (let ((pool (make-test-pool :errors (make-array workers :initial-element nil))))
+    (dotimes (id workers)
+      (let ((id id))
+        (push (bt:make-thread (lambda () (test-pool-worker pool id)) :name "inference test worker")
+              (test-pool-threads pool))))
+    (values
+     (lambda (count callback)
+       (bt:with-lock-held ((test-pool-lock pool))
+         (fill (test-pool-errors pool) nil)
+         (setf (test-pool-finished pool) 0
+               (test-pool-job pool)
+               (lambda (id)
+                 (funcall callback (floor (* count id) workers) (floor (* count (1+ id)) workers))))
+         (incf (test-pool-generation pool))
+         (dotimes (id workers) (bt:condition-notify (test-pool-wake pool)))
+         (loop until (= (test-pool-finished pool) workers)
+               do (bt:condition-wait (test-pool-done pool) (test-pool-lock pool)))
+         (let ((condition (find-if #'identity (test-pool-errors pool))))
+           (when condition (error condition)))))
+     (lambda ()
+       (bt:with-lock-held ((test-pool-lock pool))
+         (setf (test-pool-stopped pool) t)
+         (dotimes (id workers) (bt:condition-notify (test-pool-wake pool))))
+       (mapc #'bt:join-thread (test-pool-threads pool))))))
+
+(defun check-parallel-model (executor)
+  (dolist (dtype '(:f32 :f16 :bf16 :q8_0 :q4_0 :q4_k :q6_k))
+    (let* ((width (if (member dtype '(:q4_k :q6_k)) 256 32))
+           (spec (spec* :dim width :ffn width :heads 4 :kv 2 :head-dim (/ width 4)
+                        :rope-dims (/ width 4) :layers 1 :dtype dtype))
+           (table (weight-table spec)))
+      (dolist (architecture '("blk-llama" "blk-qwen"))
+        (when (string= architecture "blk-qwen")
+          (setf (getf spec :qk-norm) t table (weight-table spec)))
+        (with-spec-model (model architecture spec table)
+          (let* ((tokens '(3 0 5 2))
+                 (expected (local:model-forward model tokens :all-logits t))
+                 (serial (greedy-continuation model tokens 3))
+                 (ct:*executor* executor)
+                 (cache (local:make-kv-cache 16)))
+            (is (rows-close-p (tensor-rows expected)
+                              (tensor-rows (local:model-forward model tokens :all-logits t)))
+                "~A ~A prefill" architecture dtype)
+            (local:model-forward model '(3 0 5) :cache cache)
+            (is (rows-close-p (last (tensor-rows expected))
+                              (tensor-rows (local:model-forward model '(2) :start 3 :cache cache)))
+                "~A ~A decode" architecture dtype)
+            (is (equal serial (greedy-continuation model tokens 3)) "~A ~A greedy" architecture dtype)))))))
+
+(test parallel-models-match-serial
+  (check-parallel-model
+   (lambda (count callback)
+     (funcall callback count count)
+     (loop for end = count then start while (plusp end)
+           for start = (max 0 (- end 3)) do (funcall callback start end))))
+  (multiple-value-bind (executor close) (make-threaded-test-executor 3)
+    (unwind-protect (check-parallel-model executor) (funcall close))))
+
+(test parallel-head-bindings-errors-and-validation
+  (multiple-value-bind (executor close) (make-threaded-test-executor 3)
+    (unwind-protect
+         (let ((ct:*executor* executor)
+               (trivial-simd::*backend* :lisp) (trivial-simd::*fma-mode* :fallback)
+               (seen (make-array 7 :initial-element nil)))
+           (local::call-with-head-ranges
+            7 (lambda (start end)
+                (loop for i from start below end do
+                      (setf (aref seen i) (list ct:*executor* trivial-simd::*backend* trivial-simd::*fma-mode*)))))
+           (is (every (lambda (item) (equal item '(nil :lisp :fallback))) seen))
+           (fill seen nil)
+           (signals error
+             (local::call-with-head-ranges
+              7 (lambda (start end)
+                  (loop for i from start below end do (setf (aref seen i) t))
+                  (when (zerop start) (error "Injected head failure")))))
+           (is (every #'identity seen))
+           (fill seen nil)
+           (local::call-with-head-ranges
+            7 (lambda (start end) (loop for i from start below end do (setf (aref seen i) t))))
+           (is (every #'identity seen)))
+      (funcall close)))
+  (dolist (range '((-1 1) (1 0) (0 8) (0 1.5)))
+    (let ((ct:*executor* (lambda (count callback) (declare (ignore count)) (apply callback range))))
+      (signals error (local::call-with-head-ranges 7 (lambda (&rest range) (declare (ignore range)))))))
+  (let ((ct:*executor* (lambda (&rest args) (declare (ignore args)) (error "Unexpected scheduling"))))
+    (is (null (local::call-with-head-ranges 0 (lambda (&rest args) (declare (ignore args)) (error "Unexpected work")))))
+    (is (= 1 (local::call-with-head-ranges 1 (lambda (start end) (- end start)))))))
+
+(test parallel-generation-cancel-and-deadline
+  (multiple-value-bind (executor close) (make-threaded-test-executor 3)
+    (unwind-protect
+         (with-session (session model) ()
+           (dolist (reason '(:cancelled :timeout))
+             (local:session-reset session)
+             (let ((cancel (ci:make-cancel-token)) (calls 0)
+                   (timeout (if (eq reason :timeout) 0 30000)))
+               (let ((ct:*executor*
+                       (lambda (count callback)
+                         (funcall executor count callback)
+                         (when (and (eq reason :cancelled) (= 1 (incf calls))) (ci:cancel cancel)))))
+                 (is (equal (list :error reason)
+                            (nth-value 1 (local:generate session '(3 0 5) :cancel cancel :timeout timeout))))))))
+      (funcall close))))

@@ -10,6 +10,10 @@ A block is one computation of a model: a norm, an attention, an MLP. An [archite
 
 A model holds views into `w` and is valid until `w` closes.
 
+## Execution
+
+[Caller-owned range executors](parallel-inference.md) schedule tensor matmul rows and independent attention heads. NIL preserves serial execution.
+
 ## Standard blocks
 
 | Block | Scope | Tensor roles | Hparams | Returns |

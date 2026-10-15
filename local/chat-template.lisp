@@ -231,12 +231,11 @@ markers none do."
                               (class-name architecture) name)))))
 
 (defun load-chat-template (weights)
-  "Instantiate the chat template WEIGHTS calls for: the one whose markers occur in the file's
-template, else the one its architecture names with `(:chat-template name)`."
+  "Instantiate the detected template, using architecture fallback only when source is absent."
   (ensure-open weights)
   (let* ((format (weights-format weights))
          (source (chat-template-source format weights))
-         (class (or (and source (detected-chat-template-class source))
+         (class (if source (detected-chat-template-class source)
                     (architecture-chat-template-class weights format))))
     (unless class
       (error 'unknown-chat-template :source source

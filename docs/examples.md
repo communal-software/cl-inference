@@ -18,6 +18,7 @@ The result is the assistant reply plist. Failures signal client conditions, as w
 |---|---|---|
 | `complete-file path messages &key max-tokens timeout` | [`complete.lisp`](../examples/complete.lisp) | Greedy reply; defaults: 64 tokens, 30,000 ms |
 | `inspect-weights path` | [`weights.lisp`](../examples/weights.lisp) | Format, architecture and tensor summaries |
+| `pool-executor pool run-pool` | [`executor.lisp`](../examples/executor.lisp) | Range-executor adapter for a caller-owned synchronous pool |
 | `forward-observed path tokens` | [`architecture.lisp`](../examples/architecture.lisp) | Logits and attention-output shapes for an `observed-llama` fixture |
 
 ```lisp
@@ -34,6 +35,6 @@ sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(asdf:test-system "cl-inference/examples")'
 ```
 
-The examples test system creates temporary tiny GGUF fixtures, runs all three entry points, and checks the observed architecture against the independent model reference. Only the test system requires development test dependencies.
+The examples test system creates temporary tiny GGUF fixtures, runs the model entry points and pool adapter, and checks the observed architecture against the independent model reference. Only the test system requires development test dependencies.
 
 The architecture fixture declares `general.architecture = "observed-llama"`; its metadata keys use that prefix. See [the architecture tutorial](architectures.md#extend-from-an-application-package) for its definition and selection rules.

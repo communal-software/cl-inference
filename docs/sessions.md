@@ -12,6 +12,8 @@ A session holds a model's KV cache and position. `generate` runs one turn on it:
 ;; => "Hi! How can I help?", :stop, (9906 0 ...), (:prompt-tokens 14 :completion-tokens 8 :total-tokens 22)
 ```
 
+Bind `ct:*executor*` around session calls for [parallel CPU inference](parallel-inference.md). The caller owns the pool; session ownership and cancellation checkpoints remain the same.
+
 ## Functions
 
 | Function | Does |

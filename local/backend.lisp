@@ -63,18 +63,24 @@
            (ci:validate-schema (ci:tool-schema tool)))
          nil))))
 
+(defun local-template-options (request)
+  (loop for key in '(:builtin-tools :tools-in-user-message :enable-thinking :date)
+        when (loop for present in request by #'cddr thereis (eq key present))
+          append (list key (getf request key))))
+
 (defun local-generate (backend session request)
   (let* ((parser-problem nil)
          (tools (getf request :tools))
-         (parser (make-reply-parser (backend-template backend) :tools tools
-                                    :sink (getf request :stream) :ref (getf request :ref)))
+         (template-options (local-template-options request))
+         (parser (apply #'make-reply-parser (backend-template backend) :tools tools
+                        :sink (getf request :stream) :ref (getf request :ref) template-options))
          (sampler (handler-case
                       (make-sampler :temperature (getf request :temperature 1)
                                     :top-p (getf request :top-p 1) :top-k (getf request :top-k)
                                     :seed (getf request :seed))
                     (sampler-error (e) (session-fail "~A" e))))
-         (tokens (encode-chat (backend-template backend) (backend-tokenizer backend)
-                              (getf request :messages) :tools tools)))
+         (tokens (apply #'encode-chat (backend-template backend) (backend-tokenizer backend)
+                        (getf request :messages) :tools tools template-options)))
     (session-reset session)
     (multiple-value-bind (raw finish ids usage)
         (generate session tokens :special t
