@@ -2,6 +2,8 @@
 
 The MLX acceptance suite compares Llama 3.2 1B Instruct and Qwen3 0.6B in original BF16 and affine 4-bit form with Python MLX. Both sides use identical weights and F32 computation. Strict acceptance requires all four cases to pass without skips.
 
+[Cache acceptance](cache-acceptance.md) adds prefix replay and Q8 KV checks for all four weight variants. Set its strict environment variable as well when validating caches.
+
 ## Reference inputs
 
 | Dependency | Pin |

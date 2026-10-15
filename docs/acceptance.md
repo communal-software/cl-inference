@@ -2,6 +2,8 @@
 
 The acceptance suite compares pinned Llama 3.2 1B and Qwen3 0.6B models against llama.cpp. It checks real-model behavior beyond the offline fixtures; see [Testing](testing.md) for routine checks.
 
+[Cache acceptance](cache-acceptance.md) adds exact-prefix reuse and opt-in Q8 KV storage checks against independent Python references.
+
 The shared acceptance helpers use each case’s layer count, template arguments and generation horizon. Qwen3 uses the same numerical bounds as Llama except for the [two Q8_0 cases](#qwen3-reference-checks). All full-model inputs must be present when verifying a model; skips do not establish acceptance.
 
 Q4_0, Q4_K_M and Q6_K variants use [Q4/Q6 acceptance](quant-acceptance.md), with reproducible quantization from the pinned F16 inputs and a F32-dequantized oracle.

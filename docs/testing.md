@@ -14,6 +14,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | File | Covers |
 |---|---|
 | `tests/local/backend.lisp` | Local client contract against a tiny GGUF; sampling, cache policies, tools, reasoning, parser chunk boundaries, deadlines and cancellation |
+| `tests/local/cache.lisp` | Prefix matching, exact-hit replay, token-history commits, failures, Q8 codec and oracle helpers |
 | `tests/local/systems.lisp` | Every subsystem package loads; the `:local` backend is registered |
 | `tests/local/gguf-writer.lisp` | Test-only GGUF writer with knobs for malformed files |
 | `tests/local/fixtures.lisp` | Shared model specs, GGUF files in floating-point and supported packed formats from one weight table, the double-precision reference and `tracing-layers`, which returns the residual stream after each layer |

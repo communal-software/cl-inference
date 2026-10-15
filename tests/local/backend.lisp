@@ -80,6 +80,53 @@
         (is (eq session (local::backend-session backend)))
         (is (eq policy (getf (ci:describe-backend backend) :session-policy)))))))
 
+(test local-backend-reports-prefix-hits-and-cache-configuration
+  (dolist (cache-type '(:f32 :q8))
+    (dolist (policy '(:serialized :per-call))
+      (dolist (reuse '(nil t))
+        (with-local-backend (backend :cache-type cache-type :session-policy policy :reuse-prefix reuse)
+          (is (eq cache-type (getf (ci:describe-backend backend) :cache-type)))
+          (is (eq reuse (getf (ci:describe-backend backend) :reuse-prefix)))
+          (ci:complete* backend :messages *backend-messages* :max-tokens 0)
+          (let* ((reply (ci:complete* backend :messages *backend-messages* :max-tokens 0))
+                 (usage (getf (getf reply :meta) :usage))
+                 (prompt (getf usage :prompt-tokens)))
+            (is (= (if (and reuse (eq policy :serialized)) (1- prompt) 0)
+                   (getf usage :cached-prompt-tokens)))))))))
+
+(test local-q8-interruption-discards-the-session
+  (with-local-backend (backend :cache-type :q8)
+    (ci:complete* backend :messages *backend-messages* :max-tokens 2 :temperature 0)
+    (let ((cancel (ci:make-cancel-token)))
+      (is (equal '(:error :cancelled)
+                 (ci:complete backend :messages *backend-messages* :max-tokens 8 :temperature 0
+                                      :cancel cancel
+                                      :stream (lambda (event)
+                                                (when (eq :text-delta (getf event :type))
+                                                  (ci:cancel cancel)))))))
+    (is (null (local::backend-session backend)))
+    (let ((reply (ci:complete* backend :messages *backend-messages* :max-tokens 2 :temperature 0)))
+      (is (equal "aa" (ci:content-text (getf reply :content))))
+      (is (zerop (getf (getf (getf reply :meta) :usage) :cached-prompt-tokens))))))
+
+(test backend-prefix-matching-includes-tools-and-template-options
+  (with-gguf-file (path (backend-fixture "<|im_start|> multi_step_tool"))
+    (local:with-weights (weights path)
+      (let ((backend (local:make-local-backend weights :n-ctx 2048)) (previous #()))
+        (unwind-protect
+             (dolist (options (list nil '(:enable-thinking nil)
+                                   (list :tools *parser-tools*)
+                                   (list :tools (list (second *parser-tools*))) nil))
+               (let* ((expected (apply #'local:encode-chat (local::backend-template backend)
+                                      (local::backend-tokenizer backend) *backend-messages* options))
+                      (prefix (or (mismatch expected previous) (min (length expected) (length previous))))
+                      (reply (apply #'ci:complete* backend :messages *backend-messages* :max-tokens 0 options))
+                      (usage (getf (getf reply :meta) :usage)))
+                 (is (= (min prefix (1- (length expected))) (getf usage :cached-prompt-tokens)))
+                 (is (equalp expected (local::session-tokens (local::backend-session backend))))
+                 (setf previous expected)))
+          (local:close-local-backend backend))))))
+
 (test local-backend-stops-and-validates-input
   (with-local-backend (backend)
     (let ((reply (ci:complete* backend :messages *backend-messages* :temperature 0

@@ -1,84 +1,43 @@
 (in-package #:cl-inference/local)
 
-;;; A session holds a model's KV cache and position; GENERATE runs one turn on it.
-
-(define-condition session-error (error)
-  ((message :initarg :message :reader session-error-message))
-  (:report (lambda (condition stream)
-             (write-string (session-error-message condition) stream))))
-
-(define-condition context-overflow (session-error) ())
-
-(defun session-fail (control &rest args)
-  (error 'session-error :message (apply #'format nil control args)))
-
-(defun context-fail (control &rest args)
-  (error 'context-overflow :message (apply #'format nil control args)))
-
-;;; KV cache: one preallocated (n-ctx kv-heads head-dim) buffer per layer for keys and values
-
-(defstruct (kv-cache (:constructor make-kv-cache (n-ctx)))
-  n-ctx
-  (layers (make-hash-table)))   ; layer -> (keys . values), allocated on first use
-
-(defun cache-buffer (cache template)
-  (ct:zeros (cons (kv-cache-n-ctx cache) (rest (coerce (ct:tensor-shape template) 'list)))
-            :dtype (ct:tensor-dtype template)))
-
-;; TODO: copy-storage! moves one element at a time; a bulk copy of the contiguous rows (#39)
-(defun store-rows (buffer rows start end)
-  (ct:copy-storage! (ct:find-dtype (ct:tensor-dtype rows))
-                    (ct:slice buffer :selectors (list (list start end)))
-                    rows))
-
-(defmethod kv-cache-update ((cache kv-cache) layer k v start)
-  (let ((end (+ start (aref (ct:tensor-shape k) 0))))
-    (when (> end (kv-cache-n-ctx cache))
-      (context-fail "Positions up to ~D do not fit in a context of ~D" end (kv-cache-n-ctx cache)))
-    (destructuring-bind (keys . values)
-        (or (gethash layer (kv-cache-layers cache))
-            (setf (gethash layer (kv-cache-layers cache))
-                  (cons (cache-buffer cache k) (cache-buffer cache v))))
-      (store-rows keys k start end)
-      (store-rows values v start end)
-      (values (ct:slice keys :selectors (list (list 0 end)))
-              (ct:slice values :selectors (list (list 0 end)))))))
-
-(defgeneric make-model-cache (model n-ctx)
-  (:method (model n-ctx) (declare (ignore model)) (make-kv-cache n-ctx)))
-
-(defgeneric close-cache (cache)
-  (:method (cache) (declare (ignore cache)) nil))
-
 ;;; Sessions
 
 (defconstant +default-context-cap+ 4096
   "The n-ctx a session gets when the model declares none, and the most it takes from one that does.")
 
-(defstruct (session (:constructor %make-session (model tokenizer chat-template n-ctx n-batch cache)))
-  model tokenizer chat-template n-ctx n-batch cache
-  (position 0))
+(defstruct (session (:constructor %make-session
+                       (model tokenizer chat-template n-ctx n-batch cache cache-type reuse-prefix)))
+  model tokenizer chat-template n-ctx n-batch cache cache-type reuse-prefix
+  (position 0)
+  (tokens (make-array 0 :element-type 'integer :adjustable t :fill-pointer 0)))
 
 (defun default-n-ctx (model)
   (let ((length (hparam-or (model-architecture model) 'context-length nil)))
     (if length (min length +default-context-cap+) +default-context-cap+)))
 
-(defun make-session (model &key tokenizer chat-template n-ctx (n-batch 512))
+(defun make-session (model &key tokenizer chat-template n-ctx (n-batch 512)
+                               (cache-type :f32) (reuse-prefix t))
   "A session over MODEL. N-CTX is the most positions it holds: the model's context-length hparam
-up to 4096 by default. N-BATCH is the most tokens one prefill pass feeds."
+up to 4096 by default. N-BATCH is the most tokens one prefill pass feeds.
+CACHE-TYPE is :F32 or :Q8; REUSE-PREFIX controls complete-prompt matching."
   (let ((n-ctx (or n-ctx (default-n-ctx model))))
     (unless (and (integerp n-ctx) (plusp n-ctx) (integerp n-batch) (plusp n-batch))
       (session-fail "n-ctx and n-batch must be positive integers"))
-    (%make-session model tokenizer chat-template n-ctx n-batch (make-model-cache model n-ctx))))
+    (unless (member cache-type '(:f32 :q8))
+      (session-fail "cache-type must be :f32 or :q8"))
+    (%make-session model tokenizer chat-template n-ctx n-batch
+                   (make-model-cache model n-ctx :cache-type cache-type) cache-type reuse-prefix)))
 
 (defun close-session (session)
   "Release a session's execution cache."
   (close-cache (session-cache session))
+  (session-reset session)
   nil)
 
 (defun session-reset (session)
   "Forget every position. The cache buffers are kept."
-  (setf (session-position session) 0)
+  (setf (session-position session) 0
+        (fill-pointer (session-tokens session)) 0)
   session)
 
 (defun session-prefill (session tokens &key check)
@@ -93,12 +52,30 @@ returns one. Signals CONTEXT-OVERFLOW when TOKENS do not fit."
     (loop for offset from 0 below count by n-batch
           for failure = (and check (funcall check))
           when failure do (return-from session-prefill (values nil failure))
-          do (setf logits (model-forward (session-model session)
-                                         (subseq tokens offset (min count (+ offset n-batch)))
-                                         :start (session-position session)
-                                         :cache (session-cache session)))
-             (incf (session-position session) (min n-batch (- count offset))))
+          do (let ((batch (subseq tokens offset (min count (+ offset n-batch))))
+                   (committed nil))
+               (unwind-protect
+                    (progn
+                      (setf logits (model-forward (session-model session) batch
+                                                  :start (session-position session)
+                                                  :cache (session-cache session)))
+                      (map nil (lambda (token) (vector-push-extend token (session-tokens session))) batch)
+                      (incf (session-position session) (length batch))
+                      (setf committed t))
+                 (unless committed (session-reset session)))))
     (values logits nil)))
+
+(defun prepare-prompt (session tokens reuse-prefix)
+  (let ((count (length tokens)) (matched 0) (history (session-tokens session)))
+    (when (> count (session-n-ctx session))
+      (context-fail "~D prompt tokens do not fit in a context of ~D" count (session-n-ctx session)))
+    (when reuse-prefix
+      (loop while (and (< matched (min (length history) (1- count)))
+                       (= (aref history matched) (elt tokens matched)))
+            do (incf matched)))
+    (setf (session-position session) matched
+          (fill-pointer history) matched)
+    matched))
 
 ;;; Sampling and stop strings
 
@@ -139,11 +116,10 @@ is the text before it."
   (and (consp input) (consp (first input))))
 
 (defun prompt-tokens (session input)
-  "INPUT's token ids; messages reset the session and are rendered by its chat template."
+  "INPUT's token ids, rendering messages through the session's template."
   (cond ((messages-p input)
          (unless (and (session-chat-template session) (session-tokenizer session))
            (session-fail "Messages need a session with a chat template and a tokenizer"))
-         (session-reset session)
          (encode-chat (session-chat-template session) (session-tokenizer session) input))
         (t input)))
 
@@ -153,9 +129,10 @@ is the text before it."
 
 (defun generate (session input &key (sampler #'greedy-sampler) max-tokens stop
                                  (stop-ids (default-stop-ids session))
-                                 (timeout ci:+default-timeout+) cancel sink ref special)
+                                 (timeout ci:+default-timeout+) cancel sink ref special prompt-p
+                                 (reuse-prefix (session-reuse-prefix session)))
   "Run one turn: feed INPUT, then sample until a stop id, a STOP string, MAX-TOKENS or a full
-context. INPUT is token ids, appended after the session's position, or messages, which reset it.
+context. Token ids append unless PROMPT-P; complete prompts and messages reuse matching prefixes.
 SAMPLER is a sampler object or a function from the logits to an id. TIMEOUT (milliseconds, covering the whole turn) and CANCEL end
 the turn early. SINK receives client events: text deltas, then one :done.
 Returns (values text finish-reason token-ids usage). FINISH-REASON is :stop, :length or a
@@ -167,16 +144,22 @@ tokens in decoded output; stop ids still end the turn without appearing in TEXT.
       (unless (and (stringp string) (plusp (length string)))
         (session-fail "A stop string must be a non-empty string, not ~S" string)))
     (let* ((check (turn-check timeout cancel))
-           (prompt (prompt-tokens session input))
+           (prompt (coerce (prompt-tokens session input) 'vector))
            (detokenizer (and tokenizer (make-detokenizer tokenizer :special special)))
            (text (make-string-output-stream))
-           (held "") (ids nil) (count 0) (logits nil) (finish nil) (matched nil))
+           (held "") (ids nil) (count 0) (logits nil) (finish nil) (matched nil) (cached 0))
       (when (zerop (length prompt)) (session-fail "Nothing to generate from"))
+      (setf finish (funcall check))
+      (unless finish
+        (when (or prompt-p (messages-p input))
+          (setf cached (prepare-prompt session prompt reuse-prefix))))
       (flet ((release (string)
                (when (plusp (length string))
                  (write-string string text)
                  (ci:emit-event sink (ci:text-delta ref string)))))
-        (multiple-value-setq (logits finish) (session-prefill session prompt :check check))
+        (unless finish
+          (multiple-value-setq (logits finish)
+            (session-prefill session (subseq prompt cached) :check check)))
         (loop until finish
               do (setf finish (or (funcall check)
                                   (and max-tokens (>= count max-tokens) :length)
@@ -203,5 +186,5 @@ tokens in decoded output; stop ids still end the turn without appearing in TEXT.
       (values (and detokenizer (get-output-stream-string text))
               finish
               (nreverse ids)
-              (list :prompt-tokens (length prompt) :completion-tokens count
+              (list :prompt-tokens (length prompt) :cached-prompt-tokens cached :completion-tokens count
                     :total-tokens (+ (length prompt) count))))))

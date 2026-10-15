@@ -6,6 +6,8 @@
 
 Build cl-mlx's native libraries with its [installation instructions](https://github.com/communal-software/cl-mlx/blob/trunk/docs/install.md), then load the optional system:
 
+Q8 cache support requires the [symmetric Q8 bindings and finite reconstruction](https://github.com/communal-software/cl-mlx/commit/e9d7d40) and a rebuilt native shim.
+
 ```lisp
 (asdf:load-system "cl-inference/mlx")
 (cl-inference/local:with-weights (weights #p"models/Qwen3-0.6B/")
@@ -29,11 +31,11 @@ The model directory contains Safetensors weights, `config.json`, `tokenizer.json
 | Tokenizer and chat | [Shipped HF byte-level BPE pipelines](hf-tokenizers.md) and existing renderers |
 | Real-model acceptance | Llama 3.2 1B Instruct and Qwen3 0.6B, BF16 and affine 4-bit |
 
-Quantized projections and tied output heads use packed matmul. Quantized embeddings dequantize only selected rows. Computation, caches, scales and quantization biases use F32; full packed matrices stay packed. Tiny fixtures cover both architectures, mixed weights and tied output heads.
+Quantized projections and tied output heads use packed matmul. Quantized embeddings dequantize only selected rows. Computation, scales and quantization biases use F32; full packed matrices stay packed. Caches use F32 by default or optional [symmetric Q8 storage](kv-cache.md). Tiny fixtures cover both architectures, mixed weights and tied output heads.
 
 ## Configuration and lifetime
 
-`make-mlx-backend` borrows open weights. Its keyword arguments are `:name` (default `:mlx`), `:n-ctx`, `:n-batch` (default 512) and `:session-policy` (default `:serialized`). Sampling, stops, tools, reasoning, deadlines and cancellation follow the [local backend](local-backend.md).
+`make-mlx-backend` borrows open weights. Its keyword arguments are `:name` (default `:mlx`), `:n-ctx`, `:n-batch` (default 512), `:session-policy` (default `:serialized`), `:reuse-prefix` (default `t`) and `:cache-type` (`:f32` or `:q8`, default `:f32`). Sampling, stops, tools, reasoning, deadlines and cancellation follow the [local backend](local-backend.md).
 
 Keep weights and the backend open until every completion finishes. `with-mlx-backend` releases its model and cache; `close-mlx-backend` provides explicit, idempotent cleanup and does not close weights. Calls after closing either return `(:error :unavailable)`.
 
@@ -43,7 +45,7 @@ Direct token-ID inference uses `load-mlx-model` with the shared `make-session`, 
 
 ## Execution
 
-A forward pass constructs one lazy graph and evaluates logits and updated caches together. Each decode step has one explicit evaluation; prefill evaluates once per batch. Only final logits move to the existing CPU sampler. Temporary array handles are released after each pass; model and cache arrays remain owned by their objects.[^execution]
+A floating-cache forward pass constructs one lazy graph and evaluates logits and updated caches together. Each decode step has one explicit evaluation; prefill evaluates once per batch. Q8 caches also evaluate each layer to release dequantization scratch. Only final logits move to the existing CPU sampler. Temporary array handles are released after each pass; model and cache arrays remain owned by their objects.[^execution]
 
 The [acceptance instructions](mlx-acceptance.md) describe the pinned reference and required checks.
 
@@ -52,6 +54,7 @@ The [acceptance instructions](mlx-acceptance.md) describe the pinned reference a
 | Deferred capability | Tracker |
 |---|---|
 | Cache updates avoiding full-capacity memory traffic | [#49](https://github.com/communal-software/cl-inference/issues/49) |
+| Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 | Additional quantization widths and modes | [#50](https://github.com/communal-software/cl-inference/issues/50) |
 | Custom GPU kernels | [#44](https://github.com/communal-software/cl-inference/issues/44) |
 | Other HF tokenizer pipelines and templates | [HF limitations](hf-tokenizers.md#limitations) |

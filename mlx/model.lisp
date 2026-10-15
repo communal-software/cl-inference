@@ -170,9 +170,50 @@
   (mx:reshape (mx:transpose (mx:reshape x (list count heads head)) '(1 0 2))
               (list 1 heads count head)))
 
-(defstruct (mlx-cache (:constructor make-mlx-cache (n-ctx)))
-  n-ctx (layers (make-hash-table)) (closed-p nil))
+(defstruct (mlx-cache (:constructor make-mlx-cache (n-ctx &key (cache-type :f32))))
+  n-ctx cache-type (layers (make-hash-table)) (closed-p nil))
+(defstruct mlx-q8-buffer codes scales)
 (defvar *cache-updates* nil)
+
+(defun cache-arrays (buffer)
+  (if (mlx-q8-buffer-p buffer)
+      (list (mlx-q8-buffer-codes buffer) (mlx-q8-buffer-scales buffer))
+      (list buffer)))
+
+(defun update-arrays (update)
+  (append (cache-arrays (fourth update)) (cache-arrays (fifth update))))
+
+(defmethod local::cache-storage-bytes ((cache mlx-cache))
+  (loop for pair being the hash-values of (mlx-cache-layers cache)
+        sum (loop for array in (append (cache-arrays (car pair)) (cache-arrays (cdr pair)))
+                  sum (* (if (eq (mx:dtype array) :s8) 1 4) (mx:size array)))))
+
+(defun mlx-store-cache (old rows start capacity cache-type)
+  (let* ((shape (mx:shape rows)) (end (+ start (third shape)))
+         (full (list 1 (second shape) capacity (fourth shape)))
+         (stop (list 1 (second shape) end (fourth shape))))
+    (flet ((store (buffer input target-shape target-stop)
+             (mx:slice-update (or buffer (mx:zeros target-shape :dtype (mx:dtype input))) input
+                              (list 0 0 start 0) target-stop)))
+      (if (eq cache-type :f32)
+          (store old rows full stop)
+          (multiple-value-bind (codes scales) (mx:symmetric-quantize rows)
+            (let ((groups (ceiling (fourth shape) local::+kv-group-size+)))
+              (make-mlx-q8-buffer
+               :codes (store (and old (mlx-q8-buffer-codes old)) codes full stop)
+               :scales (store (and old (mlx-q8-buffer-scales old)) scales
+                              (list 1 (second shape) capacity groups)
+                              (list 1 (second shape) end groups)))))))))
+
+;; TODO: F32 prefix scratch grows with context; use tiled or fused Q8 attention (#57).
+(defun mlx-cache-prefix (buffer end)
+  (flet ((prefix (array)
+           (let ((shape (mx:shape array)))
+             (mx:slice array '(0 0 0 0) (list 1 (second shape) end (fourth shape))))))
+    (if (mlx-q8-buffer-p buffer)
+        (mx:symmetric-dequantize (prefix (mlx-q8-buffer-codes buffer))
+                                (prefix (mlx-q8-buffer-scales buffer)))
+        (prefix buffer))))
 
 ;; TODO: full-capacity slice updates; donate or chunk buffers when context traffic matters (#49).
 (defmethod local:kv-cache-update ((cache mlx-cache) layer k v start)
@@ -181,19 +222,17 @@
          (capacity (mlx-cache-n-ctx cache))
          (old (gethash layer (mlx-cache-layers cache))))
     (when (> end capacity) (local::context-fail "MLX cache exceeds context ~D" capacity))
-    (let* ((full-shape (list 1 (second shape) capacity (fourth shape)))
-           (keys (mx:slice-update (if old (car old) (mx:zeros full-shape)) k
-                                 (list 0 0 start 0) (list 1 (second shape) end (fourth shape))))
-           (values (mx:slice-update (if old (cdr old) (mx:zeros full-shape)) v
-                                   (list 0 0 start 0) (list 1 (second shape) end (fourth shape)))))
+    (let* ((keys (mlx-store-cache (car old) k start capacity (mlx-cache-cache-type cache)))
+           (values (mlx-store-cache (cdr old) v start capacity (mlx-cache-cache-type cache))))
       (push (list cache layer old keys values) *cache-updates*)
-      (values (mx:slice keys '(0 0 0 0) (list 1 (second shape) end (fourth shape)))
-              (mx:slice values '(0 0 0 0) (list 1 (second shape) end (fourth shape)))))))
+      (values (mlx-cache-prefix keys end) (mlx-cache-prefix values end)))))
 
 (defmethod local:close-cache ((cache mlx-cache))
   (unless (mlx-cache-closed-p cache)
     (setf (mlx-cache-closed-p cache) t)
-    (maphash (lambda (layer pair) (declare (ignore layer)) (mx:release (car pair)) (mx:release (cdr pair)))
+    (maphash (lambda (layer pair)
+               (declare (ignore layer))
+               (mapc #'mx:release (append (cache-arrays (car pair)) (cache-arrays (cdr pair)))))
              (mlx-cache-layers cache))
     (clrhash (mlx-cache-layers cache)))
   nil)
@@ -225,7 +264,8 @@
                       (:constructor %make-mlx-model (architecture layers model-blocks weights)))
   weights (closed-p nil))
 
-(defmethod local:make-model-cache ((model mlx-model) n-ctx) (make-mlx-cache n-ctx))
+(defmethod local:make-model-cache ((model mlx-model) n-ctx &key (cache-type :f32))
+  (make-mlx-cache n-ctx :cache-type cache-type))
 (defmethod local:model-ready-p ((model mlx-model))
   (and (not (mlx-model-closed-p model))
        (not (local:weights-closed-p (source-weights (mlx-model-weights model))))))
@@ -276,6 +316,18 @@
       (unless success
         (maphash (lambda (name array) (declare (ignore name)) (mx:release array)) (imported-arrays weights))))))
 
+(defun q8-layer-forward (block x start cache)
+  (let ((previous *cache-updates*) (saved nil) (result nil))
+    (mx:with-array-scope ()
+      (setf result (mx:add x (local:block-forward block x :start start :cache cache))
+            saved (loop for tail on *cache-updates* until (eq tail previous)
+                        append (update-arrays (car tail))))
+      (apply #'mx:eval result saved)
+      (mapc #'mx:retain saved)
+      (mx:retain result))
+    (dolist (array (cons result saved)) (push array mx::*array-scope*))
+    result))
+
 (defmethod local:model-forward ((model mlx-model) tokens &key (start 0) cache all-logits)
   (unless (local:model-ready-p model) (local::session-fail "MLX model or borrowed weights are closed"))
   (mx:with-array-scope ()
@@ -284,13 +336,17 @@
                                     (mx:from-data tokens (list (length tokens)) :dtype :s32))))
       (dolist (blocks (local:model-layers model))
         (dolist (block blocks)
-          (setf x (mx:add x (local:block-forward block x :start start :cache cache)))))
+          (setf x (if (and cache (eq (mlx-cache-cache-type cache) :q8))
+                      (q8-layer-forward block x start cache)
+                      (mx:add x (local:block-forward block x :start start :cache cache))))))
       (let ((logits (local:block-forward (local::model-block-of-type model 'local:lm-head)
                                           x :last-only (not all-logits))))
-        (apply #'mx:eval logits (loop for update in *cache-updates* append (cdddr update)))
+        (apply #'mx:eval logits (loop for update in *cache-updates* append (update-arrays update)))
         (let ((result (ct:reshape (ct:from-data (mx:to-vector logits :evaluate nil)) (mx:shape logits))))
           (dolist (update *cache-updates*)
             (destructuring-bind (cache layer old k v) update
-              (setf (gethash layer (mlx-cache-layers cache)) (cons (mx:retain k) (mx:retain v)))
-              (when old (mx:release (car old)) (mx:release (cdr old)))))
+              (mapc #'mx:retain (append (cache-arrays k) (cache-arrays v)))
+              (setf (gethash layer (mlx-cache-layers cache)) (cons k v))
+              (when old
+                (mapc #'mx:release (append (cache-arrays (car old)) (cache-arrays (cdr old)))))))
           result)))))

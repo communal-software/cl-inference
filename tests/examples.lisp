@@ -16,6 +16,14 @@
       (is (getf reply :done))
       (is (equal '((:type :text :text "aa")) (getf reply :content))))))
 
+(test multi-turn-q8-example
+  (fixtures::with-gguf-file (path (fixtures::backend-fixture "<|im_start|>"))
+    (let* ((replies (examples:chat-file path '("hi" "hi again") :cache-type :q8 :max-tokens 2))
+           (usage (getf (getf (second replies) :meta) :usage)))
+      (is (= 2 (length replies)))
+      (is (equal '((:type :text :text "aa")) (getf (second replies) :content)))
+      (is (plusp (getf usage :cached-prompt-tokens))))))
+
 (test weight-inspection-example
   (fixtures::with-gguf-file (path (fixtures::sample-gguf))
     (let ((summary (examples:inspect-weights path)))

@@ -2,7 +2,8 @@
 
 (defclass mlx-backend (local:local-backend) ())
 
-(defun make-mlx-backend (weights &key (name :mlx) n-ctx (n-batch 512) (session-policy :serialized))
+(defun make-mlx-backend (weights &key (name :mlx) n-ctx (n-batch 512) (session-policy :serialized)
+                                    (cache-type :f32) (reuse-prefix t))
   "A client backend borrowing open Safetensors WEIGHTS."
   (unless (member session-policy '(:serialized :per-call))
     (local::session-fail "session-policy must be :serialized or :per-call"))
@@ -12,7 +13,8 @@
                                        :tokenizer (local:load-tokenizer weights)
                                        :template (local:load-chat-template weights)
                                        :n-ctx (or n-ctx (local::default-n-ctx model)) :n-batch n-batch
-                                       :session-policy session-policy))
+                                       :session-policy session-policy :cache-type cache-type
+                                       :reuse-prefix reuse-prefix))
                 (session (local::backend-new-session backend)))
            (when (> (local:tokenizer-vocab-size (local::backend-tokenizer backend))
                     (first (weight-shape (local::embedding-table (local::model-block-of-type model 'local:embedding)))))

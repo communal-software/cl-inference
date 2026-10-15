@@ -81,6 +81,21 @@
   (multiple-value-bind (executor close) (make-threaded-test-executor 3)
     (unwind-protect (check-parallel-model executor) (funcall close))))
 
+(test parallel-q8-cache-matches-serial
+  (multiple-value-bind (executor close) (make-threaded-test-executor 3)
+    (unwind-protect
+         (with-session (serial model :cache-type :q8) ()
+           (let ((parallel (local:make-session model :cache-type :q8)))
+             (unwind-protect
+                  (progn
+                    (local:session-prefill serial '(3 0 5))
+                    (let ((ct:*executor* executor)) (local:session-prefill parallel '(3 0 5)))
+                    (let ((expected (nth-value 2 (local:generate serial '(2) :max-tokens 3))))
+                      (is (equal expected (let ((ct:*executor* executor))
+                                            (nth-value 2 (local:generate parallel '(2) :max-tokens 3)))))))
+               (local:close-session parallel))))
+      (funcall close))))
+
 (test parallel-head-bindings-errors-and-validation
   (multiple-value-bind (executor close) (make-threaded-test-executor 3)
     (unwind-protect

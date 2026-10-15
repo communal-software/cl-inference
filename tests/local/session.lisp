@@ -94,7 +94,7 @@
       (is (null text))
       (is (eq :length finish))
       (is (equal (greedy-continuation model '(3 0 5) 4) ids))
-      (is (equal '(:prompt-tokens 3 :completion-tokens 4 :total-tokens 7) usage))
+      (is (equal '(:prompt-tokens 3 :cached-prompt-tokens 0 :completion-tokens 4 :total-tokens 7) usage))
       (is (= 7 (local:session-position session)))
       (is (equal (greedy-continuation model (append '(3 0 5) ids '(4)) 2)
                  (nth-value 2 (local:generate session '(4) :max-tokens 2)))
@@ -216,7 +216,7 @@
           (is (null ids))
           (is (= (length (local:encode-chat template tokenizer messages))
                  (local:session-position session))
-              "messages reset the session"))))
+              "messages replace the logical prompt"))))
     (with-session (session model :tokenizer tokenizer) (:vocab 274)
       (signals local:session-error (local:generate session (list *user*))))))
 

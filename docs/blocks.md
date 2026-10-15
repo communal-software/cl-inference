@@ -77,6 +77,8 @@ Frequency `i` is `rope-theta^(-2i/rope-dims)` divided by element `i` of the opti
 | `model-forward model tokens &key start cache all-logits` | Logits of the last position, or of every position with `all-logits` |
 | `block-forward block input &key start cache` | The block's output |
 | `layer-forward architecture blocks x &key start cache` | The residual stream after one layer |
+| `make-model-cache model n-ctx &key cache-type` | Session-owned cache; `:cache-type` is `:f32` or `:q8` |
+| `close-cache cache` | Releases a model cache |
 | `bind-block block architecture weights` | Reads the block's tensors and hparams |
 | `block-tensor block architecture weights suffix` | The tensor for `<slot>.<suffix>` |
 | `linear x weight` | `x · weightᵀ`; every projection goes through it. [Half precision](#half-precision) selects encoded matmul or bounded tiles; [quantized weights](quant.md) use packed kernels |

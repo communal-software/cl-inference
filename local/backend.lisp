@@ -7,6 +7,8 @@
    (template :initarg :template :reader backend-template)
    (n-ctx :initarg :n-ctx :reader backend-n-ctx)
    (n-batch :initarg :n-batch :reader backend-n-batch)
+   (cache-type :initarg :cache-type :initform :f32 :reader backend-cache-type)
+   (reuse-prefix :initarg :reuse-prefix :initform t :reader backend-reuse-prefix)
    (policy :initarg :session-policy :initform :serialized :reader backend-session-policy)
    (session :initform nil :accessor backend-session)
    (lock :initform (bt:make-lock) :reader backend-session-lock)))
@@ -14,9 +16,11 @@
 (defun backend-new-session (backend)
   (make-session (backend-model backend) :tokenizer (backend-tokenizer backend)
                 :chat-template (backend-template backend) :n-ctx (backend-n-ctx backend)
-                :n-batch (backend-n-batch backend)))
+                :n-batch (backend-n-batch backend) :cache-type (backend-cache-type backend)
+                :reuse-prefix (backend-reuse-prefix backend)))
 
-(defun make-local-backend (weights &key name n-ctx (n-batch 512) (session-policy :serialized))
+(defun make-local-backend (weights &key name n-ctx (n-batch 512) (session-policy :serialized)
+                                      (cache-type :f32) (reuse-prefix t))
   "A backend borrowing open WEIGHTS. SESSION-POLICY is :SERIALIZED (one reusable cache) or :PER-CALL."
   (unless (member session-policy '(:serialized :per-call))
     (session-fail "session-policy must be :serialized or :per-call"))
@@ -25,9 +29,12 @@
                                  :tokenizer (load-tokenizer weights)
                                  :template (load-chat-template weights)
                                  :n-ctx (or n-ctx (default-n-ctx model)) :n-batch n-batch
-                                 :session-policy session-policy)))
+                                 :session-policy session-policy :cache-type cache-type
+                                 :reuse-prefix reuse-prefix)))
     (let ((session (backend-new-session backend)))
-      (when (eq session-policy :serialized) (setf (backend-session backend) session)))
+      (if (eq session-policy :serialized)
+          (setf (backend-session backend) session)
+          (close-session session)))
     backend))
 
 (defmethod ci:describe-backend ((backend local-backend))
@@ -36,6 +43,7 @@
           :status (if (and weights (not (weights-closed-p weights))
                            (model-ready-p (backend-model backend))) :ready :unavailable)
           :session-policy (backend-session-policy backend)
+          :cache-type (backend-cache-type backend) :reuse-prefix (backend-reuse-prefix backend)
           :params '((:temperature number) (:top-p number) (:top-k (integer 1))
                     (:seed integer) (:max-tokens (integer 0)) (:stop (ci:array-of string))))))
 
@@ -81,9 +89,8 @@
                     (sampler-error (e) (session-fail "~A" e))))
          (tokens (apply #'encode-chat (backend-template backend) (backend-tokenizer backend)
                         (getf request :messages) :tools tools template-options)))
-    (session-reset session)
     (multiple-value-bind (raw finish ids usage)
-        (generate session tokens :special t
+        (generate session tokens :special t :prompt-p t
                   :sampler (lambda (logits)
                              (when parser-problem (error parser-problem))
                              (sample sampler logits))

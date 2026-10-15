@@ -26,6 +26,8 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 
 CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verified on SBCL. The architecture declarations cover these families; the acceptance suite establishes support for the listed model variants. Other sizes and variants require their own verification.
 
+[Session caches](kv-cache.md) reuse matching token prefixes and support F32 or opt-in symmetric Q8 storage on CPU and MLX. Cache format is independent of weight format.
+
 `define-architecture` describes the local engine's blocks and weight mappings. Remote providers are declared separately with `define-provider`. See [Architectures](architectures.md), [Tokenizers](tokenizers.md) and [Chat templates](chat-templates.md) for extension points.
 
 ## Local formats and storage

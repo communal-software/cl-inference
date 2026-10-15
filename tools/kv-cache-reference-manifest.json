@@ -1,0 +1,127 @@
+{
+  "cpu-llama": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "cpu-llama",
+      "gguf_reader": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "inputs": {
+        "reference/models/Llama-3.2-1B-Instruct-f16.gguf": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      },
+      "source_configuration": "2febf68cea25bf4611be02b7536f2488a5ba523bb1134986e3610152abe74fdb"
+    },
+    "sha256": "e121b1adb87de288218b084f7bb347e544766c71974e1db858f30a7dc5ec5c17"
+  },
+  "cpu-qwen": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "cpu-qwen",
+      "gguf_reader": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "inputs": {
+        "reference/models/Qwen3-0.6B-f16.gguf": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      },
+      "source_configuration": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd"
+    },
+    "sha256": "6e68f5a2f88c09a2f70cd5207660b9f33481512cc2158e0b5156552ef571a2cc"
+  },
+  "llama-4bit": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "llama-4bit",
+      "inputs": {
+        "reference/mlx/llama-4bit-oracle.json": "17876cb5f054861452f70e6599beed0b579db28efdb3c1b82629543ded4785c9",
+        "reference/mlx/llama-4bit/chat_template.jinja": "5816fce10444e03c2e9ee1ef8a4a1ea61ae7e69e438613f3b17b69d0426223a4",
+        "reference/mlx/llama-4bit/config.json": "44606383117cdb27a71cd6e47bd3c0c61dbe0aab2c42c7c9402d1cc7264f1160",
+        "reference/mlx/llama-4bit/generation_config.json": "88effbb63300dbbc7390143fbbdd9d9fa50587b37e8bfd16c8c90d4970a74a36",
+        "reference/mlx/llama-4bit/model.safetensors": "69dedb12a33e97738dc79622fb4bb79d55b5ea7557f9e2181b18c9791a84f877",
+        "reference/mlx/llama-4bit/model.safetensors.index.json": "84c95cfac2ea4b50b6b4cdee47f84df780211562af637e9138e6f8e9e9a862cc",
+        "reference/mlx/llama-4bit/tokenizer.json": "6b9e4e7fb171f92fd137b777cc2714bf87d11576700a1dcd7a399e7bbe39537b",
+        "reference/mlx/llama-4bit/tokenizer_config.json": "06cf8bb52c93bb82c7f8e416646cb1e01fe48e5df5ce509377637b9eca0037f5"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      }
+    },
+    "sha256": "52bded35dd2a3feee179a8531eb98d13f85220e54201e8d341a31fb2053d4c6c"
+  },
+  "llama-float": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "llama-float",
+      "inputs": {
+        "reference/mlx/llama-float-oracle.json": "00f127b7e4f8f451b9d212372ecb397e8e868b292467f9f149529aabc6148d19",
+        "reference/mlx/llama-float/config.json": "2febf68cea25bf4611be02b7536f2488a5ba523bb1134986e3610152abe74fdb",
+        "reference/mlx/llama-float/generation_config.json": "88effbb63300dbbc7390143fbbdd9d9fa50587b37e8bfd16c8c90d4970a74a36",
+        "reference/mlx/llama-float/model.safetensors": "1ff795ff6a07e6a68085d206fb84417da2f083f68391c2843cd2b8ac6df8538f",
+        "reference/mlx/llama-float/special_tokens_map.json": "6f38c73729248f6c127296386e3cdde96e254636cc58b4169d3fd32328d9a8ec",
+        "reference/mlx/llama-float/tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+        "reference/mlx/llama-float/tokenizer_config.json": "9823dcfdc1121869029da45192238e85cf44f0b232a6d9dc20e4fe6f4242a14e"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      }
+    },
+    "sha256": "d87079fcd0b8a763e96eea99dc157da2a51d11bcac9e4f89679afe2470bbc21c"
+  },
+  "qwen-4bit": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "qwen-4bit",
+      "inputs": {
+        "reference/mlx/qwen-4bit-oracle.json": "db1ca50c2d1b3d5404c2b9b551d4224ad55054d39d8374504b617a43931f7cf2",
+        "reference/mlx/qwen-4bit/chat_template.jinja": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+        "reference/mlx/qwen-4bit/config.json": "d8cbd096f758add51a940656710a0319cfb3ad4ae4591507ab29c2e8bebecc54",
+        "reference/mlx/qwen-4bit/generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+        "reference/mlx/qwen-4bit/model.safetensors": "1d4171fc25a59574157b96ad4b7919f853c7c35ef965d78a0e88c56b28a5d76c",
+        "reference/mlx/qwen-4bit/model.safetensors.index.json": "5ee67e4efeb75dfacb8dd3892dd6208473771264fdeff6b9eba4a79db5b1435e",
+        "reference/mlx/qwen-4bit/tokenizer.json": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+        "reference/mlx/qwen-4bit/tokenizer_config.json": "ee8f6d44bf2353e6d3686c3adaf70e1ccfe9e6ed6822d0ab2f28cafdd7754792"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      }
+    },
+    "sha256": "26665b2aabd290723f9182b54ce4e12088f1da57aedf7b9a66c7ed471cdd466a"
+  },
+  "qwen-float": {
+    "metadata": {
+      "algorithm": "symmetric-s8-f32-group32-rne-v1",
+      "case": "qwen-float",
+      "inputs": {
+        "reference/mlx/qwen-float-oracle.json": "d2bfd669d06b2c08d2cc4114e855c32004853235da12e79489216c10a31a1be6",
+        "reference/mlx/qwen-float/config.json": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd",
+        "reference/mlx/qwen-float/generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+        "reference/mlx/qwen-float/model.safetensors": "f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b",
+        "reference/mlx/qwen-float/tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "reference/mlx/qwen-float/tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101"
+      },
+      "packages": {
+        "mlx": "0.32.2",
+        "mlx-lm": "0.32.0",
+        "tokenizers": "0.23.3",
+        "transformers": "5.19.0"
+      }
+    },
+    "sha256": "464903b2cab6c130e2cad2cb0e2ee469164893dfd9de5d231cc89c395325047c"
+  }
+}

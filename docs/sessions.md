@@ -1,6 +1,6 @@
 # Sessions
 
-A session holds a model's KV cache and position. `generate` runs one turn on it: feed a prompt, then sample until the reply ends.
+A session holds a model's KV cache, tokens and position. `generate` runs one turn on it; complete prompts reuse their matching token prefix. [Cache behavior](kv-cache.md) covers branching, ownership and Q8 storage.
 
 ```lisp
 (local:with-weights (w "Llama-3.2-1B-Instruct-f16.gguf")
@@ -18,11 +18,14 @@ Bind `ct:*executor*` around session calls for [parallel CPU inference](parallel-
 
 | Function | Does |
 |---|---|
-| `make-session model &key tokenizer chat-template n-ctx n-batch` | A session with an empty cache |
-| `generate session input &key sampler max-tokens stop stop-ids timeout cancel sink ref special` | One turn; returns `(values text finish-reason token-ids usage)` |
+| `make-session model &key tokenizer chat-template n-ctx n-batch cache-type reuse-prefix` | A session with an empty cache |
+| `generate session input &key sampler max-tokens stop stop-ids timeout cancel sink ref special prompt-p reuse-prefix` | One turn; returns `(values text finish-reason token-ids usage)` |
 | `session-prefill session tokens &key check` | Feeds tokens `n-batch` at a time; returns the last position's logits |
 | `session-reset session` | Position 0; the cache buffers are kept |
 | `session-position session` | Tokens in the cache |
+| `session-cache-type session` | `:f32` or `:q8` |
+| `session-reuse-prefix session` | Default prefix-reuse policy |
+| `close-session session` | Releases cache storage; the session is no longer usable |
 | `greedy-sampler logits` | The default sampler: the largest logit's id |
 | `make-sampler &key temperature top-k top-p seed` | A [sampler](sampling.md) |
 
@@ -32,10 +35,14 @@ Bind `ct:*executor*` around session calls for [parallel CPU inference](parallel-
 |---|---|---|
 | `:n-ctx` | The model's `context-length` hparam, at most 4096; 4096 without one | Positions the cache holds. Its K and V buffers are allocated per layer on first use |
 | `:n-batch` | 512 | Tokens per prefill pass |
+| `:cache-type` | `:f32` | Floating-point or symmetric Q8 K/V storage; independent of weight quantization |
+| `:reuse-prefix` | `t` | Reuse matching tokens for complete prompts |
 
 ## Turns
 
-`input` is token ids, appended after the session's position, or messages, which reset the session and are rendered by its chat template.
+`input` is token ids, appended after the session's position, or messages rendered by its chat template. Messages and token IDs passed with `:prompt-p t` replace the logical prompt and reuse its exact matching prefix. `:reuse-prefix nil` forces fresh prefill for a complete prompt. Plain token-ID input continues to append.
+
+Usage reports the full `:prompt-tokens`, `:completion-tokens` and `:total-tokens`, plus `:cached-prompt-tokens` for positions whose prefill was skipped. An identical or shorter cached prompt replays its final token for logits; that position does not count as cached.
 
 A turn ends with the first of:
 
@@ -82,8 +89,7 @@ A stop id is neither returned nor cached. When the context fills, `generate` end
 
 | Missing | Tracker |
 |---|---|
-| Reusing the cache across messages or sessions | [#16](https://github.com/communal-software/cl-inference/issues/16) |
 | Bulk copy of new keys and values into the cache | [#39](https://github.com/communal-software/cl-inference/issues/39) |
-| Quantized cache | [#18](https://github.com/communal-software/cl-inference/issues/18) |
+| Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 
 [^sampler]: A stop id is checked on the sampler's choice, so a sampler that returns one ends the turn.

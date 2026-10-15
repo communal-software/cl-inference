@@ -11,6 +11,7 @@
 | Templates outside pinned text coverage; semantic prompt injection (see [template limits](chat-families.md#limitations)) | [#37](https://github.com/communal-software/cl-inference/issues/37), [#38](https://github.com/communal-software/cl-inference/issues/38) |
 | Tokenizer gaps: files without `pre`, other `pre` types, SentencePiece, rule placement | [#32](https://github.com/communal-software/cl-inference/issues/32), [#33](https://github.com/communal-software/cl-inference/issues/33), [#34](https://github.com/communal-software/cl-inference/issues/34) |
 | Sampler sorts the whole vocabulary each token | [#40](https://github.com/communal-software/cl-inference/issues/40) |
-| Reusing the KV cache across turns; slow cache copy | [#16](https://github.com/communal-software/cl-inference/issues/16), [#39](https://github.com/communal-software/cl-inference/issues/39) |
+| Slow cache copy | [#39](https://github.com/communal-software/cl-inference/issues/39) |
+| Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 
 The full roadmap is [#1](https://github.com/communal-software/cl-inference/issues/1).

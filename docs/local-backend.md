@@ -25,6 +25,8 @@ HF model directories use the shipped [HF tokenizer reader](hf-tokenizers.md). Fo
 | `:n-ctx` | Model context, capped at 4096 | Maximum cached positions |
 | `:n-batch` | 512 | Tokens per prefill pass |
 | `:session-policy` | `:serialized` | Cache reuse and concurrency |
+| `:reuse-prefix` | `t` | Reuse the session's matching rendered-token prefix |
+| `:cache-type` | `:f32` | `:f32` or symmetric `:q8` K/V storage |
 
 The constructor's weights select the model. Request `:model` does not switch models or open a file. Use another backend object for another model.
 
@@ -45,7 +47,7 @@ Keep registration inside the weights' lifetime. `describe-backend` reports `:rea
 | `:serialized` | One reusable session | Wait for the current turn; waiting counts toward timeout |
 | `:per-call` | Fresh session per call | Run independently; each active call allocates its own cache |
 
-Both modes share model weights and reset prompt state for each request. Serialized mode keeps cache buffers after successful turns and discards the session after a failed or interrupted turn. Cache prefixes are not reused between conversations.
+Both modes share model weights and render the complete request. Serialized mode reuses its session's matching token prefix after successful turns and discards the session after a failed or interrupted turn. Per-call sessions share no cache. Unrelated prompts safely overwrite the unmatched suffix; `:reuse-prefix nil` disables matching. See [cache ownership and matching](kv-cache.md).
 
 Use `:serialized` for lower memory use. `:n-ctx` and `:n-batch` control cache capacity and prefill size. A nested call from the same serialized backend's delta sink returns a bad request; use `:per-call` for that pattern.
 
@@ -94,4 +96,4 @@ Every backend turn emits one closing `:done` when a sink is supplied. Its reason
 
 | Missing | Tracker |
 |---|---|
-| Prompt-prefix KV cache reuse between turns | [#16](https://github.com/communal-software/cl-inference/issues/16) |
+| Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |

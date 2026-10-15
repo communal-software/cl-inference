@@ -53,6 +53,25 @@
     (is (equal "aa" (ci:content-text
                       (getf (ci:complete* backend :messages f::*backend-messages* :temperature 0 :max-tokens 2) :content))))))
 
+(test mlx-q8-interruption-and-prefix-recovery
+  (let ((before (mx:live-array-count)))
+    (with-backend (backend :cache-type :q8)
+      (ci:complete* backend :messages f::*backend-messages* :temperature 0 :max-tokens 2)
+      (let ((cancel (ci:make-cancel-token)))
+        (is (equal '(:error :cancelled)
+                   (ci:complete backend :messages f::*backend-messages* :temperature 0 :max-tokens 8
+                                        :cancel cancel
+                                        :stream (lambda (event)
+                                                  (when (eq :text-delta (getf event :type))
+                                                    (ci:cancel cancel)))))))
+      (is (null (local::backend-session backend)))
+      (ci:complete* backend :messages f::*backend-messages* :temperature 0 :max-tokens 2)
+      (let* ((reply (ci:complete* backend :messages f::*backend-messages* :temperature 0 :max-tokens 2))
+             (usage (getf (getf reply :meta) :usage)))
+        (is (equal "aa" (ci:content-text (getf reply :content))))
+        (is (plusp (getf usage :cached-prompt-tokens)))))
+    (is (= before (mx:live-array-count)))))
+
 (test mlx-invalid-requests-and-lifetime
   (with-backend (backend :n-ctx 2)
     (is (eq :bad-request (first (ci:result-error (ci:complete backend :messages f::*backend-messages*)))))

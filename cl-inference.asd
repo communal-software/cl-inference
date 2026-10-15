@@ -35,7 +35,8 @@
                (:file "local/pre-tokenizer") (:file "local/bpe") (:file "local/tokenizers")
                (:file "local/chat-template") (:file "local/tojson")
                (:file "local/chat-templates") (:file "local/chat-families")
-               (:file "local/blocks") (:file "local/architectures") (:file "local/session") (:file "local/sampler")
+               (:file "local/blocks") (:file "local/architectures") (:file "local/kv-cache")
+               (:file "local/session") (:file "local/sampler")
                (:file "local/reply-parser") (:file "local/backend"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/local/tests"))))
 
@@ -82,7 +83,7 @@
                (:file "tests/local/blocks") (:file "tests/local/tokenizer")
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
-               (:file "tests/local/session") (:file "tests/local/sampler")
+               (:file "tests/local/session") (:file "tests/local/cache") (:file "tests/local/sampler")
                (:file "tests/local/quant") (:file "tests/local/quant-golden")
                (:file "tests/local/packed-fixtures") (:file "tests/local/packed")
                (:file "tests/local/qwen3")
@@ -100,7 +101,7 @@
   :serial t
   :components ((:file "tests/acceptance/package") (:file "tests/acceptance/helpers")
                (:file "tests/acceptance/llama") (:file "tests/acceptance/qwen3")
-               (:file "tests/acceptance/quant"))
+               (:file "tests/acceptance/quant") (:file "tests/acceptance/cache"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
@@ -112,7 +113,8 @@
   :depends-on ("cl-inference/quant")
   :serial t
   :components ((:file "examples/package") (:file "examples/complete")
-               (:file "examples/weights") (:file "examples/architecture") (:file "examples/executor"))
+               (:file "examples/weights") (:file "examples/architecture") (:file "examples/executor")
+               (:file "examples/chat"))
   :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/examples/tests"))))
 
 (asdf:defsystem "cl-inference/examples/tests"
@@ -145,7 +147,7 @@
   :description "Qwen3 float and 4-bit against a pinned Python MLX reference"
   :depends-on ("cl-inference/mlx/tests")
   :serial t
-  :components ((:file "tests/mlx/acceptance"))
+  :components ((:file "tests/mlx/acceptance") (:file "tests/mlx/cache-acceptance"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/mlx/tests :run-acceptance)
