@@ -56,7 +56,11 @@ The inventory does not certify runtime correctness or performance. Validation re
 
 ### Tracker reconciliation
 
-Follow-up outside the snapshot: the [tokenizer limitations](tokenizers.md#limitations) record the direct empty-input HF Qwen failure found during chat encoding validation.
+Follow-up outside the snapshot; the original inventory counts remain unchanged:
+
+| Ticket | State | Planning note |
+|---|---|---|
+| [cl-inference #53 — HF Qwen empty-string encoding](https://github.com/communal-software/cl-inference/issues/53) | Closed: 2026-10-15 | Owner: Codex. Empty HF Qwen text bypasses NFC normalization and follows the shared BOS policy. HF Qwen/Llama fixtures cover configured and missing BOS, defaults and overrides; combining-character and chat-provenance checks pass. SBCL: 9,584 local checks and 527 client checks pass; three optional live client checks skip. Pinned Qwen empty-input checks pass. See [tokenizer behavior](tokenizers.md#functions). Next: select remaining tokenizer coverage from the inventory. |
 
 | Finding | Evidence and next action |
 |---|---|
@@ -74,7 +78,7 @@ Follow-up outside the snapshot: the [tokenizer limitations](tokenizers.md#limita
 
 | Repository | Ticket | State | Planning note |
 |---|---|---|---|
-| cl-inference | [#37 — Chat templates: encode message text without parsing special tokens](https://github.com/communal-software/cl-inference/issues/37) | Closed: 2026-10-15 | Owner: Codex. Text-first rendering with segment provenance protects messages, tools, reasoning and dates without changing ordinary prompt IDs. Client/local fixtures, pinned CPU acceptance and strict four-model MLX acceptance pass; only three optional live client tests skip. See [implementation and validation](chat-token-encoding-plan.md). Next: address the separate empty-input tokenizer limitation. |
+| cl-inference | [#37 — Chat templates: encode message text without parsing special tokens](https://github.com/communal-software/cl-inference/issues/37) | Closed: 2026-10-15 | Owner: Codex. Text-first rendering with segment provenance protects messages, tools, reasoning and dates without changing ordinary prompt IDs. Client/local fixtures, pinned CPU acceptance and strict four-model MLX acceptance pass; only three optional live client tests skip. See [implementation and validation](chat-token-encoding-plan.md). The separate HF Qwen empty-input fix is recorded under tracker reconciliation. |
 | trivial-simd | [#81 — Preserve lazy branches in native elementwise selection kernels](https://github.com/communal-software/trivial-simd/issues/81) | Closed: 2026-10-15 | Owner: Codex. Native selection on `trunk` preserves lazy branches; tensor fusion uses the selected backend. SBCL/CCL/ECL suites pass.[^selection81] Next: tune measured masking overhead. |
 
 ### P1 — model and inference capability

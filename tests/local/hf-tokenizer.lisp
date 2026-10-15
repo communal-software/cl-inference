@@ -52,6 +52,28 @@
           (is (typep template (if (equal arch "llama") 'local:llama3-chat 'local:qwen3-chat)))
           (is (plusp (length (local:encode-chat template tokenizer '((:role :user :content "hi")))))))))))
 
+(test hf-tokenizer-empty-input-and-bos
+  (dolist (arch '("llama" "qwen3"))
+    (with-hf-directory (directory)
+      (write-hf-model directory arch (spec*) (weight-table (spec*)))
+      (write-hf-tokenizer-fixture directory arch)
+      (dolist (bos '("<s>" nil))
+        (dolist (add-bos '(nil t))
+          (write-hf-json directory "tokenizer_config.json"
+                         (ci::json-object "bos_token" (or bos 'cl:null)
+                                          "add_bos_token" add-bos))
+          (local:with-weights (w directory)
+            (let* ((tokenizer (local:load-tokenizer w))
+                   (empty (local:encode tokenizer "" :add-bos nil)))
+              (is (typep empty '(simple-array (unsigned-byte 32) (0))))
+              (if bos
+                  (is (equalp #(264) (local:encode tokenizer "" :add-bos t)))
+                  (signals local:tokenizer-error (local:encode tokenizer "" :add-bos t)))
+              (cond ((not add-bos)
+                     (is (equalp empty (local:encode tokenizer ""))))
+                    (bos (is (equalp #(264) (local:encode tokenizer ""))))
+                    (t (signals local:tokenizer-error (local:encode tokenizer "")))))))))))
+
 (test hf-bpe-cleanup-configuration
   (dolist (arch '("llama" "qwen3"))
     (with-hf-directory (directory)

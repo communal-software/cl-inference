@@ -36,7 +36,6 @@ Token IDs, Unicode handling and rendered prompts are checked against the pinned 
 |---|---|
 | Other HF tokenizer pipelines and SentencePiece | [#33](https://github.com/communal-software/cl-inference/issues/33) |
 | Additional templates and stricter detection | [#38](https://github.com/communal-software/cl-inference/issues/38) |
-| Control-token spelling in message text | [#37](https://github.com/communal-software/cl-inference/issues/37) |
 
 Paired inputs and arbitrary Jinja execution are outside this reader's coverage.
 

@@ -10,7 +10,8 @@
                     (t (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF tokenizer ~S" pre)))))
 
 (defmethod local::normalize-tokenizer-text ((tokenizer local:qwen2) text)
-  (if (eq (local:tokenizer-format tokenizer) :safetensors)
+  (if (and (eq (local:tokenizer-format tokenizer) :safetensors)
+           (plusp (length text)))
       (map 'string #'code-char (cl-unicode:normalization-form-c text))
       text))
 

@@ -28,6 +28,12 @@ The tokenizer keeps its own copy of the vocabulary, so it stays valid after `w` 
 | `tokenizer-add-bos-p tokenizer` | The file's `add_bos_token`, or the tokenizer's default |
 | `tokenizer-ignore-merges-p tokenizer` | Whether whole pieces found in the vocabulary skip merging |
 
+Empty text follows the same BOS policy: `:add-bos nil` returns an empty unsigned-32 vector; `:add-bos t` returns one BOS ID or signals `tokenizer-error` if none is configured.
+
+```lisp
+(local:encode tokenizer "" :add-bos nil) ; => #(), unsigned-32 elements
+```
+
 `add-bos` defaults to the file's `add_bos_token`. Stop tokens are not decided here; read them with `tokenizer-special-id`, or `chat-template-stop-ids` from a [chat template](chat-templates.md).
 
 ## Special tokens
@@ -135,7 +141,6 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 | Files without `tokenizer.ggml.pre` | [#32](https://github.com/communal-software/cl-inference/issues/32) |
 | Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
 | Placing a child's rule before an inherited one | [#34](https://github.com/communal-software/cl-inference/issues/34) |
-| Direct empty-string encoding with the HF Qwen NFC normalizer raises a type error | [#53](https://github.com/communal-software/cl-inference/issues/53) |
 | Chat templates | [chat templates](chat-templates.md#limitations) |
 
 [^regex]: The standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
