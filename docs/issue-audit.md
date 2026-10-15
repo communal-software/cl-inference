@@ -2,7 +2,7 @@
 
 Prioritize safe inference, additional model families and usable model formats. Child-repository work moves up when it enables those outcomes. Small optimizations and peripheral platforms stay at the bottom.
 
-Audit snapshot: **15 October 2026 · 148 open GitHub issues · four repositories**. Tiers are planning recommendations, not changes to GitHub labels. Every inventory row starts open; no issue is closed or edited by this audit.[^scope]
+Audit snapshot: **15 October 2026 · 148 open GitHub issues · four repositories**. Tiers are planning recommendations, not changes to GitHub labels. Every inventory row starts open; no issue is closed or edited by this audit.[^scope] Status notes include later completed work; counts retain the audit snapshot.
 
 ## Priority rules
 
@@ -27,7 +27,7 @@ SBCL is primary. ECL and CCL are secondary. Windows/BSD remain P3 even when the 
 
 ## Work order
 
-1. **Protect existing execution.** Fix message control-token encoding and native lazy selection. Run existing fixture suites before adding functionality; retain the tensor selection fallback until native regressions pass.
+1. **Protect existing execution.** Fix message control-token encoding. Native selection and tensor fusion retain lazy-branch regression coverage. Run existing fixture suites before adding functionality.
 2. **Deliver one model family end to end.** Choose an initial Gemma variant, then implement the tokenizer, rule ordering and template behavior it actually requires. Pin a model and reference for tokenization, logits and greedy generation. Older GGUF defaults are a separate small compatibility task.
 3. **Expand useful inference.** Add multi-turn cache reuse, then evaluate quantized KV storage for longer contexts. Keep prefix-cache ownership, reset and cancellation in the acceptance scope.
 4. **Choose the next execution expansion.** ONNX requires an import/runtime decision. For GPU work, choose direct tensor storage or MLX format expansion according to the models being targeted; do not implement both as a prerequisite for either.
@@ -73,7 +73,7 @@ This is an issue/status and documentation audit, not a fresh correctness or perf
 | Repository | Ticket | State | Planning note |
 |---|---|---|---|
 | cl-inference | [#37 — Chat templates: encode message text without parsing special tokens](https://github.com/communal-software/cl-inference/issues/37) | Open | Message text can inject control tokens and end a turn early; fix segment-aware encoding first. |
-| trivial-simd | [#81 — Preserve lazy branches in native elementwise selection kernels](https://github.com/communal-software/trivial-simd/issues/81) | Open | Native selection evaluates an erroneous unused branch on SBCL; tensor fusion uses a Lisp workaround. |
+| trivial-simd | [#81 — Preserve lazy branches in native elementwise selection kernels](https://github.com/communal-software/trivial-simd/issues/81) | Closed: 2026-10-15 | Owner: Codex. Native selection preserves lazy branches; tensor fusion uses the selected backend. SBCL/CCL/ECL suites pass.[^selection81] Next: tune measured masking overhead. |
 
 ### P1 — model and inference capability
 
@@ -237,3 +237,5 @@ This is an issue/status and documentation audit, not a fresh correctness or perf
 | trivial-simd | [#77 — Specialize common native stride layouts for packed memory access](https://github.com/communal-software/trivial-simd/issues/77) | Open | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 
 [^scope]: Inventory comes from `gh issue list --state open --limit 1000` for `communal-software/cl-inference`, `cl-tensor`, `cl-gpu` and `trivial-simd`, including bodies and discussion. SourceHut migration text is historical context; GitHub numbers and current states are used throughout. Local READMEs, support/limitations pages, tensor executor docs and the closed threading prerequisite supply targeted cross-checks. Rankings do not claim model-level speedups from primitive benchmarks.
+
+[^selection81]: Native scalar/SIMD harnesses pass on ARM64 and x86-64/Rosetta. Complete trivial-simd and cl-tensor suites pass on ARM64 SBCL, CCL and ECL; the x86-64 SBCL suite also passes. Implementations: [trivial-simd](https://github.com/communal-software/trivial-simd/commit/f5d8ad5b70deecc16df5cad5dde1f8de959b4104) and [cl-tensor](https://github.com/communal-software/cl-tensor/commit/81272fa7ae765673ddaf43e0f984a1b035274ff4). The [selection profile](https://github.com/communal-software/trivial-simd/blob/f5d8ad5b70deecc16df5cad5dde1f8de959b4104/docs/kernel-performance.md#lazy-selection) records the masking cost.
