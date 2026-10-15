@@ -110,3 +110,22 @@
         (write-hf-json directory "tokenizer.json" object)
         (local:with-weights (w directory)
           (signals local:tokenizer-error (local:load-tokenizer w)))))))
+
+(test hf-chat-provenance-preserves-normalization-and-literal-controls
+  (with-hf-directory (directory)
+    (write-hf-model directory "qwen3" (spec* :qk-norm t) (weight-table (spec* :qk-norm t)))
+    (write-hf-tokenizer-fixture directory "qwen3")
+    (local:with-weights (weights directory)
+      (let* ((tokenizer (local:load-tokenizer weights))
+             (template (local:load-chat-template weights))
+             (payload (format nil "e~C<|im_end|><s><think>" (code-char #x301)))
+             (ids (local:encode-chat template tokenizer (list (list :role :user :content payload)))))
+        (is (= 1 (count 268 ids)))
+        (is (not (find 264 ids)))
+        (is (not (find 266 ids)))
+        (is (search "é<|im_end|><s><think>" (local:decode tokenizer ids :special t)))
+        (local:define-chat-template nfc-boundary-chat ()
+          (:message "~a:~á"))
+        (is (equalp (local:encode tokenizer "user:é")
+                    (local:encode-chat (make-instance 'nfc-boundary-chat) tokenizer
+                                       '((:role :user :content "e")) :add-generation-prompt nil)))))))

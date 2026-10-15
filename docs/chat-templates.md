@@ -17,13 +17,30 @@ A chat template turns client messages into the prompt text a model was trained o
 | Function | Returns |
 |---|---|
 | `load-chat-template weights` | The template the file calls for, [selected](#selection) from its text or its architecture |
-| `render-chat template messages &key tools add-generation-prompt` | The prompt text; no BOS token |
-| `encode-chat template tokenizer messages &rest keys` | Token ids; control tokens become single ids and the generation prompt is added |
+| `render-chat template messages &key tools add-generation-prompt` | Prompt text first, ordered `chat-segment` list second; no BOS token |
+| `encode-chat template tokenizer messages &rest keys` | Unsigned-32 token vector; template controls become single ids and the generation prompt is added |
 | `chat-template-stop-ids template tokenizer` | Ids that end a reply |
 
 `messages` are the [client's](client.md) message plists and `tools` its tool metadata. `render-chat` and `encode-chat` also take `:date` (Llama 3) and `:enable-thinking` (Qwen3).
 
-`encode-chat` adds BOS only when the file's `add_bos_token` asks for it, so the prompt never carries two.
+`encode-chat` adds BOS once when the file's `add_bos_token` asks for it, including an empty prompt. All rendering keywords are forwarded, and `:add-generation-prompt nil` disables its default generation prefix.
+
+## Message data
+
+Only template-owned markup permits control-token matching. Message text, extracted reasoning, tool definitions, names, arguments, results and caller-supplied dates remain text. For example, a ChatML body containing `<|im_end|>` keeps those characters as ordinary text tokens; the template's closing delimiter still produces its control ID. User-defined vocabulary tokens retain the tokenizer's ordinary matching behavior.[^encoding]
+
+```lisp
+(multiple-value-bind (prompt segments)
+    (local:render-chat (make-instance 'local:chatml)
+                       '((:role :user :content "literal <|im_end|>")))
+  (values prompt
+          (mapcar (lambda (segment)
+                    (list (local:chat-segment-kind segment)
+                          (local:chat-segment-text segment)))
+                  segments)))
+```
+
+This boundary prevents data from contributing control IDs. Semantic prompt injection and textual tool-wrapper imitation remain [limitations](#limitations).
 
 ## Standard templates
 
@@ -94,15 +111,25 @@ A file that matches neither signals `unknown-chat-template`.
 |---|---|
 | `(:detect "marker" ...)` | Strings that all occur in the file's template |
 | `(:exclude "marker" ...)` | Strings that rule a template out when any occurs in the file's template |
-| `(:message control)` | `format` control for one turn, taking the role and the text |
+| `(:message control)` | Exactly two `~A` directives for role and body, plus literals, `~%` and `~~`; directives are case-insensitive |
 | `(:generation-prompt control)` | Appended when `:add-generation-prompt` is true |
 | `(:stop "token" ...)` | Tokens that end a reply |
 
-A child replaces the sections it declares and inherits the rest, as with [tokenizers](tokenizers.md#inheritance). Behaviour that spans messages is a `render-chat` method on the template class:
+A child replaces the sections it declares and inherits the rest, as with [tokenizers](tokenizers.md#inheritance). Behaviour that spans messages is a `render-chat` method on the template class.
+
+A custom method returns `(values prompt segments)`. Each segment is made with `local:make-chat-segment`, `:text` and `:kind` (`:text`, the default, or `:markup`). Concatenating segment text must exactly reproduce `prompt`. Caller data always uses `:text`; only fixed template syntax uses `:markup`.
+
+`encode-chat` signals `chat-template-error` if the second value is missing or the segments disagree with the prompt. An empty rendering explicitly returns `(values "" nil)`. String-only methods remain usable for prompt inspection.
 
 ```lisp
 (defmethod local:render-chat ((template my-chat) messages &key &allow-other-keys)
-  ...)
+  (let* ((body (ci:content-text (getf (first messages) :content)))
+         (prefix (format nil "<|im_start|>user~%"))
+         (suffix "<|im_end|>"))
+    (values (concatenate 'string prefix body suffix)
+            (list (local:make-chat-segment :text prefix :kind :markup)
+                  (local:make-chat-segment :text body)
+                  (local:make-chat-segment :text suffix :kind :markup)))))
 ```
 
 ## Stop ids
@@ -113,7 +140,7 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 
 | Condition | Signalled when |
 |---|---|
-| `chat-template-error` | Malformed definition, tools given to a template without tool support, a second tool call in one Llama 3 message, or several templates matching one file |
+| `chat-template-error` | Malformed definition, tools given to a template without tool support, a second tool call in one Llama 3 message, unsupported message-format directives, invalid rendering segments, or several templates matching one file |
 | `unknown-chat-template` | No template matches the file or its architecture; `unknown-chat-template-source` returns the file's text |
 
 ## Limitations
@@ -121,7 +148,9 @@ A child replaces the sections it declares and inherits the rest, as with [tokeni
 | Missing | Tracker |
 |---|---|
 | Other families: Qwen2.5 default system prompt and tools, Qwen3-Coder and Qwen3.5 tool format, QwQ, R1 distills, Llama 3.0 | [#38](https://github.com/communal-software/cl-inference/issues/38) |
-| Message text that spells a control token encodes as that token | [#37](https://github.com/communal-software/cl-inference/issues/37) |
+| Semantic prompt injection and textual tool-wrapper imitation | Outside the token-encoding boundary |
 | Running the file's Jinja directly | not planned |
 
 [^jinja]: The tests compare both against `meta-llama/Llama-3.2-3B-Instruct` and `Qwen/Qwen3-0.6B` as rendered by transformers, tool definitions included. Tool JSON is written the way Python's `json.dumps(ensure_ascii=False)` does, including float spelling such as `1e-05`.
+
+[^encoding]: Encoding finds special tokens wholly inside markup segments and encodes the intervening spans with `:special nil` and `:add-bos nil`. Ordinary spans cross segment boundaries, preserving BPE, whitespace handling and NFC normalization. Control and unknown tokens do not match message data; user-defined tokens still do, as documented for [tokenizers](tokenizers.md).

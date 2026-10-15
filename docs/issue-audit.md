@@ -27,7 +27,7 @@ SBCL is primary. ECL and CCL are secondary. Windows/BSD remain P3 even when the 
 
 ## Work order
 
-1. **Protect existing execution.** Fix message control-token encoding. Native selection and tensor fusion retain lazy-branch regression coverage. Run existing fixture suites before adding functionality.
+1. **Protect existing execution.** Retain message control-token protection and its adversarial fixtures. Native selection and tensor fusion retain lazy-branch regression coverage. Run existing fixture suites before adding functionality.
 2. **Deliver one model family end to end.** Choose an initial Gemma variant, then implement the tokenizer, rule ordering and template behavior it actually requires. Pin a model and reference for tokenization, logits and greedy generation. Older GGUF defaults are a separate small compatibility task.
 3. **Expand useful inference.** Add multi-turn cache reuse, then evaluate quantized KV storage for longer contexts. Keep prefix-cache ownership, reset and cancellation in the acceptance scope.
 4. **Choose the next execution expansion.** ONNX requires an import/runtime decision. For GPU work, choose direct tensor storage or MLX format expansion according to the models being targeted; do not implement both as a prerequisite for either.
@@ -52,9 +52,11 @@ For each selected row, record an owner and a short next action in its planning n
 
 ## Limitations
 
-This is an issue/status and documentation audit, not a fresh correctness or performance certification. Existing bugs below are already tracked; runtime tests and new implementation are outside this document-only change. Broad umbrella issues and overlapping follow-ups are counted once per open GitHub issue, not as independent deliverables. Dependencies not explicitly established by ticket text or checked documentation are planning inferences.
+The inventory does not certify runtime correctness or performance. Validation results apply to selected work and are linked from its status notes. Broad umbrella issues and overlapping follow-ups are counted once per open GitHub issue, not as independent deliverables. Dependencies not explicitly established by ticket text or checked documentation are planning inferences.
 
 ### Tracker reconciliation
+
+Follow-up outside the snapshot: the [tokenizer limitations](tokenizers.md#limitations) record the direct empty-input HF Qwen failure found during chat encoding validation.
 
 | Finding | Evidence and next action |
 |---|---|
@@ -72,7 +74,7 @@ This is an issue/status and documentation audit, not a fresh correctness or perf
 
 | Repository | Ticket | State | Planning note |
 |---|---|---|---|
-| cl-inference | [#37 — Chat templates: encode message text without parsing special tokens](https://github.com/communal-software/cl-inference/issues/37) | Open | Message text can inject control tokens and end a turn early; fix segment-aware encoding first. |
+| cl-inference | [#37 — Chat templates: encode message text without parsing special tokens](https://github.com/communal-software/cl-inference/issues/37) | Closed: 2026-10-15 | Owner: Codex. Text-first rendering with segment provenance protects messages, tools, reasoning and dates without changing ordinary prompt IDs. Client/local fixtures, pinned CPU acceptance and strict four-model MLX acceptance pass; only three optional live client tests skip. See [implementation and validation](chat-token-encoding-plan.md). Next: address the separate empty-input tokenizer limitation. |
 | trivial-simd | [#81 — Preserve lazy branches in native elementwise selection kernels](https://github.com/communal-software/trivial-simd/issues/81) | Closed: 2026-10-15 | Owner: Codex. Native selection on `trunk` preserves lazy branches; tensor fusion uses the selected backend. SBCL/CCL/ECL suites pass.[^selection81] Next: tune measured masking overhead. |
 
 ### P1 — model and inference capability

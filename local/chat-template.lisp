@@ -20,15 +20,49 @@
 ;;; Sections are a plist with one alist of entries, keyed by section name:
 ;;;   :entries (:detect marker...) (:message control) (:generation-prompt control) (:stop token...)
 
+(defstruct chat-segment
+  (text "" :type string)
+  (kind :text :type (member :markup :text)))
+
+(defun markup (text)
+  (list (make-chat-segment :text text :kind :markup)))
+
+(defun chat-text (text)
+  (list (make-chat-segment :text text :kind :text)))
+
+(defun chat-segments-text (segments)
+  (with-output-to-string (out)
+    (dolist (segment segments)
+      (write-string (chat-segment-text segment) out))))
+
+(defun chat-rendering (segments)
+  (values (chat-segments-text segments) segments))
+
+(defun message-control-parts (control)
+  "Split the two ~A substitutions without interpreting message data as FORMAT syntax."
+  (let ((parts nil) (start 0))
+    (loop for i from 0 below (length control)
+          when (char= (char control i) #\~)
+            do (when (= (1+ i) (length control))
+                 (chat-template-fail "Incomplete message directive in ~S" control))
+               (case (char-upcase (char control (incf i)))
+                 (#\A (push (format nil (subseq control start (1- i))) parts)
+                       (setf start (1+ i)))
+                 ((#\% #\~))
+                 (t (chat-template-fail "Message controls support only ~~A, ~~% and ~~~~: ~S"
+                                        control))))
+    (push (format nil (subseq control start)) parts)
+    (unless (= 3 (length parts))
+      (chat-template-fail "Message control needs exactly two ~~A directives: ~S" control))
+    (nreverse parts)))
+
 (defun parse-chat-template-section (form)
   (flet ((bad () (chat-template-fail "Bad chat template section ~S" form)))
     (unless (and (consp form) (rest form) (every #'stringp (rest form))) (bad))
     (case (first form)
       ((:detect :exclude :stop))
-      (:message (unless (and (= (length form) 2)
-                             (handler-case (format nil (second form) "role" "text")
-                               (error () nil)))
-                  (bad)))
+      (:message (unless (= (length form) 2) (bad))
+                (message-control-parts (second form)))
       (:generation-prompt (unless (and (= (length form) 2)
                                        (handler-case (format nil (second form))
                                          (error () nil)))
@@ -78,37 +112,71 @@ overrides sections by name. Messages that need more than the plain turn format s
 (defun message-text (message)
   (ci:content-text (getf message :content)))
 
-(defun render-turn (template role text)
-  "One turn of ROLE (a string) with TEXT, in TEMPLATE's message format."
-  (format nil (or (first (chat-template-entry template :message))
-                  (chat-template-fail "~S declares no :message" (class-name (class-of template))))
-          role text))
+(defun render-turn (template role body)
+  (destructuring-bind (prefix middle suffix)
+      (message-control-parts
+       (or (first (chat-template-entry template :message))
+           (chat-template-fail "~S declares no :message" (class-name (class-of template)))))
+    (append (markup prefix) (chat-text role) (markup middle)
+            (if (stringp body) (chat-text body) body) (markup suffix))))
 
 (defun render-generation-prompt (template)
-  (format nil (or (first (chat-template-entry template :generation-prompt)) "")))
+  (markup (format nil (or (first (chat-template-entry template :generation-prompt)) ""))))
 
 (defgeneric render-chat (template messages &key tools add-generation-prompt &allow-other-keys)
-  (:documentation "MESSAGES, client message plists, as the prompt text TEMPLATE defines. TOOLS
-are client tool metadata. The text carries no BOS token; `encode` adds it.")
+  (:documentation "Return prompt text and ordered CHAT-SEGMENTs, without automatic BOS.
+Only :MARKUP segments permit control-token matching; caller data uses :TEXT.")
   (:method ((template chat-template) messages &key tools add-generation-prompt &allow-other-keys)
     (when tools
       (chat-template-fail "~S cannot render tools" (class-name (class-of template))))
-    (with-output-to-string (out)
-      (dolist (message messages)
-        (when (or (eq (getf message :role) :tool) (getf message :tool-calls))
-          (chat-template-fail "~S cannot render tool messages" (class-name (class-of template))))
-        (write-string (render-turn template (message-role-name message) (message-text message))
-                      out))
-      (when add-generation-prompt
-        (write-string (render-generation-prompt template) out)))))
+    (chat-rendering
+     (append
+      (loop for message in messages
+            do (when (or (eq (getf message :role) :tool) (getf message :tool-calls))
+                 (chat-template-fail "~S cannot render tool messages" (class-name (class-of template))))
+            append (render-turn template (message-role-name message) (message-text message)))
+      (when add-generation-prompt (render-generation-prompt template))))))
 
-;; TODO: user text that spells a control token such as <|im_end|> encodes as that token (#37)
+(defun encode-chat-segments (tokenizer prompt segments)
+  (let ((out (make-array 0 :element-type '(unsigned-byte 32) :adjustable t :fill-pointer 0))
+        (plain-start 0) (offset 0))
+    (labels ((emit (ids)
+               (loop for id across ids do (vector-push-extend id out)))
+             (flush (end)
+               (when (< plain-start end)
+                 (emit (encode tokenizer (subseq prompt plain-start end) :add-bos nil)))))
+      (when (tokenizer-add-bos-p tokenizer)
+        (vector-push-extend (or (special-id tokenizer :bos)
+                               (tokenizer-fail 'tokenizer-error "Tokenizer has no BOS token"))
+                            out))
+      (dolist (segment segments)
+        (let ((end (+ offset (length (chat-segment-text segment)))))
+          (when (eq (chat-segment-kind segment) :markup)
+            (loop with position = offset
+                  while (< position end)
+                  do (multiple-value-bind (id token-end) (special-match tokenizer prompt position t)
+                       (if (and id (<= token-end end))
+                           (progn
+                             (flush position)
+                             (vector-push-extend id out)
+                             (setf position token-end plain-start token-end))
+                           (incf position)))))
+          (setf offset end)))
+      ;; Keep ordinary spans intact across provenance boundaries for BPE and normalization.
+      (flush (length prompt)))
+    (coerce out '(simple-array (unsigned-byte 32) (*)))))
+
 (defun encode-chat (template tokenizer messages &rest keys &key &allow-other-keys)
-  "MESSAGES rendered by TEMPLATE and encoded with its control tokens as single ids. KEYS go to
-`render-chat`; the generation prompt is added unless `:add-generation-prompt nil`."
-  (encode tokenizer
-          (apply #'render-chat template messages (append keys '(:add-generation-prompt t)))
-          :special t))
+  "Encode template markup as controls and caller data as text. KEYS go to RENDER-CHAT;
+the generation prompt defaults to true. BOS follows the tokenizer's policy."
+  (let* ((rendered (multiple-value-list
+                    (apply #'render-chat template messages (append keys '(:add-generation-prompt t)))))
+         (prompt (first rendered)) (segments (second rendered)))
+    (unless (and (= 2 (length rendered)) (stringp prompt) (alexandria:proper-list-p segments)
+                 (every (lambda (segment) (typep segment 'chat-segment)) segments)
+                 (equal prompt (chat-segments-text segments)))
+      (chat-template-fail "Renderer must return prompt text and matching chat segments"))
+    (encode-chat-segments tokenizer prompt segments)))
 
 (defun chat-template-stop-ids (template tokenizer)
   "The ids that end a reply: TEMPLATE's :stop tokens present in the vocabulary, and the

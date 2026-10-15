@@ -65,32 +65,32 @@
 (defmethod render-chat ((template llama3-chat) messages
                         &key tools add-generation-prompt (date (current-date-string))
                         &allow-other-keys)
-  (let ((system (and (first-message-system-p messages) (first messages)))
-        (messages (if (first-message-system-p messages) (rest messages) messages)))
-    (with-output-to-string (out)
-      (write-string (render-turn template "system"
-                                 (format nil "~:[~;Environment: ipython~%~]~
+  (let* ((system (and (first-message-system-p messages) (first messages)))
+         (messages (if system (rest messages) messages))
+         (segments
+           (render-turn template "system"
+                        (append (markup (format nil "~:[~;Environment: ipython~%~]~
                                               Cutting Knowledge Date: December 2023~%~
-                                              Today Date: ~A~%~%~A"
-                                         tools date
-                                         (if system (trim-whitespace (message-text system)) "")))
-                    out)
-      (when tools
-        (unless messages
-          (chat-template-fail "Cannot put tools in the first user message when there is none"))
-        (write-string (render-turn template "user"
-                                   (format nil "Given the following functions, please respond with a JSON for a function call with its proper arguments that best answers the given prompt.~%~%~
-                                                Respond in the format {\"name\": function name, \"parameters\": dictionary of argument name and its value}.~
-                                                Do not use variables.~%~%~
-                                                ~{~A~%~%~}~A"
-                                           (tool-definitions tools 4)
-                                           (trim-whitespace (message-text (first messages)))))
-                      out)
-        (pop messages))
-      (dolist (message messages)
-        (write-string (render-llama3-message template message tools) out))
-      (when add-generation-prompt
-        (write-string (render-generation-prompt template) out)))))
+                                              Today Date: " tools))
+                                (chat-text date) (markup (format nil "~%~%"))
+                                (chat-text (if system (trim-whitespace (message-text system)) ""))))))
+    (when tools
+      (unless messages
+        (chat-template-fail "Cannot put tools in the first user message when there is none"))
+      (setf segments
+            (append segments
+                    (render-turn template "user"
+                                 (append
+                                  (markup (format nil "Given the following functions, please respond with a JSON for a function call with its proper arguments that best answers the given prompt.~%~%~
+                                                      Respond in the format {\"name\": function name, \"parameters\": dictionary of argument name and its value}.~
+                                                      Do not use variables.~%~%"))
+                                  (loop for definition in (tool-definitions tools 4)
+                                        append (append (chat-text definition) (markup (format nil "~%~%"))))
+                                  (chat-text (trim-whitespace (message-text (pop messages)))))))))
+    (chat-rendering
+     (append segments
+             (loop for message in messages append (render-llama3-message template message tools))
+             (when add-generation-prompt (render-generation-prompt template))))))
 
 ;;; Qwen3
 
@@ -131,62 +131,66 @@ when there is none."
                                         before)))))))
 
 (defun render-qwen3-assistant (template message tools after-query-p last-p)
-  "Reasoning is kept only after the last query, and then only when the message is the last or
-has some."
+  "Keep reasoning after the last query when present or on the final message."
   (multiple-value-bind (content reasoning) (split-reasoning (message-text message))
-    (render-turn template "assistant"
-                 (with-output-to-string (out)
-                   (if (and after-query-p (or last-p (plusp (length reasoning))))
-                       (format out "<think>~%~A~%</think>~%~%~A"
-                               (string-trim '(#\Newline) reasoning) content)
-                       (write-string content out))
-                   (loop for call in (getf message :tool-calls)
-                         for first = t then nil
-                         do (when (or (not first) (plusp (length content)))
-                              (terpri out))
-                            (format out "<tool_call>~%{\"name\": \"~A\", \"arguments\": ~A}~%</tool_call>"
-                                    (ci:wire-tool-name (getf call :name))
-                                    (call-json call tools)))))))
+    (render-turn
+     template "assistant"
+     (append
+      (when (and after-query-p (or last-p (plusp (length reasoning))))
+        (append (markup (format nil "<think>~%"))
+                (chat-text (string-trim '(#\Newline) reasoning))
+                (markup (format nil "~%</think>~%~%"))))
+      (chat-text content)
+      (loop for call in (getf message :tool-calls)
+            for first = t then nil
+            append (append
+                    (when (or (not first) (plusp (length content)))
+                      (markup (string #\Newline)))
+                    (markup (format nil "<tool_call>~%"))
+                    (chat-text (format nil "{\"name\": \"~A\", \"arguments\": ~A}"
+                                       (ci:wire-tool-name (getf call :name)) (call-json call tools)))
+                    (markup (format nil "~%</tool_call>"))))))))
 
 (defmethod render-chat ((template qwen3-chat) messages
                         &key tools add-generation-prompt (enable-thinking t) &allow-other-keys)
   (let ((system (and (first-message-system-p messages) (first messages)))
         (last-query (last-query-index messages))
         (previous nil))
-    (with-output-to-string (out)
+    (chat-rendering
+     (append
       (cond (tools
-             (write-string (render-turn template "system"
-                                        (format nil "~@[~A~%~%~]~A~{~%~A~}~A"
-                                                (and system (message-text system))
-                                                *qwen3-tools-header* (tool-definitions tools)
-                                                *qwen3-tools-footer*))
-                           out))
-            (system
-             (write-string (render-turn template "system" (message-text system)) out)))
+             (render-turn template "system"
+                          (append (when system
+                                    (append (chat-text (message-text system))
+                                            (markup (format nil "~%~%"))))
+                                  (markup *qwen3-tools-header*)
+                                  (loop for definition in (tool-definitions tools)
+                                        append (append (markup (string #\Newline))
+                                                       (chat-text definition)))
+                                  (markup *qwen3-tools-footer*))))
+            (system (render-turn template "system" (message-text system))))
       (loop for tail on messages
             for index from 0
             for message = (car tail)
             for role = (getf message :role)
-            do (case role
-                 (:user (write-string (render-turn template "user" (message-text message)) out))
-                 (:system (unless (zerop index)
-                            (write-string (render-turn template "system" (message-text message))
-                                          out)))
-                 (:assistant (write-string (render-qwen3-assistant template message tools
-                                                                   (> index last-query)
-                                                                   (null (cdr tail)))
-                                           out))
-                 (:tool (unless (eq previous :tool)
-                          (write-string
-                           (render-turn template "user"
-                                        (format nil "~{~A~^~%~}"
-                                                (loop for response in tail
-                                                      while (eq (getf response :role) :tool)
-                                                      collect (format nil "<tool_response>~%~A~%</tool_response>"
-                                                                      (message-text response)))))
-                           out))))
-               (setf previous role))
+            append (prog1
+                       (case role
+                         (:user (render-turn template "user" (message-text message)))
+                         (:system (unless (zerop index)
+                                    (render-turn template "system" (message-text message))))
+                         (:assistant (render-qwen3-assistant template message tools
+                                                            (> index last-query) (null (cdr tail))))
+                         (:tool (unless (eq previous :tool)
+                                  (render-turn template "user"
+                                               (loop for response in tail
+                                                     while (eq (getf response :role) :tool)
+                                                     for first = t then nil
+                                                     append (append
+                                                             (unless first (markup (string #\Newline)))
+                                                             (markup (format nil "<tool_response>~%"))
+                                                             (chat-text (message-text response))
+                                                             (markup (format nil "~%</tool_response>"))))))))
+                     (setf previous role)))
       (when add-generation-prompt
-        (write-string (render-generation-prompt template) out)
-        (unless enable-thinking
-          (format out "<think>~%~%</think>~%~%"))))))
+        (append (render-generation-prompt template)
+                (unless enable-thinking (markup (format nil "<think>~%~%</think>~%~%")))))))))

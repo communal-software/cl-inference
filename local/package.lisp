@@ -35,6 +35,7 @@
    #:unknown-tokenizer-pre #:llama-bpe #:qwen2
    ;; chat templates
    #:define-chat-template #:chat-template #:chat-template-class #:load-chat-template
+   #:chat-segment #:make-chat-segment #:chat-segment-text #:chat-segment-kind
    #:render-chat #:encode-chat #:chat-template-stop-ids #:chat-template-source
    #:chat-template-error #:chat-template-error-message #:unknown-chat-template
    #:unknown-chat-template-source #:llama3-chat #:chatml #:qwen3-chat

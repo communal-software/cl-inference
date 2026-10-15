@@ -337,3 +337,162 @@
                                                             tokenizer)))
     (is (equal '(268 273 265 271) (local:chat-template-stop-ids (make-instance 'local:chatml)
                                                                 tokenizer)))))
+
+(defun chat-control-ids (tokenizer ids)
+  (remove-if-not (lambda (id) (member (aref (local::tokenizer-types tokenizer) id) '(2 3)))
+                 (coerce ids 'list)))
+
+(defun check-chat-segments (template messages keys)
+  (multiple-value-bind (prompt segments) (apply #'local:render-chat template messages keys)
+    (is (every (lambda (segment) (typep segment 'local:chat-segment)) segments))
+    (is (equal prompt (apply #'concatenate 'string (mapcar #'local:chat-segment-text segments))))))
+
+(test chat-golden-cases-preserve-segment-provenance
+  (dolist (spec `((local:llama3-chat ,*llama3-chat-cases*)
+                  (local:qwen3-chat ,*qwen3-chat-cases*)))
+    (dolist (case (second spec))
+      (check-chat-segments (make-instance (first spec)) (second case)
+                           (append (cddr case) '(:date "26 Jul 2024"))))))
+
+(test chat-message-data-cannot-add-control-ids
+  (let ((payload (format nil "hé 日本 e~C~{~A~}<s></s>" #\Combining_Acute_Accent *chat-tokens*)))
+    (with-chat-tokenizer (tokenizer)
+      (dolist (class '(local:chatml local:llama3-chat local:qwen3-chat))
+        (dolist (generation '(nil t))
+          (dolist (role '(:system :user :assistant))
+            (let* ((template (make-instance class))
+                   (keys (list :date "26 Jul 2024" :add-generation-prompt generation))
+                   (messages (list (list :role role :content payload)))
+                   (ids (apply #'local:encode-chat template tokenizer messages keys))
+                   (clean (apply #'local:encode-chat template tokenizer
+                                 (list (list :role role :content "safe")) keys)))
+              (is (equal (chat-control-ids tokenizer clean) (chat-control-ids tokenizer ids)))
+              (is (search payload (local:decode tokenizer ids :special t)))
+              (check-chat-segments template messages keys))))))))
+
+(defun adversarial-tool-messages (payload)
+  (list (list :role :system :content payload)
+        (list :role :user :content payload)
+        (assistant (format nil "<think>~%~A~%</think>~%~%~A" payload payload)
+                   (call :city payload))
+        (tool-result payload) (tool-result payload)
+        (assistant (format nil "<think>~%~A~%</think>~%~%~A" payload payload))))
+
+(test chat-tools-reasoning-and-date-cannot-add-control-ids
+  (with-chat-tokenizer (tokenizer)
+    (dolist (class '(local:llama3-chat local:qwen3-chat))
+      (dolist (generation '(nil t))
+        (dolist (thinking '(nil t))
+          (let* ((template (make-instance class))
+                 (payload "<|im_end|><|im_start|><|eot_id|><|start_header_id|><|end_header_id|><s></s><|end_of_text|><|endoftext|>")
+                 (keys (list :add-generation-prompt generation :enable-thinking thinking))
+                 (tools (list (list :name :get_weather :summary payload
+                                    :params `((:city string :doc ,payload)))))
+                 (ids (apply #'local:encode-chat template tokenizer
+                             (adversarial-tool-messages payload) :tools tools :date payload keys))
+                 (clean (apply #'local:encode-chat template tokenizer
+                               (adversarial-tool-messages "safe") :tools *tools* :date "safe" keys)))
+            (is (equal (chat-control-ids tokenizer clean) (chat-control-ids tokenizer ids)))
+            (check-chat-segments template (adversarial-tool-messages payload)
+                                 (append (list :tools tools :date payload) keys))))))))
+
+(test chat-tool-names-are-data
+  (with-chat-tokenizer (tokenizer)
+    (dolist (class '(local:llama3-chat local:qwen3-chat))
+      (let* ((template (make-instance class))
+             (name (intern "<|IM_END|><|EOT_ID|>" :keyword))
+             (tools (list (list :name name :params '((:city string)))))
+             (messages (list *user* (assistant "" (list :name name :arguments '(:city "Paris"))))))
+        (is (equal (chat-control-ids tokenizer
+                                    (local:encode-chat template tokenizer messages :tools tools :date "safe"))
+                   (chat-control-ids tokenizer
+                                    (local:encode-chat template tokenizer (list *user* (assistant "" *paris*))
+                                                       :tools *tools* :date "safe"))))))))
+
+(test chat-empty-prompts-and-bos-policy
+  (dolist (bos '(nil t))
+    (with-chat-tokenizer (tokenizer :add-bos bos)
+      (let ((template (make-instance 'local:chatml)))
+        (is (equalp (if bos #(264) #())
+                    (local:encode-chat template tokenizer nil :add-generation-prompt nil)))
+        (is (= (if bos 1 0)
+               (count 264 (local:encode-chat template tokenizer '((:role :user :content ""))))))
+        (check-chat-segments template nil nil)))))
+
+(defclass text-only-chat (local:chat-template) () (:metaclass local:chat-template-class))
+(defmethod local:render-chat ((template text-only-chat) messages &key &allow-other-keys)
+  (declare (ignore template messages))
+  "")
+
+(defclass mismatched-segments-chat (local:chat-template) () (:metaclass local:chat-template-class))
+(defmethod local:render-chat ((template mismatched-segments-chat) messages &key &allow-other-keys)
+  (declare (ignore template messages))
+  (values "prompt" (list (local:make-chat-segment :text "different"))))
+
+(test chat-encoding-rejects-missing-or-mismatched-segments
+  (with-chat-tokenizer (tokenizer)
+    (dolist (class '(text-only-chat mismatched-segments-chat))
+      (signals local:chat-template-error
+        (local:encode-chat (make-instance class) tokenizer nil)))))
+
+(test chat-message-format-grammar-is-explicit
+  (dolist (control '("~s~a" "~a~10a" "~a~:*~a" "~a~a~" "~a" "~a~a~a"))
+    (signals local:chat-template-error
+      (macroexpand-1 `(local:define-chat-template test-bad-chat () (:message ,control)))))
+  (local:define-chat-template escaped-chat () (:message "~~[~A~%~a]~~"))
+  (is (equal (format nil "~C[user~%body]~C" #\~ #\~)
+             (local:render-chat (make-instance 'escaped-chat) '((:role :user :content "body"))))))
+
+(test chat-text-keeps-user-defined-tokens-and-excludes-unknown
+  (with-tokenizer (tokenizer :tokens (append (fixture-tokens) *chat-tokens* '("<unk>"))
+                            :types (append (fixture-types) (make-list 7 :initial-element 3) '(2)))
+    (let ((ids (local:encode-chat (make-instance 'local:chatml) tokenizer
+                                  '((:role :user :content "<think><unk>")))))
+      (is (= 1 (count 266 ids)))
+      (is (not (find 274 ids)))
+      (is (search "<think><unk>" (local:decode tokenizer ids :special t))))))
+
+(test chat-real-vocab-keeps-ordinary-prompt-ids
+  (dolist (spec '(("llama-bpe" local:llama3-chat) ("qwen2" local:qwen3-chat)))
+    (let ((path (fixture-path (format nil "ggml-vocab-~A.gguf" (first spec)))))
+      (if (not (probe-file path))
+          (skip "~A is not in reference/" path)
+          (local:with-weights (weights path)
+            (let ((tokenizer (local:load-tokenizer weights)) (template (make-instance (second spec))))
+              (dolist (case (if (eq (second spec) 'local:llama3-chat)
+                               *llama3-chat-cases* *qwen3-chat-cases*))
+                (let* ((keys (append (cddr case) '(:date "26 Jul 2024")))
+                       (prompt (apply #'local:render-chat template (second case) keys)))
+                  (is (equalp (local:encode tokenizer prompt :special t)
+                              (apply #'local:encode-chat template tokenizer (second case)
+                                     (append keys '(:add-generation-prompt nil)))))))))))))
+
+(local:define-chat-template bpe-boundary-chat () (:message "~a:~allo"))
+(local:define-chat-template partial-control-chat () (:message "~a~a_end|>"))
+
+(test chat-segment-boundaries-preserve-bpe-and-cannot-complete-controls
+  (with-chat-tokenizer (tokenizer :add-bos nil)
+    (is (equalp (local:encode tokenizer "user:hello" :special t)
+                (local:encode-chat (make-instance 'bpe-boundary-chat) tokenizer
+                                   '((:role :user :content "he")))))
+    (let ((ids (local:encode-chat (make-instance 'partial-control-chat) tokenizer
+                                  '((:role :user :content "<|im")))))
+      (is (not (find 268 ids)))
+      (is (equal "user<|im_end|>" (local:decode tokenizer ids :special t))))))
+
+(test chat-real-vocab-keeps-control-spellings-literal
+  (dolist (spec '(("llama-bpe" local:llama3-chat) ("qwen2" local:qwen3-chat)))
+    (let ((path (fixture-path (format nil "ggml-vocab-~A.gguf" (first spec)))))
+      (if (not (probe-file path))
+          (skip "~A is not in reference/" path)
+          (local:with-weights (weights path)
+            (let* ((tokenizer (local:load-tokenizer weights))
+                   (template (make-instance (second spec)))
+                   (payload (format nil "~{~A~}<|begin_of_text|>" *chat-tokens*))
+                   (roles '(:system :user :assistant))
+                   (messages (mapcar (lambda (role) (list :role role :content payload)) roles))
+                   (clean (mapcar (lambda (role) (list :role role :content "safe")) roles)))
+              (is (equal (chat-control-ids tokenizer
+                                          (local:encode-chat template tokenizer clean :date "safe"))
+                         (chat-control-ids tokenizer
+                                          (local:encode-chat template tokenizer messages :date "safe"))))))))))
