@@ -64,6 +64,8 @@ Follow-up outside the snapshot; the original inventory counts remain unchanged. 
 | [cl-inference #54 — ECL half-linear profile call](https://github.com/communal-software/cl-inference/issues/54) | Closed: 2026-10-15 | Owner: Codex. The failure reproduces with unchanged compiled baseline code; interpreted source passes. A `notinline` declaration preserves fixture replacement; the isolated fixture and all three local suites pass. Next: preserve cross-Lisp regression coverage in CI. |
 | [cl-inference #55 — Parallel half-weight dispatch](https://github.com/communal-software/cl-inference/issues/55) | Open | Owner: unassigned. P2 follow-up for measured executor-bound F16/BF16 tiled conversion overhead. The source TODO names the ceiling and encoded-dispatch upgrade path. Next: establish complete-call parallel dispatch profiles, retaining mapped/strided coverage and serial/parallel acceptance. |
 | [cl-inference #56 — Ambiguous function-wrapper scalar values](https://github.com/communal-software/cl-inference/issues/56) | Open | Owner: unassigned. P2 follow-up for untyped/nullable scalar type loss and unescaped delimiters in the pinned format. Ordinary typed values and untyped text/JSON are supported. The parser TODO names explicit codecs as the upgrade path. Next: choose a per-tool codec or explicit ambiguity policy and add collision round trips. |
+| [cl-inference #57 — Q8 cache conversion and attention scratch](https://github.com/communal-software/cl-inference/issues/57) | Open | Owner: unassigned. Follow-up for scalar CPU conversion and full-prefix F32 attention scratch; source TODOs name bulk conversion and tiled/fused attention as upgrade paths. Next: use the [cache profile](cache-acceptance.md#recorded-profile) to select the measured bottleneck. |
+| [cl-inference #58 — Stale template limitation references](https://github.com/communal-software/cl-inference/issues/58) | Open | Owner: unassigned. Existing template limits refer to closed implementation work. Next: reconcile links while preserving the pinned coverage and explicit semantic limits. |
 
 | Finding | Evidence and next action |
 |---|---|
@@ -109,6 +111,27 @@ The [family matrix](chat-families.md) covers Qwen2.5, Qwen3-Coder, Qwen3.5, QwQ,
 
 The pinned 12-template matrix passes 477 prompt/error parity checks and 24 detection checks. Streaming boundary, malformed-call, typed-schema, client round-trip, BOS/stop and adversarial control-token checks pass. Existing Llama 3.2/Qwen3 prompt IDs and CPU acceptance pass; strict four-model MLX acceptance passes all 164 checks. Template coverage is independent of architecture support; pinned reference quirks remain explicit [limitations](chat-families.md#limitations).
 
+### Cache implementation review
+
+Review date: **15 October 2026**. Owner: Codex. Both cache issues are closed. [Implementation `5a371a5`](https://github.com/communal-software/cl-inference/commit/5a371a57ab5d4609c5b27f5ef282eadc22d2652d) and the [cl-mlx dependency `e9d7d40`](https://github.com/communal-software/cl-mlx/commit/e9d7d40) are published to origin and mirror.
+
+| Validation | Passing checks | Skips |
+|---|---:|---:|
+| Local fixtures: SBCL, CCL and ECL | 14,011 each | 0 |
+| SBCL client | 527 | 3 optional live checks |
+| Runnable examples | 12 | 0 |
+| cl-mlx / MLX fixtures | 51 / 281 | 0 |
+| Pinned CPU acceptance | 1,603 | 0 |
+| Strict four-model MLX/cache acceptance | 376 | 0 |
+
+[Prefix reuse](kv-cache.md#prefix-matching) is session-local and enabled by default, with an opt-out. Complete prompts match rendered token IDs; token-ID input still appends unless marked as a complete prompt. Complete hits replay the final token. Serialized backends retain one successful session; failures discard it. Fixtures cover branching, tools/template changes, generated tokens, cancellation, partial-layer failures, threaded attention and MLX ownership.
+
+Q8 is opt-in on CPU and MLX; F32 remains the default. The shared encoding uses signed-byte groups of 32 and F32 scales, including partial groups, ties-to-even and finite-extrema reconstruction. Attention uses temporary F32 prefixes. The user confirms retaining this storage-first format with measured F32 quality bounds of relative L2 ≤0.15 and cosine ≥0.99; independent Q8 oracle comparisons use tighter bounds. All six cases match eight oracle greedy IDs, and those reference sequences match their corresponding F32 references.
+
+The [recorded profile](cache-acceptance.md#recorded-profile) retains **63 MiB Q8 versus 224 MiB F32** at context capacity 1024. Eight-token generation takes about **5.5× longer on CPU and 1.4× on MLX** in this profile. Conversion and scratch tuning remain open; existing full-capacity MLX writes remain a separate limitation. The unrelated stale template-limit links are recorded in tracker reconciliation.
+
+Live counts verified after closure: cl-inference **23**, cl-tensor **18**, cl-gpu **43**, trivial-simd **62** — **146 open issues**. Historical snapshot counts remain unchanged.
+
 ### P0 — main-path correctness
 
 | Repository | Ticket | State | Planning note |
@@ -120,8 +143,8 @@ The pinned 12-template matrix passes 477 prompt/error parity checks and 24 detec
 
 | Repository | Ticket | State | Planning note |
 |---|---|---|---|
-| cl-inference | [#16 — Multi-turn KV reuse and prefix caching](https://github.com/communal-software/cl-inference/issues/16) | Open | Adds reusable multi-turn inference; distinguish request/session ownership and prefix matching. |
-| cl-inference | [#18 — Quantized KV cache](https://github.com/communal-software/cl-inference/issues/18) | Open | Expands usable context within a memory budget; depends on cache/session integration. |
+| cl-inference | [#16 — Multi-turn KV reuse and prefix caching](https://github.com/communal-software/cl-inference/issues/16) | Closed: 2026-10-15 | Owner: Codex. Session-local exact-token matching, final-token replay and serialized-backend reuse; opt-out retains fresh prefill. CPU/MLX fixtures, pinned acceptance and the multi-turn example pass. Published to origin and mirror; see [cache review](#cache-implementation-review). Next: preserve prefix regressions when extending model support. |
+| cl-inference | [#18 — Quantized KV cache](https://github.com/communal-software/cl-inference/issues/18) | Closed: 2026-10-15 | Owner: Codex. Opt-in symmetric S8/F32 group-32 caches on CPU and MLX, with finite reconstruction and temporary F32 attention prefixes. Pinned quality/oracle acceptance and storage/timing measurements pass; see [cache review](#cache-implementation-review). Next: conversion and scratch tuning under the follow-up in tracker reconciliation. |
 | cl-inference | [#32 — Tokenizer: default pre-tokenizer for GGUF files without tokenizer.ggml.pre](https://github.com/communal-software/cl-inference/issues/32) | Open | Loads otherwise rejected older GGUF tokenizer metadata. |
 | cl-inference | [#33 — Tokenizer: more pre types and SentencePiece models](https://github.com/communal-software/cl-inference/issues/33) | Open | Tokenizer algorithms and pre-types unlock additional model families; select the first family. |
 | cl-inference | [#34 — Tokenizer: insert a child's pre-tokenizer rule before an inherited rule](https://github.com/communal-software/cl-inference/issues/34) | Open | Enables tokenizer inheritance where rule order matters; do alongside a model that needs it. |
