@@ -186,8 +186,16 @@
                      (lambda (&rest arguments)
                        (declare (ignore arguments))
                        (error "Encoded linear unexpectedly converts strided storage")))
-                  (let ((local::*half-linear-path* :encoded)) (local:linear x mapped)))))
-            (is (= 1 calls))
+                  (let ((local::*half-linear-path* :encoded)) (local:linear x mapped))
+                  (with-function-wrapper
+                      ('local::half-linear-profile-p profile (constantly t))
+                    (let ((local::*half-linear-path* :auto)
+                          (ct:*executor* (lambda (&rest arguments)
+                                          (declare (ignore arguments)) (error "Unexpected scheduling"))))
+                      (with-function-wrapper
+                          ('trivial-simd:encoded-matmul-native-p capability (constantly t))
+                        (local:linear (ct:slice x :selectors '((0 1) :all)) mapped)))))))
+            (is (= 2 calls))
             (with-function-wrapper
                 ('trivial-simd:nd-convert! original
                  (lambda (destination input shape &rest options)
@@ -221,8 +229,59 @@
       (let ((trivial-simd::*backend* :lisp))
         (check-half-linear x weight decoded))
       (let ((ct:*executor* (lambda (count work) (funcall work 0 count))))
-        (is (not (local::half-linear-profile-p)))
+        (is (eq :tiled (local::half-linear-path x weight)))
         (check-half-linear x weight decoded)))))
+
+(test half-linear-single-row-executor-dispatch
+  (dolist (dtype '(:f16 :bf16))
+    (multiple-value-bind (weight decoded) (half-weight 257 33 dtype)
+      (declare (ignore decoded))
+      (with-function-wrapper
+          ('local::half-linear-profile-p profile (constantly t))
+        (with-function-wrapper
+            ('trivial-simd:encoded-matmul-native-p capability (constantly t))
+          (let ((local::*half-linear-path* :auto)
+                (ct:*executor* (lambda (&rest arguments)
+                                (declare (ignore arguments)) (error "Unexpected scheduling"))))
+            (dolist (count '(0 1 2 18 19 21 22))
+              (let ((x (ct:make-tensor (list count 33))))
+                (is (eq (if (= count 1) :encoded :tiled) (local::half-linear-path x weight))))))
+          (let* ((local::*half-linear-path* :auto)
+                 (threshold (cdr (assoc dtype local::*half-linear-thresholds*))))
+            (is (eq :encoded (local::half-linear-path (half-activations threshold 33) weight)))
+            (is (eq :tiled (local::half-linear-path (half-activations (1+ threshold) 33) weight)))))))))
+
+(test half-linear-single-row-executor-views
+  (dolist (dtype '(:f16 :bf16))
+    (multiple-value-bind (weight decoded) (half-weight 260 70 dtype)
+      (with-function-wrapper
+          ('local::half-linear-profile-p profile (constantly t))
+        (let ((ct:*executor* (lambda (&rest arguments)
+                              (declare (ignore arguments)) (error "Unexpected scheduling"))))
+          (dolist (selectors '(:all ((1 258) (2 67)) ((1 258) (2 67 2))
+                              ((257 0 -1) (66 1 -2))))
+            (let* ((view (if (eq selectors :all) weight (ct:slice weight :selectors selectors)))
+                   (reference (if (eq selectors :all) decoded (ct:slice decoded :selectors selectors)))
+                   (columns (aref (ct:tensor-shape view) 1))
+                   (x (ct:slice (half-activations 3 (* 2 columns))
+                                :selectors (list '(1 2) (list 0 (* 2 columns) 2)))))
+              (with-function-wrapper
+                  ('trivial-simd:encoded-matmul-native-p capability (constantly t))
+                (let ((local::*half-linear-path* :auto))
+                  (is (eq (if (or (eq selectors :all) (equal selectors '((1 258) (2 67))))
+                              :encoded :tiled)
+                          (local::half-linear-path x view)))))
+              (check-half-linear x view reference)))
+          (check-half-linear (half-activations 1 260) (ct:transpose weight) (ct:transpose decoded))
+          (let ((x (half-activations 1 70)) (local::*half-linear-path* :auto))
+            (with-function-wrapper
+                ('trivial-simd:encoded-matmul-native-p capability (constantly nil))
+              (is (eq :tiled (local::half-linear-path x weight))))
+            (with-function-wrapper
+                ('local::half-linear-profile-p original (constantly nil))
+              (is (eq :tiled (local::half-linear-path x weight))))
+            (let ((ct:*executor* :invalid) (local::*half-linear-path* :encoded))
+              (signals error (local:linear x weight)))))))))
 
 (test blocks-qk-norm
   (check-model "blk-qwen" :neox (spec* :qk-norm t)))

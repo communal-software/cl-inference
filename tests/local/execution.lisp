@@ -73,13 +73,15 @@
             (is (equal serial (greedy-continuation model tokens 3)) "~A ~A greedy" architecture dtype)))))))
 
 (test parallel-models-match-serial
-  (check-parallel-model
-   (lambda (count callback)
-     (funcall callback count count)
-     (loop for end = count then start while (plusp end)
-           for start = (max 0 (- end 3)) do (funcall callback start end))))
-  (multiple-value-bind (executor close) (make-threaded-test-executor 3)
-    (unwind-protect (check-parallel-model executor) (funcall close))))
+  (with-function-wrapper
+      ('local::half-linear-profile-p profile (constantly t))
+    (check-parallel-model
+     (lambda (count callback)
+       (funcall callback count count)
+       (loop for end = count then start while (plusp end)
+             for start = (max 0 (- end 3)) do (funcall callback start end))))
+    (multiple-value-bind (executor close) (make-threaded-test-executor 3)
+      (unwind-protect (check-parallel-model executor) (funcall close)))))
 
 (test parallel-q8-cache-matches-serial
   (multiple-value-bind (executor close) (make-threaded-test-executor 3)

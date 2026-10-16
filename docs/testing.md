@@ -59,6 +59,8 @@ uv run --with-requirements tools/chat-template-requirements.txt python tools/cha
 
 `tests/local/chat-families.lisp` checks detection, stream boundaries, schema validation, client round trips, BOS/stop IDs and control-token provenance. `tests/local/execution.lisp` compares serial execution with reversed partitions and a reusable three-worker pool, including cache/greedy results, bindings, errors and cancellation. [Parallel acceptance and measurements](parallel-inference.md#measurement) run separately.
 
+Half-precision fixtures check executor-bound single-row dispatch, directly readable mapped offsets/padding, irregular-layout fallback and an executor that signals if scheduled. Serial activation thresholds and forced paths retain their existing coverage. The [half-weight profile](half-linear-performance.md#executor-measurements) records complete-call performance separately from correctness tests.
+
 ## MLX
 
 After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, client and acceptance-harness fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Llama and Qwen models with a pinned Python MLX oracle. Set `CL_INFERENCE_MLX_ACCEPTANCE_STRICT=1` to require every reference input and case; absent inputs skip in ordinary runs, while hash mismatches fail. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.

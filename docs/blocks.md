@@ -89,6 +89,8 @@ F16 and BF16 projections take F32 matrix activations and produce F32 results. Di
 
 The measured M1/SBCL profile selects direct execution for small activation batches and tiled BLAS for larger batches. Other configurations use tiled BLAS. See [Half-precision measurements](half-linear-performance.md) for thresholds and reproduction commands.
 
+With an executor, automatic encoded execution requires one activation row and directly readable weight rows, including mapped offsets and padding. Irregular weight layouts and larger activation batches use tiles. Single-row matmul validates the executor without scheduling workers.[^half-layout]
+
 The tiled path supports padded and strided views without expanding the whole weight matrix.[^tiles] Numerical comparisons use tolerances because accumulation order differs between paths.
 
 ## Mods
@@ -109,3 +111,5 @@ Specialise `block-forward`, including with `:around`, to observe or change a blo
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |
 
 [^tiles]: Scratch contains at most `min(256, output-rows) × input-columns` F32 weights. Contiguous tiles use `trivial-simd:convert!`; strided tiles use `nd-convert!`. Contiguous mapped conversion, including `ct:astype`, uses the packed converter without a full input snapshot. Arbitrary layouts on the encoded path may require an encoded layout copy in cl-tensor.
+
+[^half-layout]: Direct rows have unit inner stride unless the input width is one, and row stride at least the input width unless there is one output row. Forced encoded execution supports other layouts through cl-tensor's encoded packing. Strided activation rows remain supported.

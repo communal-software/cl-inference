@@ -51,9 +51,12 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
        (equal (lisp-implementation-version) "2.6.8")
        (equal (machine-type) "ARM64")
        (equal (machine-version) "Apple M1")
-       (eq (trivial-simd:backend) :native)
-       ;; TODO: executor-bound half decode uses tiled scratch; profile encoded dispatch (#55).
-       (null ct:*executor*)))
+       (eq (trivial-simd:backend) :native)))
+
+(defun half-linear-direct-weight-p (weight)
+  (let ((shape (ct:tensor-shape weight)) (strides (ct:tensor-strides weight)))
+    (and (or (= (aref shape 1) 1) (= (aref strides 1) 1))
+         (or (= (aref shape 0) 1) (>= (aref strides 0) (aref shape 1))))))
 
 (defun half-linear-path (x weight)
   (unless (and (= (ct:tensor-rank x) 2) (= (ct:tensor-rank weight) 2)
@@ -65,8 +68,12 @@ all keys and values so far, as (values keys values). Shapes are (positions kv-he
     (:auto
      (if (and (half-linear-profile-p)
               (trivial-simd:encoded-matmul-native-p)
-              (<= (aref (ct:tensor-shape x) 0)
-                  (cdr (assoc (ct:tensor-dtype weight) *half-linear-thresholds*))))
+              (if ct:*executor*
+                  (and (= (aref (ct:tensor-shape x) 0) 1)
+                       (half-linear-direct-weight-p weight))
+                  ;; TODO: serial packing can dominate; profile layout-aware cutoffs (#59).
+                  (<= (aref (ct:tensor-shape x) 0)
+                      (cdr (assoc (ct:tensor-dtype weight) *half-linear-thresholds*)))))
          :encoded :tiled))))
 
 (defun tiled-linear (x weight)

@@ -1,0 +1,407 @@
+{
+  "started_at_utc": "2026-10-15T22:30:29.061752+00:00",
+  "platform": "macOS-15.7.5-arm64-arm-64bit",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t15.7.5\nBuildVersion:\t\t24G624",
+  "revisions": {
+    "cl-inference": "a470f8275a846787438a1cdaae1bcbdceec4be9e",
+    "cl-tensor": "81272fa7ae765673ddaf43e0f984a1b035274ff4",
+    "trivial-simd": "f5d8ad5b70deecc16df5cad5dde1f8de959b4104"
+  },
+  "inference_diff_sha256": "19f308dde4c1e866cfb4582db554aa94eb2d73781e18449a475b9001b6a8c5bb",
+  "native_library_sha256": "32a032f959e0122a74290f7af9a83edfe026ce63cb9bf317e305d9534fb0faa6",
+  "source_sha256": {
+    "local/blocks.lisp": "7e1a33850d4e78878228602f4e5466538b22f7d20d92ed2aca46d2c26fcf5106",
+    "tests/local/blocks.lisp": "a449f353eb237349da6feda566be1363daaeda4cfa83895ca71b20654b96bb6a",
+    "tests/local/execution.lisp": "87116eaf62dbc6ca54532fff4f0f27f6aabcf295d6c0abc295e8d21cb03d5877",
+    "tools/parallel-bench.lisp": "8d87c405b7cf71a4054c6db221fd6243c03107513cf3dbd604bd0cee6f2173e2",
+    "tools/parallel-profile.py": "f2c1788e7dd18ab5f6d3a432211f9afd38200914c209d1d68a11e9415863a7cf"
+  },
+  "profiles": [
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=\"1\" tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\"",
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=\"1\" tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\"",
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=\"1\" tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\"",
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=NIL tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\"",
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=NIL tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\"",
+    "PROFILE \"Apple M1\" \"SBCL\" \"2.6.8\" simd=:NATIVE VECLIB_MAXIMUM_THREADS=NIL tensor=#P\"/Users/george/git/cl-tensor/\" simd-source=#P\"/Users/george/git/trivial-simd/\""
+  ],
+  "completed_processes": [
+    {
+      "native_threads": "single",
+      "process": 1,
+      "rows": 936
+    },
+    {
+      "native_threads": "single",
+      "process": 2,
+      "rows": 936
+    },
+    {
+      "native_threads": "single",
+      "process": 3,
+      "rows": 936
+    },
+    {
+      "native_threads": "default",
+      "process": 1,
+      "rows": 816
+    },
+    {
+      "native_threads": "default",
+      "process": 2,
+      "rows": 816
+    },
+    {
+      "native_threads": "default",
+      "process": 3,
+      "rows": 816
+    }
+  ],
+  "cpu_check": "Reject unrelated processes using >=50% CPU in three consecutive snapshots; check before/after each process and at result boundaries after 60 seconds.",
+  "updated_at_utc": "2026-10-16T07:48:33.547345+00:00",
+  "dependency_source_provenance": {
+    "checkout_revision": "f5d8ad5b70deecc16df5cad5dde1f8de959b4104",
+    "published_reference": "cd61d43c2986c05ac32503d7619b2e7b67d1b584",
+    "files": {
+      "sbcl-conversions.lisp": {
+        "sha256": "9cd8355f7c7f35da595ba15a80e8a027d24dd04c1d138101c021f311f600a505",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4609241
+      },
+      "kernel-inputs.lisp": {
+        "sha256": "1d6b0435675e2d88e3f98d8d799900ea57b699917a3435513004ab1131e3d70e",
+        "matches_published_reference": true,
+        "modified_at": 1792057905.0735295
+      },
+      "nd.lisp": {
+        "sha256": "6e13295765394d8d58fae30361932ecfb5ac7476a80bff78c79400d33356e763",
+        "matches_published_reference": true,
+        "modified_at": 1791840029.8335032
+      },
+      "kernel-complex.lisp": {
+        "sha256": "3fa5c1c61232c864031f25bc4b297ccdfca46d67427fb57845045657d2c1b8bd",
+        "matches_published_reference": true,
+        "modified_at": 1792056774.870758
+      },
+      "mask-reducer-gates.lisp": {
+        "sha256": "5c30bba9f7e48e95375d67f96f03f387fabf6ab3adbf54dfdfd768e28274774f",
+        "matches_published_reference": true,
+        "modified_at": 1791881034.9779334
+      },
+      "numeric-types.lisp": {
+        "sha256": "28975c6b7be2cc3293dcd65c16394ad91cb910eab093ca444cacc4d8b111d99f",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4606454
+      },
+      "package.lisp": {
+        "sha256": "3ed138cc491286592335e8c3db850e975282289b7d740b89872a78a956e55219",
+        "matches_published_reference": false,
+        "modified_at": 1792005167.6463149
+      },
+      "kernel-fma-arm64.lisp": {
+        "sha256": "5c2c5ce8e7143f64149bd22ed8d5c28a5b3be11fb751fd6d4154e00c3859cc15",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4580622
+      },
+      "sbcl-simd.lisp": {
+        "sha256": "19bd5ed76aef56d8469d45fdc7300247c5f949d91d1f813fad975a05d683d96c",
+        "matches_published_reference": true,
+        "modified_at": 1791318755.0971704
+      },
+      "operations.lisp": {
+        "sha256": "78aac9113d2153dae71e3d3dc71a1861f6a36fb026c7a0919320d2d7c86e7dad",
+        "matches_published_reference": true,
+        "modified_at": 1791894435.1238022
+      },
+      "q8.lisp": {
+        "sha256": "0b833dd47310af772240a0e334e6bed59ed9c12a54a2654df0da764ea9ede52d",
+        "matches_published_reference": true,
+        "modified_at": 1791837277.8588228
+      },
+      "encoded-matmul.lisp": {
+        "sha256": "3af3b437af7dad37a92652d8d1712be280e45c952c7f935fb13a2b3a0636ec2f",
+        "matches_published_reference": true,
+        "modified_at": 1792005167.6466944
+      },
+      "strided-execution.lisp": {
+        "sha256": "900f6596fe3374edad59fb776914d06ac4b6fb4842e6db1340095ec613385140",
+        "matches_published_reference": true,
+        "modified_at": 1791896292.6607175
+      },
+      "product.lisp": {
+        "sha256": "88a6d9dfba64e9c9663d2a636e5ac11f5beae63ea1767d9d5f092bf8567a180e",
+        "matches_published_reference": true,
+        "modified_at": 1791894435.1246328
+      },
+      "kernel-rows.lisp": {
+        "sha256": "608668e4e832600437cd084ffec2598eda02b9f9617d488d6cfb4e2e0bdacc01",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.458637
+      },
+      "complex-operations.lisp": {
+        "sha256": "bcc0650f713ab84ee25a170f314a789bb336d0eb98c7d872a03488024fc19c42",
+        "matches_published_reference": true,
+        "modified_at": 1791894435.124399
+      },
+      "small-arrays.lisp": {
+        "sha256": "d50e08a8c66ca8865eb22306a08fa090a08d1ddbdb779cc8d38f214c27b1448c",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4612093
+      },
+      "integer-lisp.lisp": {
+        "sha256": "f225d26c93011f8ffa55d1647866ae0e6ec1c50b570d46a7f59095d64b9eadc3",
+        "matches_published_reference": true,
+        "modified_at": 1790701278.804631
+      },
+      "copy-operations.lisp": {
+        "sha256": "8dc3053d79983f8ef746939629a9eb3e966f348710fbac4b69aa0d883aefa758",
+        "matches_published_reference": true,
+        "modified_at": 1791894435.1242712
+      },
+      "strided.lisp": {
+        "sha256": "d6b7df0ae10799fe16288cf7501f1deb9e5ebeb501304cfd3e082a89e1dc53e2",
+        "matches_published_reference": true,
+        "modified_at": 1791892801.0006037
+      },
+      "kernel-plan.lisp": {
+        "sha256": "18ab57c8ceece38002d099e46937940fd881a407712b773fbb0ef8565558e688",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4584637
+      },
+      "strided-lisp.lisp": {
+        "sha256": "ca474bf963d2f26cdb51a0e1f5cdc7185d41a430eea74222453c4f1ed867a1fb",
+        "matches_published_reference": true,
+        "modified_at": 1791894957.0502882
+      },
+      "kernel-math.lisp": {
+        "sha256": "98446d0c15755a83740513a851112e4a5259b1b6c331af03f7e22f146ba03f3c",
+        "matches_published_reference": true,
+        "modified_at": 1791362454.1636052
+      },
+      "vector-views.lisp": {
+        "sha256": "69385ff85757fc136b98db139f45fc3bd6f7309145d11be8712ec25277775dd2",
+        "matches_published_reference": true,
+        "modified_at": 1792056921.9543617
+      },
+      "sbcl-masks.lisp": {
+        "sha256": "2b28471bda8b8e68af64c412046c430e3c8daf1ab148d760462747942ebf3d30",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4610496
+      },
+      "kernel-sharing.lisp": {
+        "sha256": "d525a58d5c41c8c663c19ad8193ef06664a50c258b139c0ed4f76f246f9d88fb",
+        "matches_published_reference": true,
+        "modified_at": 1791884735.5060818
+      },
+      "float-encodings.lisp": {
+        "sha256": "22483f61293bbc8582ae89f5630229273b031217c83ff166385f6229b9ef2ad7",
+        "matches_published_reference": true,
+        "modified_at": 1791113450.889971
+      },
+      "native.lisp": {
+        "sha256": "f69141ba1e022d605d5c3f9ef8de237cdbfed36150e42d8472fc992c0fdc8fac",
+        "matches_published_reference": true,
+        "modified_at": 1791878628.7677586
+      },
+      "extended-operations.lisp": {
+        "sha256": "9dff8b5d127e4b64dfcf310b3ba6f9888a58b571ec267c6ada96ef190b44c2ff",
+        "matches_published_reference": true,
+        "modified_at": 1792057905.0436308
+      },
+      "reductions.lisp": {
+        "sha256": "3c1d760b587121635c9f84d075c5ede4f35b20211c94d4ff55d53d316d9924c6",
+        "matches_published_reference": true,
+        "modified_at": 1791894435.1247306
+      },
+      "packed-matmul.lisp": {
+        "sha256": "d19c6b9520ba5c612ebc5165f02038436fbe0d71253b1c02242a91369ccd5b26",
+        "matches_published_reference": true,
+        "modified_at": 1791997206.8389568
+      },
+      "kernel.lisp": {
+        "sha256": "194de07db9cf0e876ae96f9f4070d9319ec97a449b07fc7d1a53a6322020a795",
+        "matches_published_reference": true,
+        "modified_at": 1792056774.8526661
+      },
+      "backends.lisp": {
+        "sha256": "b9d730b69e07c08135ebc89838ce857492a5f8e6e26476debf48079ddca3e8a0",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4519517
+      },
+      "sbcl-integers.lisp": {
+        "sha256": "32a3e61366e184ee634ba747306570b8b6fad2284edb677f978d1b5edec28ec3",
+        "matches_published_reference": true,
+        "modified_at": 1790701789.7196465
+      },
+      "blas/package.lisp": {
+        "sha256": "ab7657135fe3991294bda25e865b8a74418e2ce68c4449939a3747524c2c763f",
+        "matches_published_reference": false,
+        "modified_at": 1791912588.1171372
+      },
+      "blas/gemm-arithmetic.lisp": {
+        "sha256": "59a07559afeeae790299e7e873057e75c2882f8d9dbb651d8a313a2b4f423c4f",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4520996
+      },
+      "blas/level1.lisp": {
+        "sha256": "17f0218dabcc66068325356bca197a094d53c724a53c77809a2f015118d83ed4",
+        "matches_published_reference": false,
+        "modified_at": 1791912588.1172986
+      },
+      "blas/storage.lisp": {
+        "sha256": "780591508dee5dff2214adf2a493322c58e602ae5d67089de06c2939124b9521",
+        "matches_published_reference": true,
+        "modified_at": 1791038845.538973
+      },
+      "blas/matrix-view.lisp": {
+        "sha256": "5f537a0b6c717a3386fbb40dd0fb94fdae887bec40f0630f6fd9ce33debc1cd8",
+        "matches_published_reference": true,
+        "modified_at": 1791312924.4762518
+      },
+      "blas/level3.lisp": {
+        "sha256": "f61d06660acef67de032563f181b0fb93bda614b5471c50b1e5ec902f4fe05ef",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.452429
+      },
+      "blas/level2.lisp": {
+        "sha256": "a770d779479e534f0ffa335dfd254cc02b28e2569cf235fc77022fbf4a00479b",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4522474
+      },
+      "blas/level1-extra.lisp": {
+        "sha256": "57ef17bb83eb194e5dbd67fbe3c0f0bfea16dcbb15337567099c5ce48a8945fa",
+        "matches_published_reference": true,
+        "modified_at": 1791038845.5375066
+      },
+      "blas/kernel.lisp": {
+        "sha256": "d1465addf717ccdcf33da67e54382a13e4f4794769e871a6284940b0d5c26799",
+        "matches_published_reference": true,
+        "modified_at": 1791312286.9039648
+      },
+      "blas/convenience.lisp": {
+        "sha256": "a987e6633739156604a0726e73a0b807485e794d1fb870225bafc4a3794ae81a",
+        "matches_published_reference": true,
+        "modified_at": 1791038845.536562
+      },
+      "native/encoded-matmul.c": {
+        "sha256": "528fbb64d19bb5df58f2cbdff8620e94f1b6f8d0a1eefdc840309f9a2f4180c1",
+        "matches_published_reference": true,
+        "modified_at": 1791840822.315106
+      },
+      "native/extended.c": {
+        "sha256": "a028c968e21617e2fe2e0c2d3785a9ba2650f2074d85bd8422a32163690e50cc",
+        "matches_published_reference": true,
+        "modified_at": 1791896292.660386
+      },
+      "native/q8.c": {
+        "sha256": "0294cc7d56c0cdfbe1cfbee5d4c0ebe30ba0a777501d0b65e243c3652e38210b",
+        "matches_published_reference": true,
+        "modified_at": 1791836420.8477845
+      },
+      "native/packed-matmul.c": {
+        "sha256": "67ca5530943f474cf7e8f397a1c979d30687d87e6daad808916eca62731039e9",
+        "matches_published_reference": true,
+        "modified_at": 1791998236.4239852
+      },
+      "native/complex.c": {
+        "sha256": "16ee62068a971a876705f29e9dae78fbffcffeaab522232876736780ab35093e",
+        "matches_published_reference": true,
+        "modified_at": 1791891601.0652049
+      },
+      "native/fma.c": {
+        "sha256": "2fec5f1695c396d455cdb409764b375074375475a90407aaddaaf9c82778d7c1",
+        "matches_published_reference": true,
+        "modified_at": 1790842071.1915512
+      },
+      "native/trivial_simd.c": {
+        "sha256": "5e47bc6d1c2f7d0ff7812037d0a98e86113051a0164eb706bd5e09d47b78541e",
+        "matches_published_reference": true,
+        "modified_at": 1792057363.8212843
+      },
+      "native/fma-x86.c": {
+        "sha256": "7e7716d82954652dd336cb7a446fc523d6a281ebdcc6f64197aad233ff6d7a8e",
+        "matches_published_reference": true,
+        "modified_at": 1790594141.9025826
+      },
+      "native/blas.c": {
+        "sha256": "b7e185550232c07bd4b46c576d0259514276853bda8e1dfe7b1352e0befc13a0",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4590528
+      },
+      "native/strided-memory-gates.h": {
+        "sha256": "02222870c23418f2be1810210bf0caf342eddb4456402ed567367067f082492f",
+        "matches_published_reference": false,
+        "modified_at": 1791905279.1950552
+      },
+      "native/kernel-vm.h": {
+        "sha256": "4ff39f937197a0146c89bf7dd5d2dfe019d1e68ad33bee9a131412349ee8871c",
+        "matches_published_reference": true,
+        "modified_at": 1791276137.6513474
+      },
+      "native/fma.h": {
+        "sha256": "17a7fbffc4b9ad92bd053f6b82128d27e05f45d9a43df270deea0e5602b3285c",
+        "matches_published_reference": true,
+        "modified_at": 1790594141.902462
+      },
+      "native/masks.h": {
+        "sha256": "f4b1fa33180c1e6faf966776171683d657f0b762e6f6b2a687105ee03c1d5dcf",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4601147
+      },
+      "native/encoded-load.h": {
+        "sha256": "3972f7f287c633034f9d762d9c79b7493503763eab3fe40199a613296e80e5bd",
+        "matches_published_reference": true,
+        "modified_at": 1791839255.3601391
+      },
+      "native/conversion.h": {
+        "sha256": "44d9bc81c0a63b1e58ca6b248fae34cf534b61f844d75b0031108851c99a0d8e",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4593952
+      },
+      "native/strided.h": {
+        "sha256": "3122139bdef745cdc3584a11151535d58bce2a87ebcd47469748967f6bd011ea",
+        "matches_published_reference": false,
+        "modified_at": 1791904669.529383
+      },
+      "native/strided-memory.h": {
+        "sha256": "6e73962c6d82cbdc89a60f606a778749c1a95a6f1068e284cfa313a15a86912e",
+        "matches_published_reference": false,
+        "modified_at": 1791901607.4706745
+      },
+      "native/nd.h": {
+        "sha256": "edb5ffcddb67236ffdd5ec540127f502058c1bc2cc5cfbdb54fe01649b09c1f0",
+        "matches_published_reference": true,
+        "modified_at": 1791469652.2290878
+      },
+      "native/complex-kernel.h": {
+        "sha256": "66b4abdfe56656c711f06d04e50b6d5832fa3a3c33e8cfe08d903bcf4d033aa0",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.4592435
+      },
+      "native/kernel-inputs.h": {
+        "sha256": "3b212952de60078c80b2be3855459b6bad6916b2c71010a7cf465db4f0ff8266",
+        "matches_published_reference": true,
+        "modified_at": 1791645207.459957
+      },
+      "native/integer.h": {
+        "sha256": "fce12c757c1f92bc5795d7985acd2c86040a2d5f4cf20b7a8ac3a28cbbc5c0da",
+        "matches_published_reference": true,
+        "modified_at": 1792056811.7643726
+      },
+      "native/kernel-lazy.h": {
+        "sha256": "d7a13f615ade2b493816ec549e17c5968fbb88beff736c6c69d13192f0569e5d",
+        "matches_published_reference": true,
+        "modified_at": 1792057838.4664483
+      },
+      "trivial-simd.asd": {
+        "sha256": "3f7a71c0db34e2d60be03574ab65175a59b512da9ba7b94665c91186e384bc1e",
+        "modified_at": 1791997458.8718035
+      },
+      "CMakeLists.txt": {
+        "sha256": "ab8decae4393ddd2631a4e1420dc58b8416d11adeede42d09215e3ad85d4981c",
+        "modified_at": 1791997206.8401825
+      }
+    },
+    "note": "Measured SIMD checkout includes pre-existing local changes; encoded-matmul.lisp, q8.lisp and packed-matmul.lisp match the published reference. Source hashes identify the remaining local runtime/build snapshot. Native binary SHA is recorded in the main metadata."
+  },
+  "recovery": "Retain only complete 936-row processes. Incomplete native-default model attempts rejected for macOS background CPU load are excluded. Native-default records are three projection-only processes (816 rows each); single-thread records are three complete projection/model processes (936 rows each). Processes resume after quiet-load checks. Two unrelated CPU jobs are paused with user approval during measurement and resumed afterward."
+}
