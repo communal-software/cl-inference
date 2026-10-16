@@ -40,6 +40,10 @@ Inspection does not build a model or dequantize tensors. Load `cl-inference/safe
 
 Each reply contains `:meta :usage :cached-prompt-tokens`. The example owns one serialized backend, appends each assistant reply to the next request, and releases the backend before closing weights.
 
+## GGUF on Apple Silicon
+
+`sbcl --script examples/mlx-gguf.lisp model.gguf "Say hello."` streams a completion through the MLX backend. It requires Metal, the native cl-mlx libraries and a supported model. See [GGUF on MLX](mlx-gguf.md).
+
 ## Run without downloads
 
 ```sh

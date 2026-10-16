@@ -73,7 +73,8 @@
           (make-quantized-weight :packed array :scales scales :biases biases :group-size group))
         array)))
 
-(defun weight-shape (weight)
+(defgeneric weight-shape (weight))
+(defmethod weight-shape (weight)
   (if (quantized-weight-p weight)
       (let ((shape (mx:shape (quantized-weight-packed weight))))
         (list (first shape) (* 8 (second shape))))
@@ -83,14 +84,16 @@
   (unless (equal (weight-shape weight) expected)
     (model-fail "Expected weight shape ~S, got ~S" expected (weight-shape weight))))
 
-(defun mlx-linear (x weight)
+(defgeneric mlx-linear (x weight))
+(defmethod mlx-linear (x weight)
   (if (quantized-weight-p weight)
       (mx:quantized-matmul x (quantized-weight-packed weight)
                           (quantized-weight-scales weight) (quantized-weight-biases weight)
                           (quantized-weight-group-size weight))
       (mx:matmul x (mx:transpose weight))))
 
-(defun mlx-embedding (weight tokens)
+(defgeneric mlx-embedding (weight tokens))
+(defmethod mlx-embedding (weight tokens)
   (if (quantized-weight-p weight)
       (mx:dequantize (mx:take (quantized-weight-packed weight) tokens)
                      (mx:take (quantized-weight-scales weight) tokens)
@@ -112,15 +115,22 @@
     (require-shape (local::attn-k block) (list (* head kv) dim))
     (require-shape (local::attn-v block) (list (* head kv) dim))
     (require-shape (local::attn-output block) (list dim (* head heads)))
+    (when (typep freqs 'mx:array)
+      (require-shape freqs (list (floor (local::attn-rope-dims block) 2))))
     (when (local::attention-qk-norm block)
       (require-shape (local::attn-q-norm block) (list head))
       (require-shape (local::attn-k-norm block) (list head)))
     (when freqs
       (let* ((dims (local::attn-rope-dims block)) (half (floor dims 2))
              (theta (local::attn-rope-theta block))
-             (values (loop for i below half
-                           collect (* (expt theta (/ (* 2 i) dims)) (ct:tref freqs i))))
-             (array (mx:from-data values (list half))))
+             (array (mx:with-array-scope ()
+                      (let* ((bases (loop for i below half collect (expt theta (/ (* 2 i) dims))))
+                             (result (if (typep freqs 'mx:array)
+                                         (mx:multiply freqs (mx:from-data bases (list half)))
+                                         (mx:from-data
+                                          (loop for base in bases for i from 0
+                                                collect (* base (ct:tref freqs i))) (list half)))))
+                        (mx:retain result)))))
         (setf (gethash (format nil "rope.~D" (local:block-layer block)) (imported-arrays weights)) array
               (local::attn-rope-freqs block) array)))))
 
@@ -287,16 +297,25 @@
         (local:bind-block block architecture weights)
         block))))
 
+(defgeneric prepare-mlx-weights (source))
+(defmethod prepare-mlx-weights (source)
+  (unless (eq (local:weights-format source) :safetensors)
+    (model-fail "Load cl-inference/mlx-gguf for GGUF weights; otherwise MLX requires Safetensors"))
+  (make-instance 'mlx-weights :source source :format :safetensors :path (local:weights-path source)))
+
+(defgeneric validate-mlx-source (weights architecture))
+(defmethod validate-mlx-source ((weights mlx-weights) architecture)
+  (st::validate-hf-model (source-weights weights) architecture :quantized t))
+
 (defun load-mlx-model (source)
   "Build a Llama or Qwen3 model over MLX-owned arrays; SOURCE remains borrowed."
-  (unless (eq (local:weights-format source) :safetensors)
-    (model-fail "MLX model loading requires Safetensors weights"))
+  (local::ensure-open source)
   (unless (mx:available-p) (model-fail "Metal device is unavailable"))
   (let* ((architecture (local:load-architecture source))
-         (weights (make-instance 'mlx-weights :source source :format :safetensors :path (local:weights-path source)))
+         (weights (prepare-mlx-weights source))
          (success nil))
     (unless (typep architecture 'local:llama) (model-fail "MLX supports Llama and Qwen3"))
-    (st::validate-hf-model source architecture :quantized t)
+    (validate-mlx-source weights architecture)
     (unwind-protect
          (let ((model
                  (%make-mlx-model architecture
@@ -330,6 +349,11 @@
 
 (defmethod local:model-forward ((model mlx-model) tokens &key (start 0) cache all-logits)
   (unless (local:model-ready-p model) (local::session-fail "MLX model or borrowed weights are closed"))
+  (let ((vocabulary (first (weight-shape
+                           (local::embedding-table (local::model-block-of-type model 'local:embedding))))))
+    (unless (and (plusp (length tokens))
+                 (every (lambda (token) (and (integerp token) (<= 0 token) (< token vocabulary))) tokens))
+      (local::session-fail "MLX requires nonempty token IDs within the embedding vocabulary")))
   (mx:with-array-scope ()
     (let* ((*cache-updates* nil)
            (x (local:block-forward (local::model-block-of-type model 'local:embedding)

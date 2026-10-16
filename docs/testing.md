@@ -91,6 +91,8 @@ Half-precision fixtures check executor-bound single-row dispatch, directly reada
 
 After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, client and acceptance-harness fixtures. `asdf:test-system "cl-inference/mlx/acceptance"` compares real Llama and Qwen models with a pinned Python MLX oracle. Set `CL_INFERENCE_MLX_ACCEPTANCE_STRICT=1` to require every reference input and case; absent inputs skip in ordinary runs, while hash mismatches fail. See [MLX acceptance](mlx-acceptance.md) for setup and numerical bounds.
 
+Packed GGUF/MLX fixtures use `asdf:test-system "cl-inference/mlx-gguf"`. [GGUF/MLX acceptance](mlx-gguf-acceptance.md) adds strict checks for six pinned artifacts and all 15 prompt cases, including cached-decode logits.
+
 ## Acceptance
 
 `cl-inference/local/acceptance` checks Llama 3.2 1B Instruct and Qwen3 0.6B in F16 and Q8_0 against a pinned llama.cpp reference. It compares metadata, prompt ids, layer outputs, final logits and greedy generation.

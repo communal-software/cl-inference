@@ -78,6 +78,13 @@ int main(int argc, char ** argv) {
     }
     const llama_vocab * vocab = llama_model_get_vocab(model);
     const int n_vocab = llama_vocab_n_tokens(vocab);
+    std::ofstream decode;
+    if (std::getenv("DUMP_DECODE_LOGITS")) decode.open(dir + "/decode.f32", std::ios::binary);
+    auto save_logits = [&]() {
+        if (decode.is_open()) {
+            decode.write(reinterpret_cast<const char *>(llama_get_logits_ith(ctx, -1)), n_vocab * sizeof(float));
+        }
+    };
 
     std::vector<llama_token> tokens;
     if (const char * user = std::getenv("DUMP_USER")) {
@@ -120,6 +127,7 @@ int main(int argc, char ** argv) {
         }
     }
     state.active = false;
+    save_logits();
     const float * logits = llama_get_logits_ith(ctx, -1);
     {
         std::vector<int> order(n_vocab);
@@ -135,11 +143,12 @@ int main(int argc, char ** argv) {
     llama_token next = argmax(logits);
     for (int i = 0; i < n_greedy; i++) {
         greedy << next << '\n';
-        if (i + 1 == n_greedy || llama_vocab_is_eog(vocab, next)) break;
+        if ((i + 1 == n_greedy && !decode.is_open()) || llama_vocab_is_eog(vocab, next)) break;
         common_batch batch = common_batch_get_one(ctx, std::vector<llama_token>{next});
         if (llama_process(ctx, LLAMA_PROCESS_TYPE_DECODE, batch.get())) {
             return 1;
         }
+        save_logits();
         next = argmax(llama_get_logits_ith(ctx, -1));
     }
     llama_backend_free();

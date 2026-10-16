@@ -17,6 +17,8 @@ Q8 cache support requires the [symmetric Q8 bindings and finite reconstruction](
       :temperature 0 :max-tokens 64)))
 ```
 
+[GGUF models](mlx-gguf.md) use the optional `cl-inference/mlx-gguf` integration.
+
 The model directory contains Safetensors weights, `config.json`, `tokenizer.json` and `tokenizer_config.json`. Indexed shards use the existing [Safetensors loader](safetensors.md).
 
 ## Supported models
@@ -60,9 +62,9 @@ The optional `cl-mlx/gpu` system runs cl-gpu DSL kernels as lazy MLX operations.
 | Cache updates avoiding full-capacity memory traffic | [#49](https://github.com/communal-software/cl-inference/issues/49) |
 | Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 | Additional quantization widths and modes | [#50](https://github.com/communal-software/cl-inference/issues/50) |
-| GGUF packed kernels, GPU sampling and inference fusion | [Custom kernel limitations](mlx-kernels.md#limitations) |
+| GPU sampling and inference fusion | [Custom kernel limitations](mlx-kernels.md#limitations) |
 | Other HF tokenizer pipelines and templates | [HF limitations](hf-tokenizers.md#limitations) |
 
-GGUF loading into MLX and platforms other than macOS Apple Silicon are outside this backend's coverage. The verified Lisp runtime is SBCL.
+Platforms other than macOS Apple Silicon are outside this backend's coverage. The verified Lisp runtime is SBCL.
 
 [^execution]: Shared execution dispatch selects the model and cache implementation without making MLX a cl-tensor storage extension. MLX streams belong to the native calling thread. Cancellation is checked between passes; submitted native work finishes before its resources are released.

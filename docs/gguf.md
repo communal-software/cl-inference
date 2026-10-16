@@ -11,6 +11,8 @@
 
 `weights-architecture-name` returns `general.architecture`, which [`load-architecture`](architectures.md) matches against each architecture's `:gguf` `:arch`.
 
+The [optional MLX integration](mlx-gguf.md) runs these weights on Apple Silicon with packed Q4/Q6 kernels.
+
 ## Mapping
 
 The file is mapped once, copy-on-write, and every tensor view points into the mapping.[^mmap] Writing through a view changes memory only, never the file. Views are invalid after `close-weights`.

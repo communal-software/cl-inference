@@ -15,3 +15,5 @@
 | Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 
 The full roadmap is [#1](https://github.com/communal-software/cl-inference/issues/1).
+
+[Packed GGUF on MLX](mlx-gguf.md) supports Q4_0, Q4_K and Q6_K weights. Its [limitations](mlx-gguf.md#limitations) cover other weight encodings and platform support.

@@ -30,7 +30,7 @@ Run on macOS Apple Silicon with Metal access. Bridge fixtures cover scalar/vecto
 
 | Integration | Status |
 |---|---|
-| GGUF Q4_0/Q4_K/Q6_K model execution in MLX | Separate model-loader and packed-kernel work; existing CPU support remains unchanged |
+| GGUF Q4_0/Q4_K/Q6_K model execution | [Optional GGUF integration](mlx-gguf.md) |
 | GPU sampling and inference fusion | Separate integrations; standard MLX inference uses the existing CPU sampler |
 | MLX affine widths and modes | [#50](https://github.com/communal-software/cl-inference/issues/50) |
 

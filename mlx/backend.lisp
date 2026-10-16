@@ -4,7 +4,7 @@
 
 (defun make-mlx-backend (weights &key (name :mlx) n-ctx (n-batch 512) (session-policy :serialized)
                                     (cache-type :f32) (reuse-prefix t))
-  "A client backend borrowing open Safetensors WEIGHTS."
+  "A client backend borrowing open WEIGHTS."
   (unless (member session-policy '(:serialized :per-call))
     (local::session-fail "session-policy must be :serialized or :per-call"))
   (let ((model (load-mlx-model weights)) (success nil))

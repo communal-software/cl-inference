@@ -19,7 +19,7 @@ Real-model CPU inference is verified on SBCL; the HTTP client and CPU fixture su
 ## Docs
 
 - Start here: [Getting started](docs/getting-started.md), [Runnable examples](docs/examples.md)
-- Calling models: [Client](docs/client.md), [Local backend](docs/local-backend.md), [MLX](docs/mlx.md)
+- Calling models: [Client](docs/client.md), [Local backend](docs/local-backend.md), [MLX](docs/mlx.md), [MLX GGUF](docs/mlx-gguf.md)
 - Extending models: [Architectures](docs/architectures.md), [Tokenizers](docs/tokenizers.md), [Chat templates](docs/chat-templates.md), [Blocks](docs/blocks.md)
 - Generation: [Sessions](docs/sessions.md), [Sampling](docs/sampling.md)
 - Storage: [Weights](docs/weights.md), [GGUF](docs/gguf.md), [Safetensors](docs/safetensors.md), [Quantized weights](docs/quant.md)

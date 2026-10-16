@@ -154,3 +154,31 @@
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/mlx/tests :run-acceptance)
                (error "cl-inference/mlx acceptance tests failed"))))
+
+(asdf:defsystem "cl-inference/mlx-gguf"
+  :description "Packed GGUF inference in MLX lazy graphs"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/mlx" "cl-inference/gguf" "cl-mlx/gpu")
+  :serial t
+  :components ((:file "mlx/gguf/kernels") (:file "mlx/gguf/weights"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/mlx-gguf/tests"))))
+
+(asdf:defsystem "cl-inference/mlx-gguf/tests"
+  :depends-on ("cl-inference/mlx-gguf" "cl-inference/mlx/tests" "cl-inference/local/acceptance")
+  :serial t
+  :components ((:file "tests/mlx-gguf/package") (:file "tests/mlx-gguf/kernels")
+               (:file "tests/mlx-gguf/model") (:file "tests/mlx-gguf/reference")
+               (:file "tests/mlx-gguf/reference-tests"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/mlx-gguf/tests :run-tests)
+               (error "cl-inference/mlx-gguf tests failed"))))
+
+(asdf:defsystem "cl-inference/mlx-gguf/acceptance"
+  :description "Packed MLX GGUF against pinned F32-dequantized llama.cpp references"
+  :depends-on ("cl-inference/mlx-gguf/tests" "cl-inference/local/acceptance")
+  :components ((:file "tests/mlx-gguf/acceptance"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/mlx-gguf/tests :run-acceptance)
+               (error "cl-inference/mlx-gguf acceptance failed"))))

@@ -39,6 +39,7 @@ CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verifi
 | GGUF v3, little-endian | `cl-inference/gguf` | Model metadata and mapped tensor views |
 | Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3 fixtures, ordinary and Llama 3 RoPE; HF tokenizers and chat setup |
 | F32, F16, BF16 inference weights | `cl-inference/local` and the format loader | Offline model/block fixtures; F16 also has real-model acceptance |
+| MLX packed Q4/Q6 GGUF inference | `cl-inference/mlx-gguf` | Apple Silicon; [formats, ownership and usage](mlx-gguf.md) |
 | MLX float and affine 4-bit inference | `cl-inference/mlx` | Apple Silicon; Llama 3.2 1B Instruct and Qwen3 0.6B real-model acceptance |
 | Q8_0, Q4_0, Q4_K and Q6_K inference weights | `cl-inference/quant` | Packed dtypes and matmul; real-model acceptance, including mixed Q4_K/Q6_K files |
 
