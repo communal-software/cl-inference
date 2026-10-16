@@ -15,7 +15,7 @@ The tokenizer keeps its own copy of the vocabulary, so it stays valid after `w` 
 
 | Function | Returns |
 |---|---|
-| `load-tokenizer weights` | The tokenizer the file declares |
+| `load-tokenizer weights` | The declared tokenizer; the default for GGUF `gpt2` with missing or empty `pre` |
 | `encode tokenizer text &key special add-bos` | Token ids, a `(simple-array (unsigned-byte 32) (*))` |
 | `decode tokenizer ids &key special` | Text; invalid UTF-8 becomes U+FFFD |
 | `make-detokenizer tokenizer &key special` | A [streaming decoder](#streaming) |
@@ -88,15 +88,18 @@ Without `:special t`, control token text such as `<s>` encodes as ordinary chara
 | | `(:ignore-merges bool)` | Emit a piece found whole in the vocabulary as one token, skipping merges[^merges] |
 | | `(:add-bos bool)` | Whether to add BOS when the file has no `add_bos_token` |
 
-Loading picks the most specific tokenizer whose `:model` equals the file's and whose `:pre` contains the file's.
+Loading picks the most specific tokenizer whose `:model` equals the file's and whose `:pre` contains the file's. For GGUF model `gpt2`, missing or empty `tokenizer.ggml.pre` selects `default-bpe`, as does explicit `"default"`. Unknown names and other model types still signal `unknown-tokenizer`.
+
+[`:pre-tokenizer-stages`](pre-tokenizer-stages.md) declares sequential splitting passes. Flat rules and stages cannot be mixed in one inheritance lineage.
 
 ### Rules
 
 | Rule | Options | Matches |
 |---|---|---|
 | `contractions` | `:case-insensitive` | `'s 't 'm 'd 're 've 'll` |
-| `letters` | `:prefix :non-letter-non-newline` | A run of letters, with one optional leading character that is not a letter, digit or newline |
-| `digits` | `:max n` (default 1) | Up to `n` digits |
+| `letters` | `:prefix :space` or `:non-letter-non-newline` | Letters, optionally prefixed by a literal space or one non-letter, non-digit, non-newline character |
+| `digits` | `:min n`, `:max n`, `:prefix :space`, `:ascii-only t` | A number run; minimum and maximum default to 1, NIL maximum is unbounded |
+| `punctuation-symbols` | none | Unicode punctuation and `$+<=>^~\|` |
 | `punctuation` | `:leading-space`, `:trailing-newlines` | A run of characters that are not whitespace, letters or digits, with an optional leading space and trailing newlines |
 | `newlines` | none | Whitespace up to its last newline |
 | `whitespace` | none | A whitespace run; before text it leaves its last character for the next piece |
@@ -116,10 +119,11 @@ Rules merge by kind along the class precedence list. A child's rule replaces the
 
 | Tokenizer | `tokenizer.ggml.pre` | Digits | `:ignore-merges` | `:add-bos` |
 |---|---|---|---|---|
+| `default-bpe` | missing, empty, `default` | staged Unicode runs and ASCII triples | no | no |
 | `llama-bpe` | `llama-bpe`, `llama3`, `llama-v3`, `falcon3`, `falcon-h1`, `pixtral`, `midm-2.0`, `lfm2` | up to 3 | yes | yes |
 | `qwen2` | `qwen2`, `deepseek-r1-qwen`, `kormo` | 1 | no | no |
 
-Both use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it sets both options itself.
+All three use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it sets both options itself. `default-bpe` has its own [four-stage split](pre-tokenizer-stages.md#default-gguf-pipeline); it is not an alias for plain GPT-2 splitting.
 
 ## HF files
 
@@ -138,11 +142,10 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 
 | Missing | Tracker |
 |---|---|
-| Files without `tokenizer.ggml.pre` | [#32](https://github.com/communal-software/cl-inference/issues/32) |
 | Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
 | Placing a child's rule before an inherited one | [#34](https://github.com/communal-software/cl-inference/issues/34) |
 | Chat templates | [chat templates](chat-templates.md#limitations) |
 
-[^regex]: The standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
+[^regex]: The flat standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
 [^merges]: The llama 3 merge list does not reach every token, so merging alone encodes some words differently from llama.cpp.
 [^unicode]: Letter and number are the general categories `L*` and `N*`; whitespace is the `White_Space` property. A cache covers the Basic Multilingual Plane.

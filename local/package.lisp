@@ -26,13 +26,13 @@
    #:unknown-architecture-name #:llama #:qwen3
    ;; tokenizers
    #:define-tokenizer #:tokenizer #:tokenizer-class #:byte-level-bpe #:load-tokenizer
-   #:tokenizer-format #:tokenizer-format-option #:tokenizer-pre-rules #:rule-matcher
+   #:tokenizer-format #:tokenizer-format-option #:tokenizer-pre-rules #:tokenizer-pre-stages #:rule-matcher
    #:tokenizer-selector #:tokenizer-load #:pre-tokenize
    #:encode #:decode #:token-id #:token-bytes #:tokenizer-vocab-size #:tokenizer-special-id
    #:tokenizer-special-p #:tokenizer-add-bos-p #:tokenizer-ignore-merges-p
    #:make-detokenizer #:detokenizer-push #:detokenizer-finish
    #:tokenizer-error #:tokenizer-error-message #:unknown-tokenizer #:unknown-tokenizer-model
-   #:unknown-tokenizer-pre #:llama-bpe #:qwen2
+   #:unknown-tokenizer-pre #:llama-bpe #:qwen2 #:default-bpe
    ;; chat templates
    #:define-chat-template #:chat-template #:chat-template-class #:load-chat-template
    #:chat-segment #:make-chat-segment #:chat-segment-text #:chat-segment-kind

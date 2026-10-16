@@ -46,21 +46,31 @@
              (push (cons head (first args)) options))))))
     (list key :options (nreverse options))))
 
+(defun parse-pre-stage (form)
+  (unless (and (consp form) (symbolp (first form)) (rest form))
+    (tokenizer-fail 'tokenizer-error "Bad pre-tokenizer stage ~S" form))
+  (cons (intern (symbol-name (first form)) :keyword)
+        (mapcar #'parse-pre-rule (rest form))))
+
 (defun parse-tokenizer-sections (forms)
-  (let (rules formats)
+  (let (rules stages formats)
     (dolist (form forms)
       (unless (consp form)
         (tokenizer-fail 'tokenizer-error "Bad tokenizer section ~S" form))
       (case (first form)
         (:pre-tokenizer (setf rules (append rules (mapcar #'parse-pre-rule (rest form)))))
+        (:pre-tokenizer-stages
+         (unless (rest form)
+           (tokenizer-fail 'tokenizer-error "Pre-tokenizer stages must not be empty"))
+         (setf stages (append stages (mapcar #'parse-pre-stage (rest form)))))
         (:format (setf formats (add-format formats (parse-tokenizer-format (second form)
                                                                            (cddr form)))))
         (t (tokenizer-fail 'tokenizer-error "Unknown tokenizer section ~S" (first form)))))
-    (list :pre-tokenizer rules :formats formats)))
+    (list :pre-tokenizer rules :pre-tokenizer-stages stages :formats formats)))
 
 (defmacro define-tokenizer (name (&rest parents) &body sections)
-  "Define tokenizer NAME inheriting from PARENTS. Sections: (:pre-tokenizer (kind . options)...)
-and (:format key (:model \"name\") (:pre \"alias\"...)); a child overrides entries by name."
+  "Define NAME inheriting from PARENTS, with flat rules or named pre-tokenizer stages.
+Children override rules, stages and format entries by name."
   (let ((spec (parse-tokenizer-sections sections)))
     `(progn
        (defclass ,name ,(or parents '(tokenizer)) () (:metaclass tokenizer-class))
@@ -83,6 +93,11 @@ and (:format key (:model \"name\") (:pre \"alias\"...)); a child overrides entri
 (defun tokenizer-pre-rules (tokenizer)
   "Alist of (kind . options): the pre-tokenizer rules of TOKENIZER (a class, name or instance)."
   (merged-entries (tokenizer-class-of tokenizer) (lambda (sections) (getf sections :pre-tokenizer))))
+
+(defun tokenizer-pre-stages (tokenizer)
+  "Ordered alist of stage names and rules, with child stages replacing inherited stages."
+  (merged-entries (tokenizer-class-of tokenizer)
+                  (lambda (sections) (getf sections :pre-tokenizer-stages))))
 
 ;;; Selecting and loading
 
@@ -125,10 +140,12 @@ and (:format key (:model \"name\") (:pre \"alias\"...)); a child overrides entri
         (tokenizer-load tokenizer format weights)
         tokenizer))))
 
-;; TODO: files without tokenizer.ggml.pre select no tokenizer; llama.cpp uses a default pattern (#32)
 (defmethod tokenizer-selector ((format (eql :gguf)) weights)
-  (values (weights-metadata weights "tokenizer.ggml.model")
-          (weights-metadata weights "tokenizer.ggml.pre")))
+  (let ((model (weights-metadata weights "tokenizer.ggml.model")))
+    (multiple-value-bind (pre present) (weights-metadata weights "tokenizer.ggml.pre")
+      (values model (if (and (equal model "gpt2") (or (not present) (equal pre "")))
+                        "default"
+                        pre)))))
 
 ;;; Byte-level BPE
 
@@ -284,9 +301,5 @@ and (:format key (:model \"name\") (:pre \"alias\"...)); a child overrides entri
     (load-gguf-special-ids tokenizer weights)
     (setf (slot-value tokenizer 'ignore-merges)
           (and (tokenizer-format-option tokenizer :gguf :ignore-merges) t))
-    (let ((rules (tokenizer-pre-rules tokenizer)))
-      (unless rules
-        (tokenizer-fail 'tokenizer-error "~S declares no pre-tokenizer rules"
-                        (class-name (class-of tokenizer))))
-      (setf (slot-value tokenizer 'matchers) (compile-pre-tokenizer rules)))
+    (initialize-pre-tokenizer tokenizer)
     tokenizer))

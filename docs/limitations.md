@@ -9,7 +9,7 @@
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |
 | Half-precision direct dispatch has a measured M1/SBCL profile; other configurations use tiled BLAS | [Half-precision limitations](half-linear-performance.md#limitations) |
 | Templates outside pinned text coverage; semantic prompt injection (see [template limits](chat-families.md#limitations)) | [#37](https://github.com/communal-software/cl-inference/issues/37), [#38](https://github.com/communal-software/cl-inference/issues/38) |
-| Tokenizer gaps: files without `pre`, other `pre` types, SentencePiece, rule placement | [#32](https://github.com/communal-software/cl-inference/issues/32), [#33](https://github.com/communal-software/cl-inference/issues/33), [#34](https://github.com/communal-software/cl-inference/issues/34) |
+| Tokenizer gaps: other `pre` types, SentencePiece, rule placement | [#33](https://github.com/communal-software/cl-inference/issues/33), [#34](https://github.com/communal-software/cl-inference/issues/34) |
 | Sampler sorts the whole vocabulary each token | [#40](https://github.com/communal-software/cl-inference/issues/40) |
 | Slow cache copy | [#39](https://github.com/communal-software/cl-inference/issues/39) |
 | Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |

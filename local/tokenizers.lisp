@@ -2,6 +2,18 @@
 
 ;;; Pre-tokenizer rules and `pre` aliases follow llama.cpp's llama-vocab.cpp.
 
+(define-tokenizer default-bpe (byte-level-bpe)
+  (:pre-tokenizer-stages
+   (symbols (punctuation-symbols))
+   (words (contractions)
+          (letters :prefix :space)
+          (digits :prefix :space :max nil)
+          (punctuation :leading-space t)
+          (whitespace))
+   (numbers (digits :max nil))
+   (triples (digits :min 3 :max 3 :ascii-only t)))
+  (:format :gguf (:model "gpt2") (:pre "default") (:ignore-merges nil) (:add-bos nil)))
+
 (define-tokenizer llama-bpe (byte-level-bpe)
   (:pre-tokenizer
    (contractions :case-insensitive t)

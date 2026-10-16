@@ -181,7 +181,9 @@
       (is (eq :gguf (local:tokenizer-format tokenizer))))))
 
 (test tokenizer-unknown-pre-or-model
-  (dolist (options '((:pre "no-such-pre") (:pre nil) (:model "llama") (:model nil)))
+  (dolist (options '((:pre "no-such-pre") (:model "llama") (:model nil)
+                    (:model "llama" :pre nil) (:model nil :pre nil)
+                    (:model "llama" :pre "") (:model "llama" :pre "default")))
     (with-gguf-file (path (apply #'tokenizer-file options))
       (signals local:unknown-tokenizer
         (local:with-weights (w path) (local:load-tokenizer w))))))
@@ -267,6 +269,101 @@
 (test pre-tokenize-custom-rule-kind
   (is (functionp (local:rule-matcher :test-hash nil)))
   (is (= 1 (funcall (local:rule-matcher :test-hash nil) (coerce "#a" '(simple-array character (*))) 0))))
+
+(local:define-tokenizer test-stages (local:byte-level-bpe)
+  (:pre-tokenizer-stages (first (digits :max 1)) (second (digits :max nil)))
+  (:format :gguf (:model "gpt2") (:pre "test-stages")))
+
+(local:define-tokenizer test-stage-child (test-stages)
+  (:pre-tokenizer-stages (first (letters)) (last (whitespace)))
+  (:format :gguf (:pre "test-stage-child")))
+
+(local:define-tokenizer test-mixed-stages (local:llama-bpe)
+  (:pre-tokenizer-stages (first (letters)))
+  (:format :gguf (:pre "test-mixed-stages")))
+
+(test staged-rules-preserve-gaps-and-boundaries
+  (with-tokenizer (tokenizer :pre "test-stages")
+    (is (equal '("ab" "1" "2" "cd") (local:pre-tokenize tokenizer "ab12cd")))
+    (is (null (local:pre-tokenize tokenizer ""))))
+  (with-tokenizer (tokenizer :pre "test-stage-child")
+    (is (equal '("a" "  " "b") (local:pre-tokenize tokenizer "a  b")))
+    (is (equal '("ab" "12" "cd") (local:pre-tokenize tokenizer "ab12cd")))))
+
+(test staged-rules-inherit-whole-stages
+  (is (equal '((:first (:letters)) (:second (:digits :max nil)) (:last (:whitespace)))
+             (local:tokenizer-pre-stages 'test-stage-child)))
+  (is (null (local:tokenizer-pre-rules 'test-stage-child)))
+  (local:define-tokenizer stage-prop-parent (local:byte-level-bpe)
+    (:pre-tokenizer-stages (first (letters))))
+  (local:define-tokenizer stage-prop-child (stage-prop-parent))
+  (is (equal '((:first (:letters))) (local:tokenizer-pre-stages 'stage-prop-child)))
+  (local:define-tokenizer stage-prop-parent (local:byte-level-bpe)
+    (:pre-tokenizer-stages (first (digits :max 2))))
+  (is (equal '((:first (:digits :max 2))) (local:tokenizer-pre-stages 'stage-prop-child))))
+
+(test staged-rules-reject-malformed-definitions
+  (dolist (section '((:pre-tokenizer-stages) (:pre-tokenizer-stages (first))
+                     (:pre-tokenizer-stages 1) (:pre-tokenizer-stages (1 (letters)))
+                     (:pre-tokenizer-stages (first (digits :max)))
+                     (:pre-tokenizer-stages (first (digits :max 1 2)))))
+    (signals local:tokenizer-error
+      (macroexpand-1 `(local:define-tokenizer bad-stages () ,section))))
+  (with-gguf-file (path (tokenizer-file :pre "test-mixed-stages"))
+    (signals local:tokenizer-error
+      (local:with-weights (w path) (local:load-tokenizer w))))
+  (dolist (rule '((:digits :min 0) (:digits :min 4 :max 3) (:digits :max -1)
+                  (:digits :prefix :tab) (:letters :prefix :tab)
+                  (:punctuation-symbols :leading-space t)))
+    (signals local:tokenizer-error (local:rule-matcher (first rule) (rest rule)))))
+
+(test staged-rules-validate-options-and-matches
+  (local:define-tokenizer test-stage-typo (local:byte-level-bpe)
+    (:pre-tokenizer-stages (first (digits :maxx 2)))
+    (:format :gguf (:model "gpt2") (:pre "test-stage-typo")))
+  (local:define-tokenizer test-stage-mixed-flat (test-stages)
+    (:pre-tokenizer (letters))
+    (:format :gguf (:pre "test-stage-mixed-flat")))
+  (dolist (pre '("test-stage-typo" "test-stage-mixed-flat"))
+    (with-gguf-file (path (tokenizer-file :pre pre))
+      (signals local:tokenizer-error
+        (local:with-weights (w path) (local:load-tokenizer w)))))
+  (dolist (bad '(0 -1 2 "end"))
+    (let ((pipeline (local::make-pre-tokenizer-stages
+                     :matchers (vector (vector (lambda (text start)
+                                                 (declare (ignore text start)) bad))))))
+      (signals local:tokenizer-error
+        (local::map-pre-pieces (lambda (start end) (declare (ignore start end))) pipeline
+                               (local::coerce-text "a"))))))
+
+(test default-tokenizer-matches-pinned-reference
+  (dolist (pre '(nil "" "default"))
+    (with-tokenizer (tokenizer :pre pre :add-bos nil)
+      (is (eq 'local:default-bpe (type-of tokenizer)))
+      (is (not (local:tokenizer-ignore-merges-p tokenizer)))
+      (dolist (row *default-bpe-reference*)
+        (destructuring-bind (input pieces expected-ids) row
+          (let ((text (unescape input)))
+            (is (equal (mapcar #'unescape pieces) (local:pre-tokenize tokenizer text))
+                "Default ~S splits ~S" pre text)
+            (is (equal expected-ids (coerce (local:encode tokenizer text) 'list))
+                "Default ~S encodes ~S" pre text)
+            (is (equal text (local:decode tokenizer (local:encode tokenizer text))))))))))
+
+(test default-tokenizer-bos-and-specials
+  (with-tokenizer (tokenizer :pre nil :omit '("tokenizer.ggml.add_bos_token"))
+    (is (not (local:tokenizer-add-bos-p tokenizer)))
+    (is (equalp (ids) (local:encode tokenizer "")))
+    (is (equalp (ids 264) (local:encode tokenizer "" :add-bos t)))
+    (is (equalp (ids 264 259) (local:encode tokenizer "hello" :add-bos t)))
+    (is (equalp (ids 264 259 265) (enc tokenizer "<s>hello</s>" :special t)))
+    (is (equalp (ids 266) (local:encode tokenizer "<think>"))))
+  (with-tokenizer (tokenizer :pre "" :add-bos t)
+    (is (local:tokenizer-add-bos-p tokenizer))
+    (is (equalp (ids 264 259) (local:encode tokenizer "hello")))
+    (is (equalp (ids 259) (local:encode tokenizer "hello" :add-bos nil))))
+  (with-tokenizer (tokenizer :pre "default" :specials nil :add-bos nil)
+    (signals local:tokenizer-error (local:encode tokenizer "" :add-bos t))))
 
 ;;; BPE
 
@@ -437,10 +534,11 @@
               :types ,(append (fixture-types) '(1)))
              (:omit ("tokenizer.ggml.tokens"))
              (:omit ("tokenizer.ggml.merges"))))
-    (with-gguf-file (path (apply #'tokenizer-file options))
-      (signals local:tokenizer-error
-        (local:with-weights (w path) (local:load-tokenizer w))
-        "options ~S" options))))
+    (dolist (pre '("llama-bpe" nil "" "default"))
+      (with-gguf-file (path (apply #'tokenizer-file :pre pre options))
+        (signals local:tokenizer-error
+          (local:with-weights (w path) (local:load-tokenizer w))
+          "pre ~S, options ~S" pre options)))))
 
 (test tokenizer-loads-without-token-types
   (with-tokenizer (tokenizer :omit '("tokenizer.ggml.token_type"))

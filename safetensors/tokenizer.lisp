@@ -169,8 +169,8 @@
         (unless (nth-value 1 (gethash "add_bos_token" config))
           (setf (gethash "add_bos_token" config) t))))
     (hf-special-ids tokenizer weights config)
-    (setf (slot-value tokenizer 'local::ignore-merges) (and (gethash "ignore_merges" (gethash "model" object)) t)
-          (slot-value tokenizer 'local::matchers) (local::compile-pre-tokenizer (local:tokenizer-pre-rules tokenizer)))
+    (setf (slot-value tokenizer 'local::ignore-merges) (and (gethash "ignore_merges" (gethash "model" object)) t))
+    (local::initialize-pre-tokenizer tokenizer)
     tokenizer))
 
 (defmethod local:chat-template-source ((format (eql :safetensors)) weights)
