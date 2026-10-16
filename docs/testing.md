@@ -22,7 +22,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/safetensors.lisp` | Offline Safetensors/config/index writers, dtypes, malformed inputs, shards, mapping cleanup, MLX storage and Llama/Qwen3 reference logits and cached decoding |
 | `tests/local/weights.lisp` | Weights protocol through a mock format: detection, metadata, tensors, closing |
 | `tests/local/architecture.lisp` | Architecture DSL: inheritance, removal and restoration, model blocks, tensor fallbacks, hparams, tensor names, loading from GGUF, malformed definitions |
-| `tests/local/tokenizer.lisp` | Flat/staged tokenizer DSL, default GGUF selection and pinned split/token-ID fixtures, BPE merging, special tokens, streaming decode, malformed vocabularies |
+| `tests/local/tokenizer.lisp` | Flat/staged tokenizer DSL, rule placement and errors, default GGUF selection and pinned split/token-ID fixtures, BPE merging, special tokens, streaming decode, malformed vocabularies |
 | `tests/local/qwen35.lisp`, `qwen35-expected.lisp` | Offline Qwen3.5 splits, token IDs, decoded bytes, streaming, BOS/special handling and optional pinned real-vocabulary parity |
 | `tests/local/default-tokenizer-expected.lisp` | Offline default-BPE splits and token IDs for 150 inputs, generated from pinned llama.cpp |
 | `tests/local/chat-template.lisp` | Chat templates against the official Llama 3.2 and Qwen3 Jinja output, the JSON writer, selection, stop ids, segment provenance, adversarial message/tool/reasoning/date controls, BOS and empty prompts, custom renderer rejection, and ordinary prompt IDs against real vocabularies |

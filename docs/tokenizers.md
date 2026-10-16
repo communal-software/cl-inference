@@ -113,7 +113,26 @@ Letters, marks, numbers and whitespace follow Unicode categories.[^unicode] The 
 
 ### Inheritance
 
-Rules merge by kind along the class precedence list. A child's rule replaces the parent's in place and keeps its position; a rule with a new kind goes at the end. `:model` and `:pre` merge the same way, so a child that lists `:pre` replaces the parent's names. Redefining a parent updates its children.
+Rules merge by kind along the class precedence list. Without placement, a child's rule replaces the parent's in place; a new kind appends. `:before kind` or `:after kind` inserts a new rule or moves an override beside an existing rule. Names match across packages.
+
+```lisp
+(local:define-tokenizer single-letter-bpe (local:llama-bpe)
+  (:pre-tokenizer (single-letter :before letters))
+  (:format :gguf (:pre "single-letter")))
+
+(defmethod local:rule-matcher ((kind (eql :single-letter)) options)
+  (declare (ignore options))
+  (lambda (text start)
+    (and (alpha-char-p (char text start)) (1+ start))))
+```
+
+With a matching vocabulary, `pre-tokenize` of `"hello"` returns `("h" "e" "l" "l" "o")`.
+
+Entries resolve in declaration order. The anchor must already exist in the accumulated rules; forward references signal `tokenizer-error`. Each insertion goes immediately beside its anchor: after `(a b)`, adding `x :after a` then `y :after a` produces `(a y x b)`. Repeated `:before` insertions retain declaration order.
+
+Placement accepts one non-NIL symbol anchor. Self-references, repeated placement keys and combining `:before` with `:after` signal `tokenizer-error` during macro expansion. Missing anchors fail when effective rules are queried or the tokenizer loads. Placement keys are absent from effective rule options and never reach `rule-matcher`.
+
+`:model` and `:pre` merge by name, so a child that lists `:pre` replaces the parent's names. Redefining a parent updates its children; loaded tokenizers keep their compiled matchers.
 
 ### Standard tokenizers
 
@@ -150,7 +169,6 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 | Missing | Tracker |
 |---|---|
 | Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
-| Placing a child's rule before an inherited one | [#34](https://github.com/communal-software/cl-inference/issues/34) |
 | Chat templates | [chat templates](chat-templates.md#limitations) |
 
 [^regex]: The flat standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.

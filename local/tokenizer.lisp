@@ -27,6 +27,14 @@
                (loop for key in (rest form) by #'cddr always (keywordp key)))
     (tokenizer-fail 'tokenizer-error "Bad pre-tokenizer rule ~S, expected (kind :option value ...)"
                     form))
+  (let ((placements (loop for (key value) on (rest form) by #'cddr
+                          when (member key '(:before :after)) collect (cons key value))))
+    (when (or (> (length placements) 1)
+              (and placements
+                   (let ((anchor (cdar placements)))
+                     (or (null anchor) (not (symbolp anchor))
+                         (same-key-p (first form) anchor)))))
+      (tokenizer-fail 'tokenizer-error "Bad placement in pre-tokenizer rule ~S" form)))
   (cons (intern (symbol-name (first form)) :keyword) (rest form)))
 
 (defun parse-tokenizer-format (key entries)
@@ -70,7 +78,7 @@
 
 (defmacro define-tokenizer (name (&rest parents) &body sections)
   "Define NAME inheriting from PARENTS, with flat rules or named pre-tokenizer stages.
-Children override rules, stages and format entries by name."
+Children override rules, stages and format entries by name; rules accept :before or :after."
   (let ((spec (parse-tokenizer-sections sections)))
     `(progn
        (defclass ,name ,(or parents '(tokenizer)) () (:metaclass tokenizer-class))
@@ -90,14 +98,42 @@ Children override rules, stages and format entries by name."
   (let ((cell (assoc option (format-entries (tokenizer-class-of tokenizer) format :options))))
     (if cell (values (cdr cell) t) (values default nil))))
 
+(defun merge-pre-rules (rules result)
+  (dolist (rule rules result)
+    (let* ((kind (car rule))
+           (before (getf (cdr rule) :before))
+           (after (getf (cdr rule) :after))
+           (anchor (or before after))
+           (entry (cons kind (loop for (key value) on (cdr rule) by #'cddr
+                                   unless (member key '(:before :after))
+                                     append (list key value)))))
+      (if anchor
+          (progn
+            (unless (assoc anchor result :test #'same-key-p)
+              (tokenizer-fail 'tokenizer-error "Pre-tokenizer rule ~S has no placement anchor ~S"
+                              kind anchor))
+            (setf result
+                  (loop for existing in result
+                        unless (same-key-p kind (car existing))
+                          append (if (same-key-p anchor (car existing))
+                                     (if before (list entry existing) (list existing entry))
+                                     (list existing)))))
+          (let ((existing (assoc kind result :test #'same-key-p)))
+            (if existing
+                (setf (cdr existing) (cdr entry))
+                (setf result (append result (list entry)))))))))
+
 (defun tokenizer-pre-rules (tokenizer)
   "Alist of (kind . options): the pre-tokenizer rules of TOKENIZER (a class, name or instance)."
-  (merged-entries (tokenizer-class-of tokenizer) (lambda (sections) (getf sections :pre-tokenizer))))
+  (let (result)
+    (dolist (ancestor (class-lineage (tokenizer-class-of tokenizer)) result)
+      (setf result (merge-pre-rules (getf (class-sections ancestor) :pre-tokenizer) result)))))
 
 (defun tokenizer-pre-stages (tokenizer)
   "Ordered alist of stage names and rules, with child stages replacing inherited stages."
-  (merged-entries (tokenizer-class-of tokenizer)
-                  (lambda (sections) (getf sections :pre-tokenizer-stages))))
+  (mapcar (lambda (stage) (cons (car stage) (merge-pre-rules (cdr stage) nil)))
+          (merged-entries (tokenizer-class-of tokenizer)
+                          (lambda (sections) (getf sections :pre-tokenizer-stages)))))
 
 ;;; Selecting and loading
 

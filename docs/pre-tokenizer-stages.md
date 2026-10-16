@@ -29,6 +29,8 @@ A stage contains a symbol name and at least one ordinary [rule](tokenizers.md#ru
 
 Stages merge by name, including names from different packages. A child replaces an inherited stage's complete rule list without moving it. A new stage appends. Redefining a parent updates the effective definitions of its children; loaded tokenizers keep their compiled matchers.
 
+Rules inside a stage accept [`:before` and `:after`](tokenizers.md#inheritance). Each stage resolves its own rule list from empty in declaration order; anchors must appear earlier in that stage. Placement does not reorder stages or merge a replacement stage with inherited rules.
+
 `tokenizer-pre-stages` returns the effective ordered alist of stage names and rules for a tokenizer class, class name or instance. `tokenizer-pre-rules` returns flat rules; it returns NIL for a staged tokenizer.
 
 A class lineage cannot combine `:pre-tokenizer` and `:pre-tokenizer-stages`. Loading such a tokenizer signals `tokenizer-error`. Malformed stage declarations fail when `define-tokenizer` expands; rule options are checked when loading.
