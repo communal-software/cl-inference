@@ -49,6 +49,10 @@ A floating-cache forward pass constructs one lazy graph and evaluates logits and
 
 The [acceptance instructions](mlx-acceptance.md) describe the pinned reference and required checks.
 
+## Custom kernels
+
+The optional `cl-mlx/gpu` system runs cl-gpu DSL kernels as lazy MLX operations. [Custom kernel integration](mlx-kernels.md) covers loading, generated wrappers and the runnable example.
+
 ## Limitations
 
 | Deferred capability | Tracker |
@@ -56,7 +60,7 @@ The [acceptance instructions](mlx-acceptance.md) describe the pinned reference a
 | Cache updates avoiding full-capacity memory traffic | [#49](https://github.com/communal-software/cl-inference/issues/49) |
 | Q8 conversion speed and full-prefix attention scratch | [#57](https://github.com/communal-software/cl-inference/issues/57) |
 | Additional quantization widths and modes | [#50](https://github.com/communal-software/cl-inference/issues/50) |
-| Custom GPU kernels | [#44](https://github.com/communal-software/cl-inference/issues/44) |
+| GGUF packed kernels, GPU sampling and inference fusion | [Custom kernel limitations](mlx-kernels.md#limitations) |
 | Other HF tokenizer pipelines and templates | [HF limitations](hf-tokenizers.md#limitations) |
 
 GGUF loading into MLX and platforms other than macOS Apple Silicon are outside this backend's coverage. The verified Lisp runtime is SBCL.
