@@ -97,14 +97,14 @@ Loading picks the most specific tokenizer whose `:model` equals the file's and w
 | Rule | Options | Matches |
 |---|---|---|
 | `contractions` | `:case-insensitive` | `'s 't 'm 'd 're 've 'll` |
-| `letters` | `:prefix :space` or `:non-letter-non-newline` | Letters, optionally prefixed by a literal space or one non-letter, non-digit, non-newline character |
+| `letters` | `:prefix :space` or `:non-letter-non-newline`, `:include-marks` | Letters and optional Unicode marks, optionally prefixed by a literal space or one character outside letters, numbers, CR and LF |
 | `digits` | `:min n`, `:max n`, `:prefix :space`, `:ascii-only t` | A number run; minimum and maximum default to 1, NIL maximum is unbounded |
 | `punctuation-symbols` | none | Unicode punctuation and `$+<=>^~\|` |
-| `punctuation` | `:leading-space`, `:trailing-newlines` | A run of characters that are not whitespace, letters or digits, with an optional leading space and trailing newlines |
+| `punctuation` | `:leading-space`, `:trailing-newlines`, `:exclude-marks` | A run outside whitespace, letters and numbers, optionally excluding Unicode marks, with an optional leading space and trailing newlines |
 | `newlines` | none | Whitespace up to its last newline |
 | `whitespace` | none | A whitespace run; before text it leaves its last character for the next piece |
 
-Letters, digits and whitespace follow Unicode categories.[^unicode] Rule options are checked when the tokenizer loads, so a misspelled option signals `tokenizer-error`. A mod adds a rule kind by specializing `rule-matcher`:
+Letters, marks, numbers and whitespace follow Unicode categories.[^unicode] The mark options default to NIL. Rule options are checked when the tokenizer loads, so a misspelled option signals `tokenizer-error`. A mod adds a rule kind by specializing `rule-matcher`:
 
 ```lisp
 (defmethod local:rule-matcher ((kind (eql :hash)) options)
@@ -122,8 +122,15 @@ Rules merge by kind along the class precedence list. A child's rule replaces the
 | `default-bpe` | missing, empty, `default` | staged Unicode runs and ASCII triples | no | no |
 | `llama-bpe` | `llama-bpe`, `llama3`, `llama-v3`, `falcon3`, `falcon-h1`, `pixtral`, `midm-2.0`, `lfm2` | up to 3 | yes | yes |
 | `qwen2` | `qwen2`, `deepseek-r1-qwen`, `kormo` | 1 | no | no |
+| `qwen35` | `qwen35` | 1 | no | no |
 
-All three use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it sets both options itself. `default-bpe` has its own [four-stage split](pre-tokenizer-stages.md#default-gguf-pipeline); it is not an alias for plain GPT-2 splitting.
+All four use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it sets both options itself. `default-bpe` has its own [four-stage split](pre-tokenizer-stages.md#default-gguf-pipeline); it is not an alias for plain GPT-2 splitting.
+
+## Qwen3.5 GGUF
+
+`qwen35` inherits Qwen2’s rule order and includes Unicode marks in letter runs. For example, `pre-tokenize` of decomposed `"école"` returns `("école")`. Standalone marks also form pieces. Punctuation runs exclude marks; number pieces contain one Unicode number each. Input and decoded bytes preserve the original normalization form.[^qwen35] GGUF `qwen35` treats a vocabulary entry named `</s>` as a control token even when its declared type is normal; it matches and renders only with `:special t`.
+
+This coverage applies to GGUF tokenization. Qwen3.5 inference requires its own architecture support; HF tokenizer coverage remains listed [separately](hf-tokenizers.md).
 
 ## HF files
 
@@ -148,4 +155,6 @@ Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, 
 
 [^regex]: The flat standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.
 [^merges]: The llama 3 merge list does not reach every token, so merging alone encodes some words differently from llama.cpp.
-[^unicode]: Letter and number are the general categories `L*` and `N*`; whitespace is the `White_Space` property. A cache covers the Basic Multilingual Plane.
+[^unicode]: Letters, marks and numbers are the general categories `L*`, `M*` (`Mn`, `Mc`, `Me`) and `N*`; whitespace is the `White_Space` property. A cache covers the Basic Multilingual Plane.
+
+[^qwen35]: Split, token-ID and decoded-byte expectations use llama.cpp revision `8bb3cf0d216a5ae48360179f2931daf284be4d01` and its checksum-pinned `ggml-vocab-qwen35.gguf`. See [reference generation](testing.md#qwen35-reference).

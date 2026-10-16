@@ -22,6 +22,8 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 | `llama` | Llama 3.2 1B Instruct | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `llama-bpe`, `llama3-chat` |
 | `qwen3` | Qwen3 0.6B | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `qwen2`, `qwen3-chat` |
 
+[Qwen3.5 GGUF tokenization](tokenizers.md#qwen35-gguf) has pinned split, token-ID and byte parity coverage independently of model inference.
+
 [Template coverage](chat-families.md) is independent of this architecture table. CPU inference supports [caller-owned executors](parallel-inference.md).
 
 CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verified on SBCL. The architecture declarations cover these families; the acceptance suite establishes support for the listed model variants. Other sizes and variants require their own verification.

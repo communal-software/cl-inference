@@ -32,7 +32,7 @@
    #:tokenizer-special-p #:tokenizer-add-bos-p #:tokenizer-ignore-merges-p
    #:make-detokenizer #:detokenizer-push #:detokenizer-finish
    #:tokenizer-error #:tokenizer-error-message #:unknown-tokenizer #:unknown-tokenizer-model
-   #:unknown-tokenizer-pre #:llama-bpe #:qwen2 #:default-bpe
+   #:unknown-tokenizer-pre #:llama-bpe #:qwen2 #:qwen35 #:default-bpe
    ;; chat templates
    #:define-chat-template #:chat-template #:chat-template-class #:load-chat-template
    #:chat-segment #:make-chat-segment #:chat-segment-text #:chat-segment-kind

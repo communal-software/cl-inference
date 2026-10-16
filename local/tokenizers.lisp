@@ -32,3 +32,15 @@
 (define-tokenizer qwen2 (llama-bpe)
   (:pre-tokenizer (digits :max 1))
   (:format :gguf (:pre "qwen2" "deepseek-r1-qwen" "kormo") (:ignore-merges nil) (:add-bos nil)))
+
+(define-tokenizer qwen35 (qwen2)
+  (:pre-tokenizer
+   (letters :prefix :non-letter-non-newline :include-marks t)
+   (punctuation :leading-space t :trailing-newlines t :exclude-marks t))
+  (:format :gguf (:pre "qwen35")))
+
+(defmethod build-vocabulary :before ((tokenizer qwen35) tokens types)
+  (when (eq (tokenizer-format tokenizer) :gguf)
+    ;; The pinned llama.cpp loader treats even a normal </s> entry as control.
+    (let ((id (position "</s>" tokens :test #'equal)))
+      (when id (setf (aref types id) +token-control+)))))

@@ -227,7 +227,9 @@ Children override rules, stages and format entries by name."
                 out)
               (coerce merges 'simple-vector)))))
 
-(defun build-vocabulary (tokenizer tokens types)
+(defgeneric build-vocabulary (tokenizer tokens types))
+
+(defmethod build-vocabulary ((tokenizer byte-level-bpe) tokens types)
   (let ((ids (make-hash-table :test 'equal :size (length tokens)))
         (octets (make-array (length tokens)))
         (specials (make-hash-table)))

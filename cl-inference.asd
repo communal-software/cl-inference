@@ -82,6 +82,7 @@
                (:file "tests/local/architecture")
                (:file "tests/local/blocks") (:file "tests/local/default-tokenizer-expected")
                (:file "tests/local/tokenizer")
+               (:file "tests/local/qwen35-expected") (:file "tests/local/qwen35")
                (:file "tests/local/vocab-fixtures")
                (:file "tests/local/chat-template-expected") (:file "tests/local/chat-template")
                (:file "tests/local/session") (:file "tests/local/cache") (:file "tests/local/sampler")
