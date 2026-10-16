@@ -28,7 +28,7 @@ SBCL is primary. ECL and CCL are secondary. Windows/BSD remain P3 even when the 
 ## Work order
 
 1. **Protect existing execution.** Retain message control-token protection and its adversarial fixtures. Native selection and tensor fusion retain lazy-branch regression coverage. Run existing fixture suites before adding functionality.
-2. **Deliver one model family end to end.** Choose an initial Gemma variant, then implement the tokenizer, rule ordering and template behavior it actually requires. Pin a model and reference for tokenization, logits and greedy generation. Older GGUF defaults are a separate small compatibility task.
+2. **Deliver one model family end to end.** Choose an initial Gemma variant, then implement the tokenizer, rule ordering and template behavior it actually requires. Pin a model and reference for tokenization, logits and greedy generation. Retain default GGUF tokenizer regression coverage when adding families.
 3. **Expand useful inference.** Add multi-turn cache reuse, then evaluate quantized KV storage for longer contexts. Keep prefix-cache ownership, reset and cancellation in the acceptance scope.
 4. **Choose the next execution expansion.** ONNX requires an import/runtime decision. For GPU work, choose direct tensor storage or MLX format expansion according to the models being targeted; do not implement both as a prerequisite for either.
 5. **Remove measured bottlenecks.** Retain the caller-owned tensor executor; measure mapped F32 copies, Q8 prefill, irregular half-weight packing and MLX cache traffic on real models before smaller loop tuning.
@@ -56,7 +56,7 @@ The inventory does not certify runtime correctness or performance. Validation re
 
 ### Tracker reconciliation
 
-Follow-up outside the snapshot; the original inventory counts remain unchanged. Live count check after this batch on **16 October 2026**: cl-inference **23**, cl-tensor **18**, cl-gpu **43**, trivial-simd **62** — **146 open issues** total:
+Follow-up outside the snapshot; the original inventory counts remain unchanged. Live count check after this batch on **16 October 2026**: cl-inference **22**, cl-tensor **18**, cl-gpu **43**, trivial-simd **62** — **145 open issues** total:
 
 | Ticket | State | Planning note |
 |---|---|---|
@@ -132,6 +132,24 @@ The [family matrix](chat-families.md) covers Qwen2.5, Qwen3-Coder, Qwen3.5, QwQ,
 
 The pinned 12-template matrix passes 477 prompt/error parity checks and 24 detection checks. Streaming boundary, malformed-call, typed-schema, client round-trip, BOS/stop and adversarial control-token checks pass. Existing Llama 3.2/Qwen3 prompt IDs and CPU acceptance pass; strict four-model MLX acceptance passes all 164 checks. Template coverage is independent of architecture support; pinned reference quirks remain explicit [limitations](chat-families.md#limitations).
 
+### Default GGUF tokenizer review
+
+Review date: **16 October 2026**. Owner: Codex. [cl-inference #32](https://github.com/communal-software/cl-inference/issues/32) is closed. [Implementation `2aa7b39`](https://github.com/communal-software/cl-inference/commit/2aa7b395e8f78db478868b4a3c9790bf4acb2690) is published to origin and mirror.
+
+Missing, empty and explicit `default` GGUF pre-types select `default-bpe` for model `gpt2`. Its [four-stage pipeline](pre-tokenizer-stages.md#default-gguf-pipeline) matches the pinned llama.cpp default; unknown names and unsupported models retain errors. BOS metadata and caller overrides retain their contract. Named stages replace whole inherited stages in place, append new stages and preserve earlier piece boundaries.[^default-tokenizer]
+
+| Validation | Passing checks | Skips |
+|---|---:|---:|
+| Local fixtures: SBCL, CCL and ECL | 15,544 each | 0 |
+| SBCL client | 527 | 3 optional live checks |
+| Runnable examples | 12 | 0 |
+| Full pinned CPU acceptance | 1,603 | 0 |
+| Reference regeneration | 150 split cases / 450 tokenizer cases | 0 |
+
+The unchanged SBCL baseline passes 14,109 checks before implementation. Final fixtures cover all three selectors, stage inheritance and redefinition, boundary isolation, unmatched gaps, invalid declarations/options/matches, BOS, special tokens, malformed vocabularies and closed-weight ownership. Existing Llama/Qwen GGUF and HF coverage passes; CPU acceptance includes F16, Q8, Q4/Q6 and Q8 cache references. The documented staged-rule example passes.
+
+Live counts verified after closure: cl-inference **22**, cl-tensor **18**, cl-gpu **43**, trivial-simd **62** — **145 open issues**. Historical snapshot counts remain unchanged. Next: select the first family for broader tokenizer support.
+
 ### Cache implementation review
 
 Review date: **15 October 2026**. Owner: Codex. Both cache issues are closed. [Implementation `5a371a5`](https://github.com/communal-software/cl-inference/commit/5a371a57ab5d4609c5b27f5ef282eadc22d2652d) and the [cl-mlx dependency `e9d7d40`](https://github.com/communal-software/cl-mlx/commit/e9d7d40) are published to origin and mirror.
@@ -166,7 +184,7 @@ Live counts verified after closure: cl-inference **23**, cl-tensor **18**, cl-gp
 |---|---|---|---|
 | cl-inference | [#16 — Multi-turn KV reuse and prefix caching](https://github.com/communal-software/cl-inference/issues/16) | Closed: 2026-10-15 | Owner: Codex. Session-local exact-token matching, final-token replay and serialized-backend reuse; opt-out retains fresh prefill. CPU/MLX fixtures, pinned acceptance and the multi-turn example pass. Published to origin and mirror; see [cache review](#cache-implementation-review). Next: preserve prefix regressions when extending model support. |
 | cl-inference | [#18 — Quantized KV cache](https://github.com/communal-software/cl-inference/issues/18) | Closed: 2026-10-15 | Owner: Codex. Opt-in symmetric S8/F32 group-32 caches on CPU and MLX, with finite reconstruction and temporary F32 attention prefixes. Pinned quality/oracle acceptance and storage/timing measurements pass; see [cache review](#cache-implementation-review). Next: conversion and scratch tuning under the follow-up in tracker reconciliation. |
-| cl-inference | [#32 — Tokenizer: default pre-tokenizer for GGUF files without tokenizer.ggml.pre](https://github.com/communal-software/cl-inference/issues/32) | Active | Owner: Codex. Approved: exact pinned llama.cpp default, selected for missing/empty/default GGUF `gpt2` pre-types; public named stages replace whole inherited stages in place. SBCL/CCL/ECL local fixtures pass 15,544 checks each, with zero skips; 150 pinned split cases and 450 reference tokenizer cases pass. Pinned CPU acceptance passes 1,603 checks with zero skips; client and example suites pass. Next: publish to both remotes and record closure evidence. |
+| cl-inference | [#32 — Tokenizer: default pre-tokenizer for GGUF files without tokenizer.ggml.pre](https://github.com/communal-software/cl-inference/issues/32) | Closed: 2026-10-16 | Owner: Codex. Missing/empty/default GGUF `gpt2` pre-types select the pinned four-stage default; public named stages replace whole inherited stages in place. Cross-Lisp fixtures, offline reference cases and pinned CPU acceptance pass. Published to origin and mirror; see [tokenizer review](#default-gguf-tokenizer-review). Next: choose the first additional tokenizer/model family under the following row. |
 | cl-inference | [#33 — Tokenizer: more pre types and SentencePiece models](https://github.com/communal-software/cl-inference/issues/33) | Open | Tokenizer algorithms and pre-types unlock additional model families; select the first family. |
 | cl-inference | [#34 — Tokenizer: insert a child's pre-tokenizer rule before an inherited rule](https://github.com/communal-software/cl-inference/issues/34) | Open | Enables tokenizer inheritance where rule order matters; do alongside a model that needs it. |
 | cl-inference | [#38 — Chat templates: more families and stricter detection](https://github.com/communal-software/cl-inference/issues/38) | Closed: 2026-10-15 | Owner: Codex. Native family renderers, matching parsers and strict source fallback pass the pinned reference matrix, provenance/client fixtures and CPU/MLX acceptance. See [implementation review](#template-families). Next: choose explicit codecs for the remaining format ambiguity tracked in the reconciliation table. |
@@ -326,3 +344,5 @@ Live counts verified after closure: cl-inference **23**, cl-tensor **18**, cl-gp
 [^selection81]: Native scalar/SIMD harnesses pass on ARM64 and x86-64/Rosetta. Complete trivial-simd and cl-tensor suites pass on ARM64 SBCL, CCL and ECL; the x86-64 SBCL suite also passes. The isolated trunk candidate passes 17 native tests, 876,870 upstream SBCL checks and 136,268 cl-tensor checks; its tracked files match the integrated commit. Implementations: [trivial-simd](https://github.com/communal-software/trivial-simd/commit/cd61d43c2986c05ac32503d7619b2e7b67d1b584) and [cl-tensor](https://github.com/communal-software/cl-tensor/commit/81272fa7ae765673ddaf43e0f984a1b035274ff4). The [selection profile](https://github.com/communal-software/trivial-simd/blob/cd61d43c2986c05ac32503d7619b2e7b67d1b584/docs/kernel-performance.md#lazy-selection) records the masking cost.
 
 [^selected-review]: Planning baselines were cl-inference `aca63cf` and cl-tensor `81272fa`. Both GitHub issue bodies/discussions and prerequisite states were checked. Validation includes the native renderers/parsers, pinned reference generator, executor contract, fixture suites and real-model acceptance.
+
+[^default-tokenizer]: Reference revision `8bb3cf0d216a5ae48360179f2931daf284be4d01`. The [stdlib-only generator](../tools/default-tokenizer-reference.py) compiles the actual C++ splitter and verifies token IDs for absent, empty and explicit `default` pre-types using the pinned tokenizer executable. Fifty selected inputs and 100 seeded mixed-character inputs are retained as offline fixtures. Regeneration with `--check` matches the tracked expectations.
