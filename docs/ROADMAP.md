@@ -1,0 +1,231 @@
+# Roadmap
+
+Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
+
+**Audit: 17 October 2026 · GitHub · 151 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+
+## Priorities
+
+| Tier | Importance | Work |
+|---|---|---|
+| P0 | Critical | Correctness or blockers on the main SBCL inference path |
+| P1 | High | Additional models, formats and inference features, plus concrete child-library prerequisites |
+| P2 | Medium | Substantial measured performance, reliability, CI and ECL/CCL correctness |
+| P3 | Low | Small optimizations, convenience, other Lisps, Windows/BSD and peripheral targets |
+
+SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even for those Lisps. A generic tensor or BLAS API ranks high only when it enables a selected inference capability. Promote performance work when a real model demonstrates a material bottleneck.
+
+## Counts
+
+| Repository | P0 | P1 | P2 | P3 | Open |
+|---|---:|---:|---:|---:|---:|
+| cl-inference | 0 | 11 | 10 | 8 | 29 |
+| cl-tensor | 0 | 1 | 8 | 9 | 18 |
+| cl-gpu | 0 | 6 | 13 | 23 | 42 |
+| trivial-simd | 0 | 0 | 10 | 52 | 62 |
+| **Total** | **0** | **18** | **41** | **92** | **151** |
+
+## Work order
+
+1. **Finish and verify the active Gemma slice.** Review the working-tree Gemma 3 CPU acceptance and publish it before closing its umbrella. [Support](support.md#local-architectures) defines the verified boundary.
+2. **Expand models and usable artifacts.** Choose Gemma 4 text or Gemma 3 Safetensors/MLX as the next model target. Pair it with the exact tokenizer pipeline it requires; do not treat every tokenizer variant as a prerequisite.
+3. **Choose an execution expansion.** ONNX needs an import/runtime design. Direct GPU tensors need device storage and missing math kernels. Additional MLX affine formats are a separate path; implement what the selected models require.
+4. **Remove measured inference bottlenecks.** Reproduce mapped F32 snapshots, serial half-weight layout packing, Q8 prefill, MLX packed-tile/cache traffic and long-context attention costs. Preserve complete-call benchmarks and acceptance.
+5. **Keep validation alongside each feature.** Run the existing suites first, add fixtures and a small example, and keep support/limitations docs current. Use pinned real-model acceptance for new model routes.
+
+## Cross-repository work paths
+
+| Outcome | Work path | Boundary |
+|---|---|---|
+| Gemma 3 Safetensors/MLX | HF SentencePiece pipeline → format-specific weights/norms → backend acceptance | GGUF CPU coverage does not establish HF or MLX coverage |
+| More model families | Select variant/artifact → tokenizer/template → architecture → session acceptance | Confirm variant, modality scope and new dependencies before implementation |
+| Direct GPU inference | cl-gpu axis/normalization + broadcast/conversion → cl-tensor device storage → cl-inference integration | Transfers/views exist; restrict dtypes explicitly rather than requiring Metal f64 emulation |
+| CUDA/OpenCL inference | Runtime/printer + capabilities/alignment → shared conformance → tensor integration | Hardware validation is required; backend delivery alone does not establish inference support |
+| Lower validation workspace | trivial-simd uniqueness proof → cl-tensor consumers | Share the proof rather than implementing independent solvers |
+| Faster existing inference | Reproduce model profile → choose one hot path → measure complete calls | Primitive speedups alone do not establish a model-level gain |
+
+## Keep this roadmap current
+
+At each work session, recheck the selected ticket on GitHub. Set its row to `Active — owner`, `Blocked — prerequisite`, or `Open`; add the next concrete action. Record completion evidence before closing the ticket, then remove its row and update counts. Preserve durable validation in the relevant feature docs.
+
+Keep one row per open issue, including umbrellas; umbrellas coordinate their children and do not add an independent delivery estimate. Recheck all four trackers after each audit batch. Reconsider tiers when a selected model establishes a new dependency or a measured bottleneck.
+
+Existing GitHub labels remain intact. Unlabeled Gemma 4, sliding-window and Safetensors/MLX issues receive existing `enhancement`/`arch` labels, plus `perf` or `format` as appropriate. Roadmap tiers are planning priorities; existing `lowpri` labels do not override them.
+
+## Limitations
+
+This inventory tracks unresolved work; it does not certify runtime correctness or promise dates. All rows reflect open GitHub state at audit time. Model variants, new dependencies and public APIs still require design confirmation. Owner assignments are unclaimed unless a row states otherwise.
+
+The Gemma umbrella is active in the local working tree, not treated as closed. The template-limitation cleanup has an existing ticket. The fused triangular-solve request may be partly superseded; confirm its remaining scope before implementation. GPU storage comments include completed prerequisites and optional f64 scope. Mapped F32 cost reports need reproduction on current code. These findings are recorded in the corresponding rows below.
+
+### P0 — critical
+
+No open issue in this audit establishes a main-path SBCL inference correctness blocker. Secondary compiler issues and the GPU mixed-dot range defect remain P2 with their explicit scope.
+
+### P1 — model and inference capability
+
+| Repository | Ticket | State / owner | Priority reason / next action |
+|---|---|---|---|
+| cl-inference | [#47 — Local ONNX model support](https://github.com/communal-software/cl-inference/issues/47) | Open — unassigned | Choose an ONNX import/runtime approach and first model; confirm dependencies before implementation. |
+| cl-inference | [#48 — Local Gemma-family support](https://github.com/communal-software/cl-inference/issues/48) | Active — existing working tree; owner unconfirmed | Working tree contains Gemma 3 270M IT Q8_0 CPU support. Review acceptance and publish before closing; keep Gemma 4 and other formats separate. |
+| cl-inference | [#50 — MLX: additional affine quantization widths and modes](https://github.com/communal-software/cl-inference/issues/50) | Open — unassigned | Select model artifacts requiring additional affine widths/modes, then implement and verify those formats. |
+| cl-inference | [#61 — Tokenizer: remaining GGUF BPE pre-types and alias conformance](https://github.com/communal-software/cl-inference/issues/61) | Open — unassigned | Inventory pinned GGUF BPE profiles and select the next model family; verify aliases, defaults and exact IDs together. |
+| cl-inference | [#62 — Tokenizer: GGUF SentencePiece variants beyond pinned Llama SPM](https://github.com/communal-software/cl-inference/issues/62) | Open — unassigned | Reconcile the Gemma tokenizer working-tree coverage, then select the next uncovered SentencePiece variant with pinned parity. |
+| cl-inference | [#63 — Tokenizer: Hugging Face SentencePiece tokenizer.json pipelines](https://github.com/communal-software/cl-inference/issues/63) | Open — unassigned | Select a concrete HF SentencePiece pipeline for Gemma Safetensors; decide whether tokenizer.json is sufficient. |
+| cl-inference | [#64 — Tokenizer: HF BPE pipelines beyond shipped Llama and Qwen3](https://github.com/communal-software/cl-inference/issues/64) | Open — unassigned | Select the next model artifact needing HF BPE; implement its complete pipeline with exact IDs and decode acceptance. |
+| cl-inference | [#65 — Tokenizer: automatic EOS insertion and caller override policy](https://github.com/communal-software/cl-inference/issues/65) | Open — unassigned | Select an EOS-adding artifact; confirm metadata/caller precedence and chat-fragment behavior before changing encode. |
+| cl-inference | [#66 — Tokenizer: SentencePiece extra-whitespace normalization](https://github.com/communal-software/cl-inference/issues/66) | Open — unassigned | Select an artifact requiring whitespace normalization; pin whitespace and fragment semantics without changing existing decoding. |
+| cl-inference | [#69 — Gemma 4: local text inference and pinned model acceptance](https://github.com/communal-software/cl-inference/issues/69) | Open — unassigned | Select the initial Gemma 4 text variant and format; pin architecture/tokenizer references and full-model acceptance. |
+| cl-inference | [#71 — Gemma 3: Safetensors and MLX execution with real-model acceptance](https://github.com/communal-software/cl-inference/issues/71) | Open — unassigned | Add Gemma 3 Safetensors CPU and selected MLX routes with separate acceptance; coordinate the HF SentencePiece prerequisite. |
+| cl-tensor | [#12 — Device tensor storage backed by cl-gpu](https://github.com/communal-software/cl-tensor/issues/12) | Open — unassigned | Bulk transfers and array views exist. Settle device-storage API and dtype scope; coordinate axis/normalization and broadcast/conversion kernels. Metal f64 emulation is optional for an explicitly restricted backend. |
+| cl-gpu | [#6 — CUDA backend](https://github.com/communal-software/cl-gpu/issues/6) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
+| cl-gpu | [#7 — OpenCL backend](https://github.com/communal-software/cl-gpu/issues/7) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
+| cl-gpu | [#12 — CUDA: operators for vector types](https://github.com/communal-software/cl-gpu/issues/12) | Open — unassigned | CUDA vector printer correctness is a backend prerequisite; deliver with CUDA. |
+| cl-gpu | [#58 — Axis reductions, softmax and rmsnorm kernels](https://github.com/communal-software/cl-gpu/issues/58) | Open — unassigned | Required math, normalization, broadcast and conversion for direct GPU tensor inference. |
+| cl-gpu | [#59 — Broadcast elementwise and convert kernels](https://github.com/communal-software/cl-gpu/issues/59) | Open — unassigned | Required math, normalization, broadcast and conversion for direct GPU tensor inference. |
+| cl-gpu | [#73 — OpenCL: sub-buffer base-address alignment for array views](https://github.com/communal-software/cl-gpu/issues/73) | Open — unassigned | OpenCL view alignment is correctness groundwork; deliver with OpenCL array views. |
+
+### P2 — performance and reliability
+
+| Repository | Ticket | State / owner | Priority reason / next action |
+|---|---|---|---|
+| cl-inference | [#1 — cl-inference roadmap: general-purpose inference on cl-tensor](https://github.com/communal-software/cl-inference/issues/1) | Open — unassigned | Coordination umbrella; reconcile completed children and link this roadmap. Do not count it as another deliverable. |
+| cl-inference | [#19 — CI](https://github.com/communal-software/cl-inference/issues/19) | Open — unassigned | Automate SBCL fixtures and secondary ECL/CCL checks; keep real-model runs opt-in. |
+| cl-inference | [#41 — Q8_0 prefill: dequantize tiles and use BLAS for many activation rows](https://github.com/communal-software/cl-inference/issues/41) | Open — unassigned | Measured long-prompt prefill bottleneck; preserve the fast single-row path. |
+| cl-inference | [#49 — MLX KV cache: avoid full-capacity slice updates](https://github.com/communal-software/cl-inference/issues/49) | Open — unassigned | Context-sized cache traffic can limit long-context decode; measure donation/chunking. |
+| cl-inference | [#56 — Function tool wrappers: disambiguate untyped and nullable scalar values](https://github.com/communal-software/cl-inference/issues/56) | Open — unassigned | Choose explicit scalar codecs or an ambiguity policy; cover nullable/untyped values and delimiter collisions. |
+| cl-inference | [#57 — Q8 KV cache: accelerate conversion and bound attention scratch](https://github.com/communal-software/cl-inference/issues/57) | Open — unassigned | Use the cache profile to select bulk Q8 conversion or tiled/fused attention; measure complete calls and scratch. |
+| cl-inference | [#58 — Docs: reconcile template limitations with closed tracker references](https://github.com/communal-software/cl-inference/issues/58) | Open — unassigned | Reconcile template limitation links with closed implementation tickets while retaining semantic limits. |
+| cl-inference | [#59 — Half-weight serial dispatch: account for irregular-layout packing costs](https://github.com/communal-software/cl-inference/issues/59) | Open — unassigned | Serial irregular-layout auto dispatch is about 12–15× slower than tiled conversion in the isolated profile. Measure a layout-aware policy; preserve mapped/padded paths. |
+| cl-inference | [#68 — MLX GGUF: reuse packed weight tiles across prefill token rows](https://github.com/communal-software/cl-inference/issues/68) | Open — unassigned | Measure packed GGUF prefill tile reuse across token rows; preserve quantized-format and cached-decode acceptance. |
+| cl-inference | [#70 — Gemma sliding-window layers: bound KV storage and attention work](https://github.com/communal-software/cl-inference/issues/70) | Open — unassigned | Bound sliding-layer KV history and attention to the local window; preserve absolute positions and global layers. Verify beyond 512 tokens. |
+| cl-tensor | [#4 — CI](https://github.com/communal-software/cl-tensor/issues/4) | Open — unassigned | Protects tensor correctness on the main development path. |
+| cl-tensor | [#6 — Avoid unnecessary snapshots for mixed Lisp and foreign storage](https://github.com/communal-software/cl-tensor/issues/6) | Open — unassigned | Reproduce the mapped F32 projection snapshot cost on current code, then prove disjoint mixed storage without weakening alias safety. |
+| cl-tensor | [#9 — Investigate incomplete or crashing normalization reference checks on experimental ARM64 CCL](https://github.com/communal-software/cl-tensor/issues/9) | Open — unassigned | CCL secondary support: green tests can omit assertions; require complete trial counts. |
+| cl-tensor | [#14 — Execute fused expressions through upstream strided N-D kernels](https://github.com/communal-software/cl-tensor/issues/14) | Open — unassigned | Measured reversed-layout fusion regression; upstream N-D expression execution is needed. |
+| cl-tensor | [#15 — Support fused mean and widened reduction accumulation](https://github.com/communal-software/cl-tensor/issues/15) | Open — unassigned | Expands generic fusion expressiveness; promote only when selected models need it. |
+| cl-tensor | [#17 — Support fused mask outputs and mask reductions](https://github.com/communal-software/cl-tensor/issues/17) | Open — unassigned | Expands generic fusion expressiveness; promote only when selected models need it. |
+| cl-tensor | [#18 — Parallelize single dot products and whole-tensor reductions](https://github.com/communal-software/cl-tensor/issues/18) | Open — unassigned | Single contractions remain sequential; benchmark decode-sized workloads before splitting. |
+| cl-tensor | [#19 — Support per-reducer axis sets in fused expressions](https://github.com/communal-software/cl-tensor/issues/19) | Open — unassigned | Expands generic fusion expressiveness; promote only when selected models need it. |
+| cl-gpu | [#18 — Kernel pipeline cache keeps pipelines of released devices](https://github.com/communal-software/cl-gpu/issues/18) | Open — unassigned | Released-device pipeline entries retain resources; fix lifecycle and test reopen/release. |
+| cl-gpu | [#22 — Writable swizzles](https://github.com/communal-software/cl-gpu/issues/22) | Open — unassigned | DSL expressiveness; elevate only if an inference kernel requires it. |
+| cl-gpu | [#23 — Vector comparisons and scalar broadcast in intrinsics](https://github.com/communal-software/cl-gpu/issues/23) | Open — unassigned | DSL expressiveness; elevate only if an inference kernel requires it. |
+| cl-gpu | [#32 — CI matrix across SBCL, ECL and CCL](https://github.com/communal-software/cl-gpu/issues/32) | Open — unassigned | Automates SBCL and secondary ECL/CCL validation. |
+| cl-gpu | [#44 — GPU BLAS: register-blocked gemm](https://github.com/communal-software/cl-gpu/issues/44) | Open — unassigned | Core GEMM/GEMV throughput; measure DSL paths separately from Metal MPS overrides. |
+| cl-gpu | [#45 — GPU BLAS: gemv with one group per row](https://github.com/communal-software/cl-gpu/issues/45) | Open — unassigned | Core GEMM/GEMV throughput; measure DSL paths separately from Metal MPS overrides. |
+| cl-gpu | [#47 — GPU BLAS: MPS for broadcast and negative-stride batched gemm](https://github.com/communal-software/cl-gpu/issues/47) | Open — unassigned | Broadcast batches are relevant to tensor matmul; compare queued MPS against DSL. |
+| cl-gpu | [#49 — Metal: host access synchronizes the whole device, not only the buffers in use](https://github.com/communal-software/cl-gpu/issues/49) | Open — unassigned | Whole-device waits serialize work/transfers; meaningful once device tensors exercise them. |
+| cl-gpu | [#51 — Metal: ring of staging buffers so private uploads overlap pending work](https://github.com/communal-software/cl-gpu/issues/51) | Open — unassigned | Whole-device waits serialize work/transfers; meaningful once device tensors exercise them. |
+| cl-gpu | [#52 — Metal: test private buffer storage on a discrete GPU](https://github.com/communal-software/cl-gpu/issues/52) | Open — unassigned | Validates private-storage correctness on discrete Metal GPUs; hardware-dependent. |
+| cl-gpu | [#63 — BLAS: dsdot loses finite products outside f32 range](https://github.com/communal-software/cl-gpu/issues/63) | Open — unassigned | Known mixed-dot range correctness bug; no demonstrated main inference dependency. |
+| cl-gpu | [#64 — BLAS: accept provably disjoint interleaved layouts and unique outputs](https://github.com/communal-software/cl-gpu/issues/64) | Open — unassigned | GPU rejects valid interleaved layouts; needed for reliable CPU/GPU tensor parity. |
+| cl-gpu | [#65 — BLAS tests: backend-neutral conformance and encoded bit-level coverage](https://github.com/communal-software/cl-gpu/issues/65) | Open — unassigned | Portable backend conformance and exact half-bit checks support safe GPU expansion. |
+| trivial-simd | [#6 — Add x86-64 AVX2 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/6) | Open — unassigned | Broad x86 throughput upgrade; benchmark real inference before committing kernel scope. |
+| trivial-simd | [#31 — Harden CI against transient Quicklisp archive download failures](https://github.com/communal-software/trivial-simd/issues/31) | Open — unassigned | Transient dependency setup failures prevent tests from running; keep retries bounded. |
+| trivial-simd | [#33 — Evaluate full IEEE consistency for kernel arithmetic](https://github.com/communal-software/trivial-simd/issues/33) | Open — unassigned | Numerical contract investigation; finite-only behavior is documented, not a universal bug claim. |
+| trivial-simd | [#35 — Reduce boxing in CCL and ECL ARM64 scalar FMA kernels](https://github.com/communal-software/trivial-simd/issues/35) | Open — unassigned | Secondary ECL/CCL FMA paths have a measured large boxing penalty. |
+| trivial-simd | [#55 — CCL x86-64 1.13 drops (setf (aref array CONSTANT) complex) on (complex single-float) arrays](https://github.com/communal-software/trivial-simd/issues/55) | Open — unassigned | Secondary CCL compiler correctness audit; workarounds exist, wider exposure needs checking. |
+| trivial-simd | [#56 — Reduce remaining x86-64 CCL test setup and lifetime-stress overhead](https://github.com/communal-software/trivial-simd/issues/56) | Open — unassigned | Secondary CCL/Rosetta validation reliability; distinguish host crashes from library failures. |
+| trivial-simd | [#58 — Tune multi-pass kernel planning, native setup and row execution](https://github.com/communal-software/trivial-simd/issues/58) | Open — unassigned | Inference-stage multi-pass setup/recomputation can be material; measure whole stages. |
+| trivial-simd | [#59 — CCL ARM64 typed complex-double arithmetic drops an operand](https://github.com/communal-software/trivial-simd/issues/59) | Open — unassigned | Secondary CCL compiler correctness audit; workarounds exist, wider exposure needs checking. |
+| trivial-simd | [#60 — Investigate intermittent Rosetta host assertion in CCL x86-64 (library-independent reproducer)](https://github.com/communal-software/trivial-simd/issues/60) | Open — unassigned | Secondary CCL/Rosetta validation reliability; distinguish host crashes from library failures. |
+| trivial-simd | [#74 — Tune encoded matmul for larger activation batches](https://github.com/communal-software/trivial-simd/issues/74) | Open — unassigned | Measured large-batch encoded matmul gap; retain tiled BLAS dispatch and small-batch wins. |
+
+### P3 — deferred
+
+| Repository | Ticket | State / owner | Priority reason / next action |
+|---|---|---|---|
+| cl-inference | [#20 — GGUF reader: Windows file mapping](https://github.com/communal-software/cl-inference/issues/20) | Open — unassigned | Windows/BSD are explicitly low priority, including their CI requirements. |
+| cl-inference | [#21 — GGUF reader: verify BSD file mapping](https://github.com/communal-software/cl-inference/issues/21) | Open — unassigned | Windows/BSD are explicitly low priority, including their CI requirements. |
+| cl-inference | [#22 — GGUF reader: faster string decoding](https://github.com/communal-software/cl-inference/issues/22) | Open — unassigned | Load-time string-copy optimization; no added model capability. |
+| cl-inference | [#25 — client: json-get is O(n^2) when building large JSON objects](https://github.com/communal-software/cl-inference/issues/25) | Open — unassigned | Existing implementation is adequate at human request rates; scale only with evidence. |
+| cl-inference | [#26 — client: one watcher thread per completion deadline](https://github.com/communal-software/cl-inference/issues/26) | Open — unassigned | Existing implementation is adequate at human request rates; scale only with evidence. |
+| cl-inference | [#27 — client: drop the usocket connect-refusal workaround](https://github.com/communal-software/cl-inference/issues/27) | Open — unassigned | Working refusal workaround exists; removal depends on an upstream usocket fix. |
+| cl-inference | [#39 — KV cache: bulk copy of new keys and values](https://github.com/communal-software/cl-inference/issues/39) | Open — unassigned | Targeted decode-loop optimization; promote only with end-to-end profiling. |
+| cl-inference | [#40 — Sampler: partial selection instead of a full-vocab sort](https://github.com/communal-software/cl-inference/issues/40) | Open — unassigned | Targeted decode-loop optimization; promote only with end-to-end profiling. |
+| cl-tensor | [#3 — Autograd](https://github.com/communal-software/cl-tensor/issues/3) | Open — unassigned | Training/autograd is outside the immediate inference/model-coverage goal. |
+| cl-tensor | [#5 — Reduce workspace for general output-layout validation](https://github.com/communal-software/cl-tensor/issues/5) | Open — unassigned | Valid irregular layouts work; reduce exact-validation workspace with upstream coordination. |
+| cl-tensor | [#7 — Reduce workspace for irregular axis reductions](https://github.com/communal-software/cl-tensor/issues/7) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#8 — Reduce normalization workspace and portable f64 stage allocation](https://github.com/communal-software/cl-tensor/issues/8) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#10 — Bound remaining accessible-storage fallback packing](https://github.com/communal-software/cl-tensor/issues/10) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#11 — Bound take! scratch for disjoint destinations](https://github.com/communal-software/cl-tensor/issues/11) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#13 — Bound fusion result staging and irregular reduction-row packing](https://github.com/communal-software/cl-tensor/issues/13) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#16 — Support integer and complex tensor expression fusion](https://github.com/communal-software/cl-tensor/issues/16) | Open — unassigned | Integer/complex fusion is not a demonstrated transformer requirement. |
+| cl-tensor | [#20 — Allow per-call executor overrides](https://github.com/communal-software/cl-tensor/issues/20) | Open — unassigned | Dynamic executor binding already works; keyword selection is convenience. |
+| cl-gpu | [#27 — Source locations for define-kernel compiled from an editor buffer (C-c C-c)](https://github.com/communal-software/cl-gpu/issues/27) | Open — unassigned | Editor diagnostic convenience; no execution or model-coverage change. |
+| cl-gpu | [#33 — Support ABCL on the JVM](https://github.com/communal-software/cl-gpu/issues/33) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
+| cl-gpu | [#34 — Support Clasp](https://github.com/communal-software/cl-gpu/issues/34) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
+| cl-gpu | [#35 — Support LispWorks](https://github.com/communal-software/cl-gpu/issues/35) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
+| cl-gpu | [#36 — Support Allegro CL](https://github.com/communal-software/cl-gpu/issues/36) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
+| cl-gpu | [#39 — GPU BLAS: complex routines](https://github.com/communal-software/cl-gpu/issues/39) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#41 — GPU BLAS: rotations (srot, srotm, srotg, srotmg)](https://github.com/communal-software/cl-gpu/issues/41) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#43 — GPU BLAS: reuse the reduction partials buffer](https://github.com/communal-software/cl-gpu/issues/43) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#46 — GPU BLAS: cache MPS kernel objects](https://github.com/communal-software/cl-gpu/issues/46) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#48 — Metal: tune or adapt the command-buffer commit interval](https://github.com/communal-software/cl-gpu/issues/48) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#50 — Metal: one stream lock per device serialises encoding](https://github.com/communal-software/cl-gpu/issues/50) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#55 — GPU BLAS: f64 Level 1 variants (daxpy ... idamax)](https://github.com/communal-software/cl-gpu/issues/55) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#56 — Metal: emulate f64 in software](https://github.com/communal-software/cl-gpu/issues/56) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#60 — Metal: typed source loops for array transfers](https://github.com/communal-software/cl-gpu/issues/60) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#61 — Metal: vectorised f32 conversion for f16 and bf16 transfers](https://github.com/communal-software/cl-gpu/issues/61) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#62 — Faster nested vector-element transfers (to-device / from-device)](https://github.com/communal-software/cl-gpu/issues/62) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#66 — BLAS: add a convenience system matching the CPU slice and matrix wrappers](https://github.com/communal-software/cl-gpu/issues/66) | Open — unassigned | Wrapper parity is convenience; strict calls already exist. |
+| cl-gpu | [#67 — BLAS Level 2: add dense f32 rank-one update sger](https://github.com/communal-software/cl-gpu/issues/67) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#68 — BLAS: add dense f32 symmetric matrix-vector, multiply and rank updates](https://github.com/communal-software/cl-gpu/issues/68) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#69 — BLAS: add dense f32 triangular multiply and solve routines](https://github.com/communal-software/cl-gpu/issues/69) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#70 — BLAS: add band and packed matrix storage with f32 Level 2 routines](https://github.com/communal-software/cl-gpu/issues/70) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#71 — BLAS: f64 GEMV, GEMM and batches on capable devices](https://github.com/communal-software/cl-gpu/issues/71) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
+| cl-gpu | [#72 — Metal: query the real constant-space buffer offset alignment](https://github.com/communal-software/cl-gpu/issues/72) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| trivial-simd | [#7 — Add x86-64 AVX-512 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/7) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#8 — Add ARM64 SVE/SVE2 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/8) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#9 — Support 32-bit x86 SSE2](https://github.com/communal-software/trivial-simd/issues/9) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#10 — Support ARMv7 NEON](https://github.com/communal-software/trivial-simd/issues/10) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#11 — Support RISC-V Vector SIMD](https://github.com/communal-software/trivial-simd/issues/11) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#12 — Support PowerPC VSX SIMD](https://github.com/communal-software/trivial-simd/issues/12) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#13 — Support WebAssembly SIMD128](https://github.com/communal-software/trivial-simd/issues/13) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#14 — Support FreeBSD](https://github.com/communal-software/trivial-simd/issues/14) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#15 — Support OpenBSD](https://github.com/communal-software/trivial-simd/issues/15) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#16 — Support NetBSD](https://github.com/communal-software/trivial-simd/issues/16) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#17 — Support Android](https://github.com/communal-software/trivial-simd/issues/17) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#18 — Support iOS](https://github.com/communal-software/trivial-simd/issues/18) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#19 — Support ABCL on the JVM](https://github.com/communal-software/trivial-simd/issues/19) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#20 — Support CLISP](https://github.com/communal-software/trivial-simd/issues/20) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#21 — Support Clasp](https://github.com/communal-software/trivial-simd/issues/21) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#22 — Support CMUCL](https://github.com/communal-software/trivial-simd/issues/22) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#23 — Support MKCL](https://github.com/communal-software/trivial-simd/issues/23) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#24 — Support LispWorks](https://github.com/communal-software/trivial-simd/issues/24) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#25 — Support Allegro CL](https://github.com/communal-software/trivial-simd/issues/25) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#26 — Support JSCL in Node and browsers](https://github.com/communal-software/trivial-simd/issues/26) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#27 — Support CCL on Windows](https://github.com/communal-software/trivial-simd/issues/27) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#28 — Support ECL on Windows](https://github.com/communal-software/trivial-simd/issues/28) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#29 — Support GCL](https://github.com/communal-software/trivial-simd/issues/29) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
+| trivial-simd | [#30 — Investigate SBCL ARM64 in-process SIMD backend](https://github.com/communal-software/trivial-simd/issues/30) | Open — unassigned | Supported C NEON path exists; in-process SIMD is an alternative backend. |
+| trivial-simd | [#32 — Extend kernel scratch addressing beyond 16-bit indexes](https://github.com/communal-software/trivial-simd/issues/32) | Open — unassigned | 65,536 scratch-block ceiling has no demonstrated inference workload. |
+| trivial-simd | [#34 — Profile and reduce native kernel call setup for short vectors](https://github.com/communal-software/trivial-simd/issues/34) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#36 — Evaluate concurrent ECL runner compilation for different signatures](https://github.com/communal-software/trivial-simd/issues/36) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#37 — Reduce complex SIMD transfer overhead](https://github.com/communal-software/trivial-simd/issues/37) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#38 — Native complex (c/z) BLAS Level 2 and 3 kernels](https://github.com/communal-software/trivial-simd/issues/38) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#39 — Native band, packed and symmetric BLAS Level 2 kernels](https://github.com/communal-software/trivial-simd/issues/39) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#40 — Native BLAS: fused trsm micro-kernel with packed inverted-diagonal A](https://github.com/communal-software/trivial-simd/issues/40) | Open — unassigned | Potentially superseded: later fused-solve tickets describe this kernel as present. Verify code and acceptance before narrowing or closing; clarify before implementing. |
+| trivial-simd | [#41 — Native BLAS: keep the fused trsm tile solve in registers](https://github.com/communal-software/trivial-simd/issues/41) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#42 — Native BLAS: fused trmm micro-kernel](https://github.com/communal-software/trivial-simd/issues/42) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#43 — Native BLAS: column-major trsm/trmm copy into the dense work buffer is slow](https://github.com/communal-software/trivial-simd/issues/43) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#44 — x86 trsm: fused kernel is slower relative to gemm for f32 AVX+FMA and at 64x64](https://github.com/communal-software/trivial-simd/issues/44) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#45 — Native complex BLAS level-1 reductions (scasum, dzasum, icamax, izamax, scnrm2, dznrm2)](https://github.com/communal-software/trivial-simd/issues/45) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#46 — SIMD argmin/argmax/asum: packed native lanes, sb-simd, native integers](https://github.com/communal-software/trivial-simd/issues/46) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#47 — SBCL f32 nrm2 kernel uses a scalar loop](https://github.com/communal-software/trivial-simd/issues/47) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#48 — Fuse native kernel reducers into the register VM](https://github.com/communal-software/trivial-simd/issues/48) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#50 — Extend and tune the inline small-array path](https://github.com/communal-software/trivial-simd/issues/50) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#51 — Compiler style-warnings on SBCL ARM64 and CCL](https://github.com/communal-software/trivial-simd/issues/51) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#52 — x86-64 f32 to f16 takes a scalar path for any block of eight with a subnormal result](https://github.com/communal-software/trivial-simd/issues/52) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#53 — Use F16C/AVX2 for f16 and bf16 on x86-64, and hardware f16 on Windows ARM64](https://github.com/communal-software/trivial-simd/issues/53) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#54 — Lisp f16/bf16 fallback speed on non-SBCL Lisps](https://github.com/communal-software/trivial-simd/issues/54) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#57 — Packed SBCL execution for declared kernel inputs](https://github.com/communal-software/trivial-simd/issues/57) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#62 — Native integer and complex row reductions](https://github.com/communal-software/trivial-simd/issues/62) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#63 — Prove N-D output uniqueness without element-count workspace](https://github.com/communal-software/trivial-simd/issues/63) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#65 — Reduce N-D metadata setup for short spans](https://github.com/communal-software/trivial-simd/issues/65) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#66 — Reduce exact GEMM validation search for difficult layouts](https://github.com/communal-software/trivial-simd/issues/66) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#67 — Extend packed conversion coverage beyond common integer and encoded paths](https://github.com/communal-software/trivial-simd/issues/67) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#68 — Extend SBCL packed masks and conversion primitives](https://github.com/communal-software/trivial-simd/issues/68) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+| trivial-simd | [#77 — Specialize common native stride layouts for packed memory access](https://github.com/communal-software/trivial-simd/issues/77) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
+
+[^audit]: Inventory uses `gh issue list --state open --limit 1000 --json number,title,body,labels,url,comments` for `communal-software/cl-inference`, `cl-tensor`, `cl-gpu` and `trivial-simd`. Bodies and current discussion distinguish remaining work from migrated historical context. Counts exclude pull requests and closed issues; dependency paths are planning judgments checked against ticket text and current support docs.

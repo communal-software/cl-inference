@@ -24,7 +24,7 @@ Real-model CPU inference is verified on SBCL; the HTTP client and CPU fixture su
 - Generation: [Sessions](docs/sessions.md), [Sampling](docs/sampling.md)
 - Storage: [Weights](docs/weights.md), [GGUF](docs/gguf.md), [Safetensors](docs/safetensors.md), [Quantized weights](docs/quant.md)
 - Development: [Design](docs/design.md), [Testing](docs/testing.md), [Model acceptance](docs/acceptance.md), [Limitations](docs/limitations.md)
-- Planning: [Cross-repository issue work doc](docs/issue-audit.md)
+- Planning: [Cross-repository roadmap](docs/ROADMAP.md)
 
 Work is tracked at <https://github.com/communal-software/cl-inference/issues>.
 
