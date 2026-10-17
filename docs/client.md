@@ -91,6 +91,7 @@ A turn ends with exactly one `:done`. The sink runs on the calling thread; a sin
 | `openai-backend` | `:protocol-openai` | OpenAI-compatible chat completions, SSE streaming |
 | `ollama-backend` | `:protocol-ollama` | Ollama native `/api/chat`, NDJSON streaming |
 | `scripted-backend` | not registered | Canned replies, for offline tests |
+| `onnx-backend` | Optional configured object | Local CPU ONNX decoder; see [ONNX](onnx.md) |
 | `local-backend` | `:local` | A model in this image; configure with [`make-local-backend`](local-backend.md) |
 
 `describe-backend` returns a metadata plist (`:kind`, `:name`, `:summary`, ...). `(backends :kind :provider)` lists registered names.
@@ -185,6 +186,7 @@ actions when they finish, so a token can be reused across calls until cancelled.
 
 | Missing | Tracker |
 |---|---|
+| Preflight failures omit the closing stream event | [#73](https://github.com/communal-software/cl-inference/issues/73) |
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |

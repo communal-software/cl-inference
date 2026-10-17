@@ -134,7 +134,9 @@
       (setf (schar spelling i) (aref *byte-chars* (aref bytes i))))
     (values (gethash spelling (tokenizer-ids tokenizer)))))
 
-(defun encode-plain (tokenizer text out work)
+(defgeneric encode-plain (tokenizer text out work))
+
+(defmethod encode-plain ((tokenizer byte-level-bpe) text out work)
   "Pre-tokenize and merge TEXT, appending token ids to OUT."
   (let ((byte-ids (tokenizer-byte-ids tokenizer)) (ignore-merges (tokenizer-ignore-merges-p tokenizer)))
     (map-pre-pieces (lambda (start end)

@@ -2,7 +2,7 @@
 
 | Missing | Tracker |
 |---|---|
-| Local ONNX models | [#47](https://github.com/communal-software/cl-inference/issues/47) |
+| ONNX exports and capabilities outside SmolLM2 FP32 CPU text chat | [ONNX limitations](onnx.md#limitations) |
 | Local Gemma-family models | [#48](https://github.com/communal-software/cl-inference/issues/48) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |

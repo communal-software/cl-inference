@@ -74,7 +74,7 @@ than waiting out the connect timeout."
 ;;; one already in flight finds *EXCHANGE* unbound and does nothing.
 
 (defstruct (exchange (:conc-name exchange-))
-  thread socket reason finished (lock (bt:make-lock)) (ended (bt:make-semaphore)))
+  thread socket reason finished abort-actions (lock (bt:make-lock)) (ended (bt:make-semaphore)))
 
 (defvar *exchange* nil
   "The exchange this thread is running, so an interrupt meant for one that has
@@ -155,6 +155,8 @@ its thread out of FUNCTION. Cheap, and safe to call from any thread."
   (bt:with-lock-held ((exchange-lock exchange))
     (unless (or (exchange-finished exchange) (exchange-reason exchange))
       (setf (exchange-reason exchange) reason)
+      (dolist (action (exchange-abort-actions exchange))
+        (ignore-errors (funcall action)))
       (a:when-let ((socket (exchange-socket exchange)))
         (ignore-errors (usocket:socket-shutdown socket :io)))
       (ignore-errors
@@ -163,6 +165,33 @@ its thread out of FUNCTION. Cheap, and safe to call from any thread."
                               (when (and (eq *exchange* exchange)
                                          (not *defer-exchange-interrupt*))
                                 (throw exchange nil))))))))
+
+(defun on-exchange-abort (action)
+  (let ((exchange *exchange*))
+    (if (null exchange) (lambda ())
+        (progn
+          (bt:with-lock-held ((exchange-lock exchange))
+            (cond ((exchange-reason exchange) (funcall action))
+                  ((not (exchange-finished exchange))
+                   (push action (exchange-abort-actions exchange)))))
+          (lambda ()
+            (bt:with-lock-held ((exchange-lock exchange))
+              (setf (exchange-abort-actions exchange)
+                    (delete action (exchange-abort-actions exchange)))))))))
+
+(defun call-with-native-abort (abort function)
+  "Keep native resources alive until FUNCTION returns; abort the native run before unwinding."
+  (let (results failure)
+    (let ((*defer-exchange-interrupt* t) (remove-action nil))
+      (unwind-protect
+           (progn
+             (setf remove-action (on-exchange-abort abort))
+             (handler-case (setf results (multiple-value-list (funcall function)))
+               (error (e) (setf failure e))))
+        (when remove-action (funcall remove-action))))
+    (when *exchange* (check-exchange-reason *exchange*))
+    (when failure (error failure))
+    (values-list results)))
 
 ;;; --- the connection -----------------------------------------------------
 

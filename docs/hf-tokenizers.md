@@ -1,6 +1,6 @@
 # Hugging Face tokenizers
 
-`cl-inference/safetensors` loads the shipped Llama and Qwen3 tokenizer pipelines from sibling HF files. This support serves both CPU and MLX backends.
+`cl-inference/hf` supplies shared metadata loading to Safetensors and [ONNX](onnx.md). `cl-inference/safetensors` loads the shipped Llama and Qwen3 tokenizer pipelines from sibling HF files. This support serves both CPU and MLX backends.
 
 ```lisp
 (cl-inference/local:with-weights (weights #p"models/Qwen3-0.6B/")
@@ -17,6 +17,7 @@
 | HF model configuration | EOS fallback and architecture template fallback |
 | Llama pipeline | Llama byte-level splitting, ignore-merges behavior and optional BOS postprocessor |
 | Qwen3 pipeline | NFC normalization and Qwen byte-level splitting |
+| SmolLM2 pipeline | Individual digits, GPT-2 byte-level splitting and sparse-byte BPE; [ONNX chat setup](onnx.md) |
 
 Merges accept strings or two-element arrays. Added-token IDs must agree with vocabulary entries; gaps and conflicting IDs are rejected. Added tokens with word-boundary, trimming or normalization options are unsupported.
 

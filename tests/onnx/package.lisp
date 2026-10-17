@@ -1,0 +1,15 @@
+(defpackage #:cl-inference/onnx/tests
+  (:use #:cl #:fiveam)
+  (:local-nicknames (#:ci #:cl-inference) (#:local #:cl-inference/local)
+                    (#:onnx #:cl-inference/onnx) (#:ox #:cl-onnx)
+                    (#:hf #:cl-inference/hf) (#:ct #:cl-tensor) (#:bt #:bordeaux-threads-2))
+  (:export #:run-tests #:run-acceptance))
+(in-package #:cl-inference/onnx/tests)
+(def-suite :cl-inference/onnx)
+(defun run-tests () (run! :cl-inference/onnx))
+(defun fixture-directory () (asdf:system-relative-pathname "cl-inference" "tests/onnx/fixtures/"))
+(defun ask (backend &rest options)
+  (apply #'ci:complete backend (append options '(:messages ((:role :user :content "Hello")) :temperature 0 :max-tokens 5))))
+(defun reply-text (result) (ci:content-text (getf (second result) :content)))
+
+(defun success-p (result) (eq :ok (first result)))

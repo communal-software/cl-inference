@@ -93,6 +93,12 @@ After building cl-mlx, `asdf:test-system "cl-inference/mlx"` runs native model, 
 
 Packed GGUF/MLX fixtures use `asdf:test-system "cl-inference/mlx-gguf"`. [GGUF/MLX acceptance](mlx-gguf-acceptance.md) adds strict checks for six pinned artifacts and all 15 prompt cases, including cached-decode logits.
 
+## ONNX
+
+`asdf:test-system "cl-inference/onnx"` runs tiny decoder fixtures offline after [cl-onnx setup](onnx.md#setup-and-loading). It covers client behavior, K/V continuation, cancellation/deadlines during native execution, serialized waiting, recovery and malformed packages. `cl-onnx` has its own native binding suite.
+
+[ONNX acceptance](onnx-acceptance.md) verifies SmolLM2 135M FP32 against pinned ONNX Runtime and Hugging Face references. `CL_INFERENCE_ONNX_ACCEPTANCE_STRICT=1` requires all assets; skips do not establish acceptance.
+
 ## Acceptance
 
 `cl-inference/local/acceptance` checks Llama 3.2 1B Instruct and Qwen3 0.6B in F16 and Q8_0 against a pinned llama.cpp reference. It compares metadata, prompt ids, layer outputs, final logits and greedy generation.

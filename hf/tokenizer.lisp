@@ -1,16 +1,62 @@
-(in-package #:cl-inference/safetensors)
+(in-package #:cl-inference/hf)
+
+(defclass hf-weights (local:weights) ())
+
+(local:define-tokenizer smollm2-bpe (local:byte-level-bpe)
+  (:pre-tokenizer-stages
+   (numbers (digits :max 1))
+   (words (contractions) (letters :prefix :space) (digits :prefix :space :max nil)
+          (punctuation :leading-space t) (whitespace))))
+
+(defmethod local::encode-plain ((tokenizer smollm2-bpe) text out work)
+  ;; An absent byte token ends its BPE span; tokenizers drops it without an unknown token.
+  (local::map-pre-pieces
+   (lambda (start end)
+     (let* ((bytes (babel:string-to-octets text :start start :end end :encoding :utf-8)) (count 0))
+       (local::bpe-work-reserve work (length bytes))
+       (flet ((flush ()
+                (when (plusp count) (local::bpe-merge-piece tokenizer work count out))
+                (setf count 0)))
+         (loop for byte across bytes
+               for id = (gethash (string (aref local::*byte-chars* byte)) (local::tokenizer-ids tokenizer))
+               do (if id
+                      (progn (setf (aref (local::bpe-work-ids work) count) id) (incf count))
+                      (flush)))
+         (flush))))
+   (local::tokenizer-matchers tokenizer) text))
+
+(defun hf-byte-ids (tokenizer)
+  (if (typep tokenizer 'smollm2-bpe)
+      (setf (slot-value tokenizer 'local::byte-ids)
+            (make-array 256 :element-type '(unsigned-byte 32)
+                        :initial-contents
+                        (loop for byte below 256
+                              collect (gethash (string (aref local::*byte-chars* byte))
+                                               (local::tokenizer-ids tokenizer) 0))))
+      (local::build-byte-ids tokenizer)))
+
+(local:define-chat-template smollm2-chat (local:chatml)
+  (:detect "<|im_start|>" "You are a helpful AI assistant named SmolLM, trained by Hugging Face"))
+
+(defmethod local:render-chat ((template smollm2-chat) messages &rest options &key &allow-other-keys)
+  (apply #'call-next-method template
+         (if (eq (getf (first messages) :role) :system) messages
+             (cons '(:role :system :content "You are a helpful AI assistant named SmolLM, trained by Hugging Face") messages))
+         options))
 
 (defparameter *qwen-pattern* "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+")
 (defparameter *llama-pattern* "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+")
 
-(defmethod local::tokenizer-class-for-weights ((format (eql :safetensors)) weights model pre)
+(defmethod local::tokenizer-class-for-weights (format (weights hf-weights) model pre)
   (declare (ignore weights model))
+  (declare (ignore format))
   (find-class (cond ((equal pre "llama") 'local:llama-bpe)
                     ((equal pre "qwen3") 'local:qwen2)
+                    ((equal pre "smollm2") 'smollm2-bpe)
                     (t (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF tokenizer ~S" pre)))))
 
 (defmethod local::normalize-tokenizer-text ((tokenizer local:qwen2) text)
-  (if (and (eq (local:tokenizer-format tokenizer) :safetensors)
+  (if (and (member (local:tokenizer-format tokenizer) '(:safetensors :onnx))
            (plusp (length text)))
       (map 'string #'code-char (cl-unicode:normalization-form-c text))
       text))
@@ -62,17 +108,20 @@
                    (member (gethash "end_of_word_suffix" model) '(nil cl:null "") :test #'equal)
                    (not (gethash "byte_fallback" model))
                    (not (gethash "fuse_unk" model))
-                   (or (and (equal architecture "llama") (hf-null-p normalizer))
+                   (or (and (member architecture '("llama" "smollm2") :test #'equal) (hf-null-p normalizer))
                        (and (equal architecture "qwen3") (hash-table-p normalizer)
                             (equal "NFC" (gethash "type" normalizer))))
                    (hash-table-p pre) (equal "Sequence" (gethash "type" pre))
-                   (hash-table-p split) (equal "Split" (gethash "type" split))
-                   (equal "Isolated" (gethash "behavior" split)) (not (gethash "invert" split))
-                   (hash-table-p pattern)
-                   (equal (if (equal architecture "llama") *llama-pattern* *qwen-pattern*)
-                          (gethash "Regex" pattern))
+                   (hash-table-p split)
+                   (if (equal architecture "smollm2")
+                       (and (equal "Digits" (gethash "type" split)) (eq t (gethash "individual_digits" split)))
+                       (and (equal "Split" (gethash "type" split))
+                            (equal "Isolated" (gethash "behavior" split)) (not (gethash "invert" split))
+                            (hash-table-p pattern)
+                            (equal (if (equal architecture "llama") *llama-pattern* *qwen-pattern*)
+                                   (gethash "Regex" pattern))))
                    (hash-table-p byte) (equal "ByteLevel" (gethash "type" byte))
-                   (not (gethash "add_prefix_space" byte)) (not (gethash "use_regex" byte))
+                   (not (gethash "add_prefix_space" byte)) (eq (gethash "use_regex" byte) (equal architecture "smollm2"))
                    (hash-table-p decoder) (equal "ByteLevel" (gethash "type" decoder))
                    (or (hf-null-p post)
                        (and (hash-table-p post)
@@ -80,9 +129,15 @@
                                 (and (equal architecture "llama") (hf-bos-postprocessor post))))))
         (reject)))))
 
-(defmethod local:tokenizer-selector ((format (eql :safetensors)) weights)
-  (let* ((architecture (local:weights-architecture-name weights))
-         (object (hf-sidecar weights "tokenizer.json" t)))
+(defmethod local:tokenizer-selector (format (weights hf-weights))
+  (declare (ignore format))
+  (let* ((object (hf-sidecar weights "tokenizer.json" t))
+         (pre (gethash "pre_tokenizer" object))
+         (parts (and (hash-table-p pre) (gethash "pretokenizers" pre)))
+         (digits (and (vectorp parts) (plusp (length parts))
+                      (hash-table-p (aref parts 0))
+                      (equal "Digits" (gethash "type" (aref parts 0)))))
+         (architecture (if digits "smollm2" (local:weights-architecture-name weights))))
     (check-hf-pipeline object architecture)
     (values "BPE" architecture)))
 
@@ -146,7 +201,7 @@
     (setf (slot-value tokenizer 'local::special-ids) ids
           (slot-value tokenizer 'local::add-bos) (and (gethash "add_bos_token" config) t))))
 
-(defmethod local:tokenizer-load ((tokenizer local:byte-level-bpe) (format (eql :safetensors)) weights)
+(defmethod local:tokenizer-load ((tokenizer local:byte-level-bpe) format (weights hf-weights))
   (let* ((object (hf-sidecar weights "tokenizer.json" t))
          (config (or (hf-sidecar weights "tokenizer_config.json") (make-hash-table :test 'equal))))
     ;; HF BPE decoding ignores ordinary whitespace cleanup.
@@ -156,7 +211,7 @@
     (multiple-value-bind (tokens types) (hf-vocabulary object)
       (setf (slot-value tokenizer 'local::tokens) tokens (slot-value tokenizer 'local::types) types)
       (local::build-vocabulary tokenizer tokens types)
-      (local::build-byte-ids tokenizer)
+      (hf-byte-ids tokenizer)
       (local::build-merges tokenizer (hf-merges object)))
     (multiple-value-bind (bos id) (hf-bos-postprocessor (gethash "post_processor" object))
       (when bos
@@ -173,7 +228,7 @@
     (local::initialize-pre-tokenizer tokenizer)
     tokenizer))
 
-(defmethod local:chat-template-source ((format (eql :safetensors)) weights)
+(defmethod local:chat-template-source (format (weights hf-weights))
   (let* ((config (hf-sidecar weights "tokenizer_config.json"))
          (source (and config (gethash "chat_template" config))))
     (unless (hf-null-p source)
@@ -181,12 +236,12 @@
         (local::chat-template-fail "Unsupported HF chat_template"))
       source)))
 
-(defmethod local:tokenizer-selector :around ((format (eql :safetensors)) weights)
+(defmethod local:tokenizer-selector :around (format (weights hf-weights))
   (handler-case (call-next-method)
     (local:tokenizer-error (e) (error e))
     (error (e) (local::tokenizer-fail 'local:tokenizer-error "Malformed HF tokenizer: ~A" e))))
 
-(defmethod local:tokenizer-load :around ((tokenizer local:byte-level-bpe) (format (eql :safetensors)) weights)
+(defmethod local:tokenizer-load :around ((tokenizer local:byte-level-bpe) format (weights hf-weights))
   (handler-case (call-next-method)
     (local:tokenizer-error (e) (error e))
     (error (e) (local::tokenizer-fail 'local:tokenizer-error "Malformed HF tokenizer: ~A" e))))

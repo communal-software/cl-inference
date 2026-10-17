@@ -1,0 +1,162 @@
+(in-package #:cl-inference/onnx/tests)
+(in-suite :cl-inference/onnx)
+
+(test tiny-neutral-completion-and-streaming
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx" :n-batch 7)
+    (let* ((events nil) (result (ask backend :ref :test :stream (lambda (event) (push event events)))))
+      (is (success-p result))
+      (is (equal "ok" (reply-text result)))
+      (is (eq :stop (getf (getf (second result) :meta) :finish-reason)))
+      (is (= 2 (getf (getf (getf (second result) :meta) :usage) :completion-tokens)))
+      (is (zerop (getf (getf (getf (second result) :meta) :usage) :cached-prompt-tokens)))
+      (is (= 1 (count :done events :key (lambda (event) (getf event :type)))))
+      (is (every (lambda (event) (eq :test (getf event :ref))) events))
+      (is (equal "ok" (apply #'concatenate 'string
+                                     (loop for event in (reverse events) when (eq :text-delta (getf event :type))
+                                           collect (getf event :text))))))
+    (is (equal "ok" (reply-text (ask backend))))
+    (is (eq :cpu (getf (ci:describe-backend backend) :execution-provider)))
+    (is (null (getf (ci:describe-backend backend) :reuse-prefix)))))
+
+(test token-limits-stops-and-sampling
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx")
+    (is (equal "" (reply-text (ask backend :max-tokens 0))))
+    (is (equal "o" (reply-text (ask backend :max-tokens 1))))
+    (is (eq :length (getf (getf (second (ask backend :max-tokens 1)) :meta) :finish-reason)))
+    (dolist (stop '(("ok") ("o") ("ok!" "ok")))
+      (is (equal "" (reply-text (ask backend :stop stop)))))
+    (is (equal "o" (reply-text (ask backend :stop '("k")))))
+    (is (equal (ask backend :temperature 0.7 :top-k 2 :top-p 0.9 :seed 42)
+               (ask backend :temperature 0.7 :top-k 2 :top-p 0.9 :seed 42)))))
+
+(test rejection-and-resource-lifetime
+  (signals error (onnx:make-onnx-backend (fixture-directory)))
+  (signals error (onnx:make-onnx-backend (fixture-directory) :graph "/tmp/model.onnx"))
+  (signals error (onnx:make-onnx-backend (fixture-directory) :graph "missing.onnx"))
+  (signals onnx:onnx-error (onnx:make-onnx-backend (fixture-directory) :graph "model.onnx" :n-ctx 513))
+  (let ((backend (onnx:make-onnx-backend (fixture-directory) :graph "model.onnx")))
+    (unwind-protect
+         (progn
+           (dolist (options '((:stop ("")) (:max-tokens -1) (:temperature -1) (:top-p 2)
+                              (:messages ((:role :tool :content "no" :tool-call-id "c1")))
+                              (:messages ((:role :user :content ((:type :image :url "file.png")))))
+                              (:tools ((:name :shell :params nil)))))
+             (let* ((events nil)
+                    (result (apply #'ask backend :stream (lambda (event) (push event events)) options)))
+               (is (eq :bad-request (first (ci:result-error result))))
+               (is (= 1 (count :done events :key (lambda (event) (getf event :type)))))))
+           (let (nested)
+             (is (success-p (ask backend :stream (lambda (event)
+                                                       (when (eq :text-delta (getf event :type))
+                                                         (setf nested (ask backend)))))))
+             (is (eq :bad-request (first (ci:result-error nested))))))
+      (onnx:close-onnx-backend backend))
+    (onnx:close-onnx-backend backend)
+    (is (equal '(:error :unavailable) (ask backend)))
+    (is (eq :unavailable (getf (ci:describe-backend backend) :status)))))
+
+(test cached-logits-and-positions
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx")
+    (let* ((model (local::backend-model backend)) (cache (local:make-model-cache model 128)))
+      (unwind-protect
+           (progn
+             (let ((logits (local:model-forward model #(50 111) :cache cache :all-logits t)))
+               (is (equalp #(2 259) (ct:tensor-shape logits)))
+               (is (= 10f0 (ct:tref logits 1 107))))
+             (let ((logits (local:model-forward model #(107) :start 2 :cache cache)))
+               (is (= 10f0 (ct:tref logits 0 258))))
+             (dolist (pair (onnx::onnx-cache-tensors cache))
+               (is (equal '(1 1 3 2) (ox:tensor-shape (cdr pair))))
+               (is (equalp #(0f0 0f0 1f0 1f0 2f0 2f0) (ox:tensor-data (cdr pair)))))
+             (signals onnx:onnx-error (local:model-forward model #(2) :start 0 :cache cache)))
+        (local:close-cache cache)))))
+
+(test native-deadlines-cancellation-and-recovery
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "slow.onnx")
+    (dolist (kind '(:timeout :cancelled))
+      (let ((token (ci:make-cancel-token)) (events nil) (thread nil))
+        (unwind-protect
+             (progn
+               (when (eq kind :cancelled)
+                 (setf thread (bt:make-thread (lambda () (sleep 0.04) (ci:cancel token)))))
+               (let ((result (ask backend :cancel token :timeout (if (eq kind :timeout) 40 3000)
+                                         :stream (lambda (event) (push event events)))))
+                 (is (equal (list :error kind) result))
+                 (is (= 1 (length events)))
+                 (is (eq :ready (getf (ci:describe-backend backend) :status)))
+                 (is (equal result (getf (first events) :reason)))))
+          (when thread (bt:join-thread thread))))
+      (is (equal "ok" (reply-text (ask backend :messages '((:role :user :content "Hi"))))))))
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx")
+    (let ((token (ci:make-cancel-token)))
+      (ci:cancel token)
+      (is (equal '(:error :cancelled) (ask backend :cancel token))))
+    (is (equal '(:error :timeout) (ask backend :timeout 0)))
+    (is (equal "ok" (reply-text (ask backend))))
+    (let ((token (ci:make-cancel-token)))
+      (is (equal '(:error :cancelled)
+                 (ask backend :cancel token :stream (lambda (event)
+                                                     (when (eq :text-delta (getf event :type))
+                                                       (ci:cancel token))))))
+      (is (equal "ok" (reply-text (ask backend)))))))
+
+(test serialized-wait-counts-toward-deadline
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx")
+    (let ((entered (bt:make-semaphore)) (resume (bt:make-semaphore)) (result nil))
+      (let ((thread (bt:make-thread
+                     (lambda ()
+                       (setf result (ask backend :stream
+                                         (lambda (event)
+                                           (when (eq :text-delta (getf event :type))
+                                             (bt:signal-semaphore entered)
+                                             (bt:wait-on-semaphore resume :timeout 3)))))))))
+        (unwind-protect
+             (progn
+               (is (bt:wait-on-semaphore entered :timeout 3))
+               (is (equal '(:error :timeout) (ask backend :timeout 30))))
+          (dotimes (i 4) (bt:signal-semaphore resume))
+          (bt:join-thread thread))
+        (is (success-p result))))))
+
+(test smollm-tokenizer-and-template
+  (onnx:with-onnx-backend (backend (fixture-directory) :graph "model.onnx")
+    (let ((tokenizer (local::backend-tokenizer backend)) (template (local::backend-template backend)))
+      (is (equal '(" " "1" "2" "a" "'s" "!" "  ")
+                 (local:pre-tokenize tokenizer " 12a's!  ")))
+      (dolist (text '("é你好👋" "123 ٤٥６" " leading\ntrailing " "<|im_start|>"))
+        (is (equal text (local:decode tokenizer (local:encode tokenizer text)))))
+      (is (search "You are a helpful AI assistant named SmolLM, trained by Hugging Face"
+                  (local:render-chat template '((:role :user :content "hi")))))
+      (is (not (search "named SmolLM" (local:render-chat template '((:role :system :content "Custom") (:role :user :content "hi")))))))))
+
+(defmacro with-model-copy ((directory) &body body)
+  `(uiop:with-temporary-file (:pathname temporary :keep nil)
+     (let ((,directory (uiop:ensure-directory-pathname (concatenate 'string (namestring temporary) "-model/"))))
+       (unwind-protect
+            (progn
+              (ensure-directories-exist ,directory)
+              (dolist (file '("config.json" "tokenizer.json" "tokenizer_config.json" "model.onnx"))
+                (uiop:copy-file (merge-pathnames file (fixture-directory)) (merge-pathnames file ,directory)))
+              ,@body)
+         (uiop:delete-directory-tree ,directory :validate t :if-does-not-exist :ignore)))))
+
+(test unsupported-packages-and-metadata
+  (with-model-copy (directory)
+    (with-open-file (out (merge-pathnames "model.onnx" directory) :direction :output :if-exists :supersede)
+      (write-string "invalid ONNX" out))
+    (signals ox:onnx-error (onnx:make-onnx-backend directory :graph "model.onnx")))
+  (dolist (setting '(("model_type" . "qwen3") ("vocab_size" . 260) ("head_dim" . 3)))
+    (with-model-copy (directory)
+      (let* ((path (merge-pathnames "config.json" directory)) (config (hf:read-json-file path)))
+        (setf (gethash (car setting) config) (cdr setting))
+        (with-open-file (out path :direction :output :if-exists :supersede)
+          (write-string (com.inuoe.jzon:stringify config) out)))
+      (signals onnx:onnx-error (onnx:make-onnx-backend directory :graph "model.onnx"))))
+  (with-model-copy (directory)
+    (with-open-file (out (merge-pathnames "tokenizer_config.json" directory) :direction :output :if-exists :supersede)
+      (write-string "{\"chat_template\":\"unsupported\"}" out))
+    (signals local:chat-template-error (onnx:make-onnx-backend directory :graph "model.onnx")))
+  (with-model-copy (directory)
+    (with-open-file (out (merge-pathnames "tokenizer.json" directory) :direction :output :if-exists :supersede)
+      (write-string "{}" out))
+    (signals local:tokenizer-error (onnx:make-onnx-backend directory :graph "model.onnx"))))

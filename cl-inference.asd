@@ -47,14 +47,20 @@
   :serial t
   :components ((:file "mapping/package") (:file "mapping/posix")))
 
+(asdf:defsystem "cl-inference/hf"
+  :description "Shared Hugging Face tokenizer and chat metadata"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/local")
+  :serial t
+  :components ((:file "hf/package") (:file "hf/json") (:file "hf/tokenizer")))
+
 (asdf:defsystem "cl-inference/safetensors"
   :description "Safetensors and Hugging Face configuration reader"
   :license "GPL-3.0-only"
-  :depends-on ("cl-inference/local" "cl-inference/mapping" "trivial-simd" "babel")
+  :depends-on ("cl-inference/hf" "cl-inference/mapping" "trivial-simd" "babel")
   :serial t
   :components ((:file "safetensors/package") (:file "safetensors/reader")
-               (:file "safetensors/weights") (:file "safetensors/model")
-               (:file "safetensors/tokenizer")))
+               (:file "safetensors/weights") (:file "safetensors/model")))
 
 (asdf:defsystem "cl-inference/gguf"
   :description "GGUF weight-file reader for cl-inference/local"
@@ -182,3 +188,28 @@
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/mlx-gguf/tests :run-acceptance)
                (error "cl-inference/mlx-gguf acceptance failed"))))
+
+(asdf:defsystem "cl-inference/onnx"
+  :description "Local ONNX decoder inference through cl-onnx"
+  :license "GPL-3.0-only"
+  :depends-on ("cl-inference/hf" "cl-onnx")
+  :serial t
+  :components ((:file "onnx/package") (:file "onnx/model") (:file "onnx/backend"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-inference/onnx/tests"))))
+
+(asdf:defsystem "cl-inference/onnx/tests"
+  :depends-on ("cl-inference/onnx" "fiveam")
+  :serial t
+  :components ((:file "tests/onnx/package") (:file "tests/onnx/backend"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/onnx/tests :run-tests)
+               (error "ONNX tests failed"))))
+
+(asdf:defsystem "cl-inference/onnx/acceptance"
+  :depends-on ("cl-inference/onnx/tests")
+  :components ((:file "tests/onnx/acceptance"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :cl-inference/onnx/tests :run-acceptance)
+               (error "ONNX acceptance failed"))))

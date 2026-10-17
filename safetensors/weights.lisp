@@ -1,6 +1,6 @@
 (in-package #:cl-inference/safetensors)
 
-(defclass safetensors-weights (local:weights)
+(defclass safetensors-weights (hf-weights)
   ((shards :initarg :shards :reader weights-shards)
    (metadata :initarg :metadata :reader weights-metadata-table)
    (keys :initarg :keys :reader weights-keys)

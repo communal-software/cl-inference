@@ -36,6 +36,7 @@ CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verifi
 
 | Support | System | Coverage |
 |---|---|---|
+| ONNX decoder graph | `cl-inference/onnx` | SmolLM2 135M FP32 on CPU; [setup and export boundary](onnx.md), [pinned acceptance](onnx-acceptance.md) |
 | GGUF v3, little-endian | `cl-inference/gguf` | Model metadata and mapped tensor views |
 | Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3 fixtures, ordinary and Llama 3 RoPE; HF tokenizers and chat setup |
 | F32, F16, BF16 inference weights | `cl-inference/local` and the format loader | Offline model/block fixtures; F16 also has real-model acceptance |
@@ -69,7 +70,7 @@ Load `cl-inference/gguf` for a GGUF model and `cl-inference/quant` for supported
 
 | Missing | Tracker |
 |---|---|
-| Local ONNX models; execution approach remains undecided | [#47](https://github.com/communal-software/cl-inference/issues/47) |
+| Additional ONNX exports, accelerators, cache policies and tools | [ONNX limitations](onnx.md#limitations) |
 | Local Gemma-family models; initial version and modalities remain undecided | [#48](https://github.com/communal-software/cl-inference/issues/48) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
 
