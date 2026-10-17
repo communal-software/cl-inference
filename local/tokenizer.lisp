@@ -15,7 +15,16 @@
 (defclass tokenizer-class (section-class) ())
 
 (defclass tokenizer ()
-  ((format :initarg :format :initform nil :reader tokenizer-format))
+  ((tokens :reader tokenizer-tokens :documentation "Vocabulary strings, indexed by id.")
+   (ids :reader tokenizer-ids :documentation "Token string to id.")
+   (octets :reader tokenizer-octets :documentation "Decoded bytes, indexed by id.")
+   (types :reader tokenizer-types :documentation "ggml token type, indexed by id.")
+   (byte-ids :reader tokenizer-byte-ids :documentation "Token id of each single byte.")
+   (specials :reader tokenizer-specials)
+   (special-ids :initform nil :reader tokenizer-special-ids)
+   (add-bos :initform nil :reader tokenizer-add-bos-p)
+   (ignore-merges :initform nil :reader tokenizer-ignore-merges-p)
+   (format :initarg :format :initform nil :reader tokenizer-format))
   (:metaclass tokenizer-class))
 
 ;;; Sections are plists of alists keyed by entry name:
@@ -179,27 +188,16 @@ Children override rules, stages and format entries by name; rules accept :before
 (defmethod tokenizer-selector ((format (eql :gguf)) weights)
   (let ((model (weights-metadata weights "tokenizer.ggml.model")))
     (multiple-value-bind (pre present) (weights-metadata weights "tokenizer.ggml.pre")
-      (values model (if (and (equal model "gpt2") (or (not present) (equal pre "")))
-                        "default"
-                        pre)))))
+      (values model (cond ((equal model "llama") "sentencepiece")
+                          ((and (equal model "gpt2") (or (not present) (equal pre "")))
+                           "default")
+                          (t pre))))))
 
 ;;; Byte-level BPE
 
 (defclass byte-level-bpe (tokenizer)
-  ((tokens :reader tokenizer-tokens :documentation "Vocabulary strings, indexed by id.")
-   (ids :reader tokenizer-ids :documentation "Token string to id.")
-   (octets :reader tokenizer-octets :documentation "Decoded bytes, indexed by id.")
-   (types :reader tokenizer-types :documentation "ggml token type, indexed by id.")
-   (byte-ids :reader tokenizer-byte-ids :documentation "Token id of each single byte.")
-   (merges :reader tokenizer-merges
-           :documentation "Fixnum table: left*vocab+right to rank*2^32+merged id.")
-   (specials :reader tokenizer-specials
-             :documentation "Hash from first character to (string . id), longest first.")
-   (special-ids :initform nil :reader tokenizer-special-ids)
-   (add-bos :initform nil :reader tokenizer-add-bos-p)
-   (ignore-merges :initform nil :reader tokenizer-ignore-merges-p
-                  :documentation "Emit a pre-tokenized piece found in the vocabulary as one token.")
-   (matchers :reader tokenizer-matchers :documentation "Compiled pre-tokenizer rules."))
+  ((merges :reader tokenizer-merges)
+   (matchers :reader tokenizer-matchers))
   (:metaclass tokenizer-class))
 
 (defconstant +merge-id-bits+ 32)

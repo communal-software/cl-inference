@@ -250,7 +250,13 @@ at START, or NIL. KIND is a keyword and OPTIONS the rule's plist.")
     (pre-tokenizer-stages
      (map-staged-pre-pieces function (pre-tokenizer-stages-matchers matchers) text))))
 
-(defun pre-tokenize (tokenizer text)
+(defgeneric pre-tokenize (tokenizer text)
+  (:method ((tokenizer tokenizer) text)
+    (declare (ignore text))
+    (tokenizer-fail 'tokenizer-error "~S has no split-based pre-tokenizer"
+                    (class-name (class-of tokenizer)))))
+
+(defmethod pre-tokenize ((tokenizer byte-level-bpe) text)
   "The pieces TEXT splits into before BPE, as a list of strings."
   (let ((text (coerce-text text)) pieces)
     (map-pre-pieces (lambda (start end) (push (subseq text start end) pieces))

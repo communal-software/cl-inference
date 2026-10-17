@@ -10,11 +10,11 @@ One `complete` contract for hosted and local LLMs in Common Lisp. `cl-inference/
 |---|---|
 | Remote protocols | OpenAI-compatible chat completions; Ollama native chat |
 | Remote providers | Built-in `:ollama`; custom providers through `define-provider` |
-| Local architectures | Llama and Qwen3; verified with Llama 3.2 1B Instruct and Qwen3 0.6B |
+| Local architectures | Llama, Qwen3 and Gemma 3; verified variants in [Support](docs/support.md) |
 | Local formats | GGUF v3; Safetensors with HF configuration and indexed shards |
 | Inference weights | F32, F16, BF16, Q8_0, Q4_0, Q4_K and Q6_K |
 
-Real-model CPU inference is verified on SBCL; the HTTP client and CPU fixture suites pass on SBCL, CCL and ECL. Safetensors CPU models are fixture-tested; the optional MLX backend has Llama 3.2 1B Instruct and Qwen3 0.6B float and 4-bit acceptance. See [Support](docs/support.md) for configuration, verified variants and limitations. Local Gemma models are planned. [ONNX](docs/onnx.md) has SmolLM2 135M FP32 CPU acceptance.
+Real-model CPU inference is verified on SBCL; the HTTP client and CPU fixture suites pass on SBCL, CCL and ECL. Safetensors CPU models are fixture-tested; the optional MLX backend has Llama 3.2 1B Instruct and Qwen3 0.6B float and 4-bit acceptance. See [Support](docs/support.md) for configuration, verified variants and limitations. [Gemma 3 270M IT](docs/gemma.md) has CPU Q8_0 GGUF acceptance. [ONNX](docs/onnx.md) has SmolLM2 135M FP32 CPU acceptance.
 
 ## Docs
 

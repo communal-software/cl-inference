@@ -21,6 +21,9 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 |---|---|---|---|
 | `llama` | Llama 3.2 1B Instruct | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `llama-bpe`, `llama3-chat` |
 | `qwen3` | Qwen3 0.6B | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `qwen2`, `qwen3-chat` |
+| `gemma3` | [Gemma 3 270M IT](gemma.md) | Q8_0 (CPU) | `llama-spm`, `gemma3-chat` |
+
+[Llama SentencePiece](sentencepiece.md) has pinned tokenizer parity coverage; additional SentencePiece model support requires architecture and chat-template acceptance.
 
 [Qwen3.5 GGUF tokenization](tokenizers.md#qwen35-gguf) has pinned split, token-ID and byte parity coverage independently of model inference.
 
@@ -71,7 +74,7 @@ Load `cl-inference/gguf` for a GGUF model and `cl-inference/quant` for supported
 | Missing | Tracker |
 |---|---|
 | Additional ONNX exports, accelerators, cache policies and tools | [ONNX limitations](onnx.md#limitations) |
-| Local Gemma-family models; initial version and modalities remain undecided | [#48](https://github.com/communal-software/cl-inference/issues/48) |
+| Gemma formats, families and modalities outside the verified text model | [Gemma limitations](gemma.md#limitations) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
 
 Other engine and tokenizer gaps are listed in [Limitations](limitations.md).

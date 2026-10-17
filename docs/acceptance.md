@@ -1,6 +1,6 @@
 # Model acceptance
 
-The acceptance suite compares pinned Llama 3.2 1B and Qwen3 0.6B models against llama.cpp. It checks real-model behavior beyond the offline fixtures; see [Testing](testing.md) for routine checks.
+The acceptance suite compares pinned Llama 3.2 1B, Qwen3 0.6B and [Gemma 3 270M IT](gemma.md#pinned-acceptance) models against llama.cpp. It checks real-model behavior beyond the offline fixtures; see [Testing](testing.md) for routine checks.
 
 [Cache acceptance](cache-acceptance.md) adds exact-prefix reuse and opt-in Q8 KV storage checks against independent Python references.
 

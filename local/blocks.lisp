@@ -270,16 +270,21 @@ frequency i = THETA^(-2i/ROPE-DIMS) / FACTORS[i]."
       (when (attention-qk-norm block)
         (setf (attn-q-norm block) (tensor "q-norm") (attn-k-norm block) (tensor "k-norm"))))))
 
-(defun causal-mask (count key-count query-start key-start)
+(defun causal-mask (count key-count query-start key-start &optional window)
   "A (COUNT KEY-COUNT) :u8 mask, 1 where the key's position is not after the query's; NIL
 when nothing is masked."
   (let ((mask (ct:make-tensor (list count key-count) :dtype :u8)) (masked nil))
     (dotimes (i count)
       (dotimes (j key-count)
-        (if (<= (+ key-start j) (+ query-start i))
+        (if (and (<= (+ key-start j) (+ query-start i))
+                 (or (null window) (< (- (+ query-start i) (+ key-start j)) window)))
             (setf (ct:tref mask i j) 1)
             (setf masked t))))
     (and masked mask)))
+
+(defgeneric attention-mask (block count key-count query-start key-start)
+  (:method ((block attention) count key-count query-start key-start)
+    (causal-mask count key-count query-start key-start)))
 
 (defun call-with-head-ranges (count function)
   (let ((executor ct:*executor*)
@@ -341,7 +346,7 @@ holds the positions from START; without, X attends only to itself."
               (values keys values 0))
             (values k v start))
       (linear (attend q keys values
-                      (causal-mask count (aref (ct:tensor-shape keys) 0) start key-start)
+                      (attention-mask block count (aref (ct:tensor-shape keys) 0) start key-start)
                       n-heads n-kv-heads head-dim)
               (attn-output block)))))
 

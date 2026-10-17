@@ -4,6 +4,7 @@
 #include "common.h"
 #include "log.h"
 #include "llama.h"
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <cstdlib>
@@ -87,18 +88,30 @@ int main(int argc, char ** argv) {
     };
 
     std::vector<llama_token> tokens;
-    if (const char * user = std::getenv("DUMP_USER")) {
+    const char * messages_file = std::getenv("DUMP_MESSAGES");
+    const char * user = std::getenv("DUMP_USER");
+    if (messages_file || user) {
         common_chat_templates_inputs inputs;
-        if (const char * system = std::getenv("DUMP_SYSTEM")) {
+        if (messages_file) {
+            std::ifstream stream(messages_file);
+            for (const auto & item : nlohmann::ordered_json::parse(stream)) {
+                common_chat_msg message;
+                message.role = item.at("role").get<std::string>();
+                message.content = item.at("content").get<std::string>();
+                inputs.messages.push_back(message);
+            }
+        } else {
+            if (const char * system = std::getenv("DUMP_SYSTEM")) {
+                common_chat_msg message;
+                message.role = "system";
+                message.content = system;
+                inputs.messages.push_back(message);
+            }
             common_chat_msg message;
-            message.role = "system";
-            message.content = system;
+            message.role = "user";
+            message.content = user;
             inputs.messages.push_back(message);
         }
-        common_chat_msg message;
-        message.role = "user";
-        message.content = user;
-        inputs.messages.push_back(message);
         inputs.add_generation_prompt = true;
         if (const char * thinking = std::getenv("DUMP_THINKING")) {
             inputs.enable_thinking = std::string(thinking) != "0";

@@ -44,7 +44,7 @@ This boundary prevents data from contributing control IDs. Semantic prompt injec
 
 ## Standard templates
 
-[Family coverage](chat-families.md) lists the native Llama, Qwen, QwQ, R1 and Hermes classes, their pinned references, tools and reasoning options. `chatml` renders plain turns and rejects tools. The renderers match the pinned Jinja prompt bytes; the library does not execute Jinja.[^jinja]
+[Family coverage](chat-families.md) lists the native Llama, Qwen, QwQ, R1 and Hermes classes, their pinned references, tools and reasoning options. `chatml` renders plain turns and rejects tools. [Gemma 3](gemma.md) uses `gemma3-chat` for text conversations without tools. The renderers match the pinned Jinja prompt bytes; the library does not execute Jinja.[^jinja]
 
 ## Reply parsing
 

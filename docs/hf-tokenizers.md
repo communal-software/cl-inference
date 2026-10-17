@@ -35,7 +35,8 @@ Token IDs, Unicode handling and rendered prompts are checked against the pinned 
 
 | Deferred capability | Tracker |
 |---|---|
-| Other HF tokenizer pipelines and SentencePiece | [#33](https://github.com/communal-software/cl-inference/issues/33) |
+| Other HF BPE pipelines | [#64](https://github.com/communal-software/cl-inference/issues/64) |
+| HF SentencePiece pipelines (GGUF Llama SentencePiece is [supported separately](sentencepiece.md)) | [#63](https://github.com/communal-software/cl-inference/issues/63) |
 | Template variants outside the pinned text coverage | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 
 Paired inputs and arbitrary Jinja execution are outside this reader's coverage.

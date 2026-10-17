@@ -23,7 +23,7 @@
    #:architecture-model-block-spec #:architecture-format-option #:architecture-tensor-name
    #:architecture-tensor
    #:architecture-error #:architecture-error-message #:unknown-architecture
-   #:unknown-architecture-name #:llama #:qwen3
+   #:unknown-architecture-name #:llama #:qwen3 #:gemma3
    ;; tokenizers
    #:define-tokenizer #:tokenizer #:tokenizer-class #:byte-level-bpe #:load-tokenizer
    #:tokenizer-format #:tokenizer-format-option #:tokenizer-pre-rules #:tokenizer-pre-stages #:rule-matcher
@@ -32,7 +32,7 @@
    #:tokenizer-special-p #:tokenizer-add-bos-p #:tokenizer-ignore-merges-p
    #:make-detokenizer #:detokenizer-push #:detokenizer-finish
    #:tokenizer-error #:tokenizer-error-message #:unknown-tokenizer #:unknown-tokenizer-model
-   #:unknown-tokenizer-pre #:llama-bpe #:qwen2 #:qwen35 #:default-bpe
+   #:unknown-tokenizer-pre #:llama-spm #:llama-bpe #:qwen2 #:qwen35 #:default-bpe
    ;; chat templates
    #:define-chat-template #:chat-template #:chat-template-class #:load-chat-template
    #:chat-segment #:make-chat-segment #:chat-segment-text #:chat-segment-kind
@@ -40,7 +40,7 @@
    #:chat-template-error #:chat-template-error-message #:unknown-chat-template
    #:unknown-chat-template-source #:llama3-chat #:chatml #:qwen3-chat
    #:llama30-chat #:llama31-chat #:qwen25-chat #:qwq-chat #:r1-chat #:r1-llama-chat
-   #:qwen3-coder-chat #:qwen35-chat #:hermes-chat
+   #:qwen3-coder-chat #:qwen35-chat #:hermes-chat #:gemma3-chat
    ;; blocks and models
    #:model-block #:block-slot #:block-layer #:bind-block #:block-forward #:block-tensor
    #:kv-cache-update #:linear #:rmsnorm #:embedding #:attention #:swiglu-mlp #:lm-head

@@ -21,6 +21,9 @@
                       (,(n "blk.~d.attn_output.weight") ,dim ,(* heads head-dim))
                       ,@(when qk-norm `((,(n "blk.~d.attn_q_norm.weight") ,head-dim)
                                         (,(n "blk.~d.attn_k_norm.weight") ,head-dim)))
+                      ,@(when (spec-get spec :gemma3)
+                          `((,(n "blk.~d.post_attention_norm.weight") ,dim)
+                            (,(n "blk.~d.post_ffw_norm.weight") ,dim)))
                       (,(n "blk.~d.ffn_norm.weight") ,dim)
                       (,(n "blk.~d.ffn_gate.weight") ,ffn ,dim)
                       (,(n "blk.~d.ffn_up.weight") ,ffn ,dim)
@@ -106,9 +109,14 @@ quantized integers of each block."
                  (,(format nil "~a.attention.layer_norm_rms_epsilon" arch) 6 ,epsilon)
                  (,(format nil "~a.rope.freq_base" arch) 6 ,theta)
                  (,(format nil "~a.rope.dimension_count" arch) 4 ,rope-dims)
+                 ,@(when (spec-get spec :gemma3)
+                     `(("gemma3.attention.sliding_window" 4 ,(spec-get spec :window))
+                       ("gemma3.attention.sliding_window_pattern" 4 ,(spec-get spec :pattern))
+                       ("gemma3.rope.freq_base_swa" 6 ,(spec-get spec :local-theta))))
                  ,@extra-metadata)
      :tensors (loop for (name . shape) in (weight-shapes spec)
                     for dtype = (weight-dtype spec shape name)
+                    when (gethash name table)
                     collect (list name (reverse shape) (dtype-id dtype)
                                   (dtype-octets dtype (cdr (gethash name table))))))))
 
@@ -167,14 +175,16 @@ quantized integers of each block."
                                        (ref-split (ref-matvec (w "attn_k.weight") h) head-dim))))
              (vs (loop for h in normed
                        collect (ref-split (ref-matvec (w "attn_v.weight") h) head-dim)))
-             (group (floor heads kv)))
+             (group (floor heads kv))
+             (window (spec-get spec :window)))
         (loop for qi below (length xs)
               collect
               (let ((merged
                       (loop for head below heads
                             append
                             (let* ((kvh (floor head group))
-                                   (scores (loop for kj to qi
+                                   (first-key (if window (max 0 (1+ (- qi window))) 0))
+                                   (scores (loop for kj from first-key to qi
                                                  collect (/ (ref-dot (nth head (nth qi qs))
                                                                      (nth kvh (nth kj ks)))
                                                             (sqrt (coerce head-dim 'double-float)))))
@@ -182,29 +192,44 @@ quantized integers of each block."
                                    (exps (mapcar (lambda (s) (exp (- s top))) scores))
                                    (total (reduce #'+ exps)))
                               (loop for d below head-dim
-                                    collect (/ (loop for e in exps for kj from 0
+                                    collect (/ (loop for e in exps for kj from first-key
                                                      sum (* e (nth d (nth kvh (nth kj vs)))))
                                                total))))))
                 (ref-matvec (w "attn_output.weight") merged)))))))
 
+(defun ref-gelu (x)
+  (* 0.5d0 x (+ 1d0 (tanh (* (sqrt (/ 2d0 pi)) (+ x (* 0.044715d0 x x x)))))))
+
 (defun ref-mlp (table spec layer xs)
-  (let ((eps (spec-get spec :epsilon)))
+  (let ((eps (spec-get spec :epsilon)) (gemma (spec-get spec :gemma3)))
     (flet ((w (suffix) (ref-weight table (format nil "blk.~d.~a" layer suffix))))
-      (loop for x in xs
-            collect (let* ((h (ref-rmsnorm x (w "ffn_norm.weight") eps))
-                           (gate (ref-matvec (w "ffn_gate.weight") h))
-                           (up (ref-matvec (w "ffn_up.weight") h)))
-                      (ref-matvec (w "ffn_down.weight")
-                                  (mapcar (lambda (g u) (* (ref-silu g) u)) gate up)))))))
+      (loop for x in xs collect
+        (let* ((h (ref-rmsnorm x (w "ffn_norm.weight") eps))
+               (gate (ref-matvec (w "ffn_gate.weight") h))
+               (up (ref-matvec (w "ffn_up.weight") h))
+               (delta (ref-matvec (w "ffn_down.weight")
+                        (mapcar (lambda (g u) (* (if gemma (ref-gelu g) (ref-silu g)) u)) gate up))))
+          (if gemma (ref-rmsnorm delta (w "post_ffw_norm.weight") eps) delta))))))
 
 (defun ref-logits (table spec pairing tokens &optional on-layer)
   "Logits for every position of TOKENS. ON-LAYER, when given, is called with the residual
 stream after each layer."
   (let* ((embd (ref-weight table "token_embd.weight"))
          (xs (mapcar (lambda (token) (copy-list (nth token embd))) tokens)))
+    (when (spec-get spec :gemma3)
+      (setf xs (mapcar (lambda (x) (mapcar (lambda (v) (* v (sqrt (float (spec-get spec :dim) 1f0)))) x)) xs)))
     (dotimes (layer (spec-get spec :layers))
-      (setf xs (mapcar #'(lambda (x d) (mapcar #'+ x d)) xs
-                       (ref-attention table spec pairing layer xs)))
+      (let* ((layer-spec (copy-list spec))
+             (gemma (spec-get spec :gemma3))
+             (local-p (and gemma (< (mod layer (spec-get spec :pattern)) (1- (spec-get spec :pattern))))))
+        (when gemma
+          (setf (getf layer-spec :window) (and local-p (spec-get spec :window))
+                (getf layer-spec :theta) (if local-p (spec-get spec :local-theta) (spec-get spec :theta))))
+        (let ((deltas (ref-attention table layer-spec pairing layer xs)))
+          (when gemma
+            (setf deltas (mapcar (lambda (d) (ref-rmsnorm d (ref-weight table (format nil "blk.~d.post_attention_norm.weight" layer))
+                                                        (spec-get spec :epsilon))) deltas)))
+          (setf xs (mapcar (lambda (x d) (mapcar #'+ x d)) xs deltas))))
       (setf xs (mapcar #'(lambda (x d) (mapcar #'+ x d)) xs (ref-mlp table spec layer xs)))
       (when on-layer (funcall on-layer xs)))
     (let ((output (if (gethash "output.weight" table) (ref-weight table "output.weight") embd)))

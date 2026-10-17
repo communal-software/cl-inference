@@ -85,7 +85,8 @@
                                                   :enable-thinking (case-option case :thinking))
                                (local:encode tokenizer (case-option case :text)))
                            'list))
-           (session (local:make-session model :tokenizer tokenizer :chat-template template))
+           (session (local:make-session model :tokenizer tokenizer :chat-template template
+                                       :n-batch (or (case-option case :n-batch) 512)))
            (start (get-internal-real-time))
            (logits nil)
            (trace (tests::tracing-layers (setf logits (local:session-prefill session prompt)))))
@@ -124,7 +125,9 @@
                            0 count)))
 
 (defun unavailable-acceptance (case detail)
-  (if (and (case-option case :quant) (equal "1" (uiop:getenv "CL_INFERENCE_QUANT_ACCEPTANCE_STRICT")))
+  (if (or (and (case-option case :quant) (equal "1" (uiop:getenv "CL_INFERENCE_QUANT_ACCEPTANCE_STRICT")))
+          (let ((variable (case-option case :strict-env)))
+            (and variable (equal "1" (uiop:getenv variable)))))
       (error "~A: ~A" case detail)
       (skip "~A: ~A" case detail)))
 
@@ -142,15 +145,21 @@
           (unless (and present (null native))
             (error "~A requires the F32-dequantized oracle" case)))))))
 
+(defgeneric verify-case-oracle (family case)
+  (:method (family case)
+    (declare (ignore family))
+    (verify-quant-oracle case)))
+
 (defmacro with-acceptance ((case (ours oracle)) &body body)
   `(let ((model (case-option ,case :model)))
-     (cond ((and (case-option ,case :quant) (probe-file (model-path model)) (not (verified-model-p model)))
+     (cond ((and (or (case-option ,case :quant) (case-option ,case :strict-env))
+                 (probe-file (model-path model)) (not (verified-model-p model)))
             (error "~A model SHA256 differs from its pin" ,case))
            ((not (verified-model-p model))
             (unavailable-acceptance ,case "Model missing or SHA256 differs"))
            ((not (oracle ,case))
             (unavailable-acceptance ,case "Oracle dump missing"))
-           (t (verify-quant-oracle ,case)
+           (t (verify-case-oracle (case-option ,case :family) ,case)
               (let ((,ours (our-run ,case)) (,oracle (oracle ,case)))
                 ,@body)))))
 

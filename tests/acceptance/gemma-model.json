@@ -1,0 +1,56 @@
+{
+  "file": "gemma-3-270m-it-Q8_0.gguf",
+  "repository": "ggml-org/gemma-3-270m-it-GGUF",
+  "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+  "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+  "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+  "dtype": "q8_0",
+  "cases": {
+    "plain": {
+      "text": "The capital of France is"
+    },
+    "chat": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        }
+      ]
+    },
+    "system": {
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer in one word."
+        },
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        }
+      ]
+    },
+    "multi": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is two plus two?"
+        },
+        {
+          "role": "assistant",
+          "content": "Four."
+        },
+        {
+          "role": "user",
+          "content": "And three plus three?"
+        }
+      ]
+    },
+    "window": {
+      "repeat": "The sky is blue. ",
+      "count": 110,
+      "suffix": "What color is the sky?"
+    }
+  },
+  "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+  "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc"
+}

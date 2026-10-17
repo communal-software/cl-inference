@@ -19,7 +19,7 @@ The tokenizer keeps its own copy of the vocabulary, so it stays valid after `w` 
 | `encode tokenizer text &key special add-bos` | Token ids, a `(simple-array (unsigned-byte 32) (*))` |
 | `decode tokenizer ids &key special` | Text; invalid UTF-8 becomes U+FFFD |
 | `make-detokenizer tokenizer &key special` | A [streaming decoder](#streaming) |
-| `pre-tokenize tokenizer text` | The pieces `text` splits into before merging |
+| `pre-tokenize tokenizer text` | The pieces a split-based BPE tokenizer produces; SentencePiece signals `tokenizer-error` |
 | `token-id tokenizer string` | Id of a vocabulary entry, or NIL |
 | `token-bytes tokenizer id` | The bytes a token stands for |
 | `tokenizer-vocab-size tokenizer` | Number of tokens |
@@ -88,7 +88,7 @@ Without `:special t`, control token text such as `<s>` encodes as ordinary chara
 | | `(:ignore-merges bool)` | Emit a piece found whole in the vocabulary as one token, skipping merges[^merges] |
 | | `(:add-bos bool)` | Whether to add BOS when the file has no `add_bos_token` |
 
-Loading picks the most specific tokenizer whose `:model` equals the file's and whose `:pre` contains the file's. For GGUF model `gpt2`, missing or empty `tokenizer.ggml.pre` selects `default-bpe`, as does explicit `"default"`. Unknown names and other model types still signal `unknown-tokenizer`.
+Loading picks the most specific tokenizer whose `:model` equals the file's and whose `:pre` contains the file's. For GGUF model `gpt2`, missing or empty `tokenizer.ggml.pre` selects `default-bpe`, as does explicit `"default"`. GGUF model `llama` selects `llama-spm` independently of `pre`; see [SentencePiece](sentencepiece.md). Unknown BPE pre-types and other model types signal `unknown-tokenizer`.
 
 [`:pre-tokenizer-stages`](pre-tokenizer-stages.md) declares sequential splitting passes. Flat rules and stages cannot be mixed in one inheritance lineage.
 
@@ -151,6 +151,12 @@ All four use `tokenizer.ggml.model` `gpt2`. `qwen2` inherits `llama-bpe`, so it 
 
 This coverage applies to GGUF tokenization. Qwen3.5 inference requires its own architecture support; HF tokenizer coverage remains listed [separately](hf-tokenizers.md).
 
+## SentencePiece
+
+`llama-spm` reads GGUF Llama SentencePiece vocabularies and merges by token score. Decoding preserves token-piece spaces, including the synthetic leading space. See [SentencePiece behavior and examples](sentencepiece.md).
+
+[Gemma 3 270M IT](gemma.md) uses the same `llama-spm` implementation with prefix spaces disabled and model-specific BOS/EOS IDs. Its pinned vocabulary has separate reference parity coverage.
+
 ## HF files
 
 The optional Safetensors system reads the shipped Llama and Qwen3 `tokenizer.json` pipelines and special-token configuration. See [HF tokenizers](hf-tokenizers.md) for input validation and coverage.
@@ -162,13 +168,15 @@ The optional Safetensors system reads the shipped Llama and Qwen3 `tokenizer.jso
 | `tokenizer-error` | Malformed definition or vocabulary, an invalid token id, `add-bos` with no BOS token, or several tokenizers matching one file |
 | `unknown-tokenizer` | No tokenizer matches the file's model and `pre`; `unknown-tokenizer-model` and `unknown-tokenizer-pre` return them |
 
-Loading signals `tokenizer-error` for a vocabulary that is not byte-level text, a merge that is not `"left right"` of known tokens, a missing byte token, a `token_type` list of the wrong length, and a special-token id outside the vocabulary.
+Byte-level BPE loading signals `tokenizer-error` for a vocabulary that is not byte-level text, a merge that is not `"left right"` of known tokens, a missing byte token, a `token_type` list of the wrong length, and a special-token id outside the vocabulary.
 
 ## Limitations
 
 | Missing | Tracker |
 |---|---|
-| Other `pre` types and SentencePiece models | [#33](https://github.com/communal-software/cl-inference/issues/33) |
+| Other GGUF BPE `pre` types | [#61](https://github.com/communal-software/cl-inference/issues/61) |
+| GGUF SentencePiece variants outside pinned Llama/Gemma coverage | [#62](https://github.com/communal-software/cl-inference/issues/62) |
+| Automatic EOS insertion and extra-whitespace normalization | [#65](https://github.com/communal-software/cl-inference/issues/65), [#66](https://github.com/communal-software/cl-inference/issues/66) |
 | Chat templates | [chat templates](chat-templates.md#limitations) |
 
 [^regex]: The flat standard rules reproduce llama.cpp's `llama3` and `qwen2` patterns, for example `\p{N}{1,3}` and `\s+(?!\S)`, as hand-written scanners. The tests compare both against the patterns run through Python's `regex` module.

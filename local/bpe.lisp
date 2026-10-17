@@ -134,6 +134,9 @@
       (setf (schar spelling i) (aref *byte-chars* (aref bytes i))))
     (values (gethash spelling (tokenizer-ids tokenizer)))))
 
+(defgeneric make-encoding-work (tokenizer)
+  (:method ((tokenizer byte-level-bpe)) (make-bpe-work)))
+
 (defgeneric encode-plain (tokenizer text out work))
 
 (defmethod encode-plain ((tokenizer byte-level-bpe) text out work)
@@ -167,7 +170,7 @@ only when SPECIAL; user-defined tokens always do."
 (defun encode (tokenizer text &key special (add-bos (tokenizer-add-bos-p tokenizer)))
   "Token ids for TEXT. ADD-BOS defaults to the file's add_bos_token. SPECIAL also matches
 control and unknown tokens in TEXT; user-defined tokens always match."
-  (let ((text (coerce-text (normalize-tokenizer-text tokenizer text))) (work (make-bpe-work))
+  (let ((text (coerce-text (normalize-tokenizer-text tokenizer text))) (work (make-encoding-work tokenizer))
         (out (make-array 0 :element-type '(unsigned-byte 32) :adjustable t :fill-pointer 0))
         (segment 0) (position 0))
     (when add-bos

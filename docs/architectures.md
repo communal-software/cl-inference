@@ -2,7 +2,7 @@
 
 `define-architecture` declares a model family. A child inherits from a parent and overrides only the entries that differ.
 
-The [support overview](support.md#local-architectures) lists the shipped and verified models. The library ships `local:llama` and `local:qwen3`. Qwen3 inherits Llama's blocks, metadata mappings and tied-output fallback, and declares only its differences:
+The [support overview](support.md#local-architectures) lists the shipped and verified models. The library ships `local:llama`, `local:qwen3` and [CPU GGUF `local:gemma3`](gemma.md). Qwen3 inherits Llama's blocks, metadata mappings and tied-output fallback, and declares only its differences:
 
 ```lisp
 (define-architecture qwen3 (llama)

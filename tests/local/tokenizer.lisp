@@ -181,9 +181,9 @@
       (is (eq :gguf (local:tokenizer-format tokenizer))))))
 
 (test tokenizer-unknown-pre-or-model
-  (dolist (options '((:pre "no-such-pre") (:model "llama") (:model nil)
-                    (:model "llama" :pre nil) (:model nil :pre nil)
-                    (:model "llama" :pre "") (:model "llama" :pre "default")))
+  (dolist (options '((:pre "no-such-pre") (:model "unsupported") (:model nil)
+                    (:model "unsupported" :pre nil) (:model nil :pre nil)
+                    (:model "unsupported" :pre "") (:model "unsupported" :pre "default")))
     (with-gguf-file (path (apply #'tokenizer-file options))
       (signals local:unknown-tokenizer
         (local:with-weights (w path) (local:load-tokenizer w))))))
