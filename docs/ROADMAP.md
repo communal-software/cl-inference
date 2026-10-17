@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 17 October 2026 · GitHub · 151 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 17 October 2026 · GitHub · 153 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -19,17 +19,17 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 
 | Repository | P0 | P1 | P2 | P3 | Open |
 |---|---:|---:|---:|---:|---:|
-| cl-inference | 0 | 11 | 10 | 8 | 29 |
-| cl-tensor | 0 | 1 | 8 | 9 | 18 |
-| cl-gpu | 0 | 6 | 13 | 23 | 42 |
+| cl-inference | 0 | 10 | 11 | 8 | 29 |
+| cl-tensor | 0 | 1 | 8 | 10 | 19 |
+| cl-gpu | 0 | 5 | 13 | 25 | 43 |
 | trivial-simd | 0 | 0 | 10 | 52 | 62 |
-| **Total** | **0** | **18** | **41** | **92** | **151** |
+| **Total** | **0** | **16** | **42** | **95** | **153** |
 
 ## Work order
 
-1. **Finish and verify the active Gemma slice.** Review the working-tree Gemma 3 CPU acceptance and publish it before closing its umbrella. [Support](support.md#local-architectures) defines the verified boundary.
-2. **Expand models and usable artifacts.** Choose Gemma 4 text or Gemma 3 Safetensors/MLX as the next model target. Pair it with the exact tokenizer pipeline it requires; do not treat every tokenizer variant as a prerequisite.
-3. **Choose an execution expansion.** ONNX needs an import/runtime design. Direct GPU tensors need device storage and missing math kernels. Additional MLX affine formats are a separate path; implement what the selected models require.
+1. **Select the next model or format.** Gemma 3 270M IT Q8_0 GGUF CPU and SmolLM2 135M FP32 ONNX CPU have pinned acceptance. Choose Gemma 4 text or Gemma 3 Safetensors/MLX next; [support](support.md) defines the verified boundary.
+2. **Pair the model with usable artifacts.** Deliver its exact tokenizer pipeline, template and format-specific weights/norms. Do not treat every tokenizer variant as a prerequisite.
+3. **Choose an execution expansion.** Direct GPU tensors have storage and f32 reductions/normalization; add missing tensor BLAS, broadcast and conversion dispatch before model integration. Broader ONNX exports/providers and additional MLX affine formats are separate paths; select a concrete model route first.
 4. **Remove measured inference bottlenecks.** Reproduce mapped F32 snapshots, serial half-weight layout packing, Q8 prefill, MLX packed-tile/cache traffic and long-context attention costs. Preserve complete-call benchmarks and acceptance.
 5. **Keep validation alongside each feature.** Run the existing suites first, add fixtures and a small example, and keep support/limitations docs current. Use pinned real-model acceptance for new model routes.
 
@@ -39,7 +39,8 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 |---|---|---|
 | Gemma 3 Safetensors/MLX | HF SentencePiece pipeline → format-specific weights/norms → backend acceptance | GGUF CPU coverage does not establish HF or MLX coverage |
 | More model families | Select variant/artifact → tokenizer/template → architecture → session acceptance | Confirm variant, modality scope and new dependencies before implementation |
-| Direct GPU inference | cl-gpu axis/normalization + broadcast/conversion → cl-tensor device storage → cl-inference integration | Transfers/views exist; restrict dtypes explicitly rather than requiring Metal f64 emulation |
+| Direct GPU inference | cl-gpu broadcast/conversion + cl-tensor BLAS/elementwise/conversion dispatch → cl-inference integration | Device storage, f32 reductions/normalization and s64 arg indices exist; whole-model GPU acceptance remains separate |
+| Broader ONNX inference | Select export/provider → runtime and cache policy → pinned model acceptance | Verified baseline is SmolLM2 135M FP32 on CPU, serialized requests and fresh per-request KV state |
 | CUDA/OpenCL inference | Runtime/printer + capabilities/alignment → shared conformance → tensor integration | Hardware validation is required; backend delivery alone does not establish inference support |
 | Lower validation workspace | trivial-simd uniqueness proof → cl-tensor consumers | Share the proof rather than implementing independent solvers |
 | Faster existing inference | Reproduce model profile → choose one hot path → measure complete calls | Primitive speedups alone do not establish a model-level gain |
@@ -50,39 +51,37 @@ At each work session, recheck the selected ticket on GitHub. Set its row to `Act
 
 Keep one row per open issue, including umbrellas; umbrellas coordinate their children and do not add an independent delivery estimate. Recheck all four trackers after each audit batch. Reconsider tiers when a selected model establishes a new dependency or a measured bottleneck.
 
-Existing GitHub labels remain intact. Unlabeled Gemma 4, sliding-window and Safetensors/MLX issues receive existing `enhancement`/`arch` labels, plus `perf` or `format` as appropriate. Roadmap tiers are planning priorities; existing `lowpri` labels do not override them.
+Existing GitHub labels remain intact. Use existing `enhancement`/`arch` labels for model coverage, plus `perf` or `format` as appropriate. Roadmap tiers are planning priorities; existing `lowpri` labels do not override them.
 
 ## Limitations
 
 This inventory tracks unresolved work; it does not certify runtime correctness or promise dates. All rows reflect open GitHub state at audit time. Model variants, new dependencies and public APIs still require design confirmation. Owner assignments are unclaimed unless a row states otherwise.
 
-The Gemma umbrella is active in the local working tree, not treated as closed. The template-limitation cleanup has an existing ticket. The fused triangular-solve request may be partly superseded; confirm its remaining scope before implementation. GPU storage comments include completed prerequisites and optional f64 scope. Mapped F32 cost reports need reproduction on current code. These findings are recorded in the corresponding rows below.
+Verified Gemma, ONNX and GPU primitive coverage does not establish support for additional variants, providers or whole-model GPU inference. The template-limitation cleanup has an existing ticket. The fused triangular-solve request may be partly superseded; confirm its remaining scope before implementation. Mapped F32 cost reports need reproduction on current code. These findings are recorded in the corresponding rows below.
 
 ### P0 — critical
 
-No open issue in this audit establishes a main-path SBCL inference correctness blocker. Secondary compiler issues and the GPU mixed-dot range defect remain P2 with their explicit scope.
+No open issue in this audit establishes a main-path SBCL inference correctness blocker. Secondary compiler issues, the GPU mixed-dot range defect and rejected-request stream closing remain P2 with their explicit scope.
 
 ### P1 — model and inference capability
 
 | Repository | Ticket | State / owner | Priority reason / next action |
 |---|---|---|---|
-| cl-inference | [#47 — Local ONNX model support](https://github.com/communal-software/cl-inference/issues/47) | Open — unassigned | Choose an ONNX import/runtime approach and first model; confirm dependencies before implementation. |
-| cl-inference | [#48 — Local Gemma-family support](https://github.com/communal-software/cl-inference/issues/48) | Active — existing working tree; owner unconfirmed | Working tree contains Gemma 3 270M IT Q8_0 CPU support. Review acceptance and publish before closing; keep Gemma 4 and other formats separate. |
 | cl-inference | [#50 — MLX: additional affine quantization widths and modes](https://github.com/communal-software/cl-inference/issues/50) | Open — unassigned | Select model artifacts requiring additional affine widths/modes, then implement and verify those formats. |
 | cl-inference | [#61 — Tokenizer: remaining GGUF BPE pre-types and alias conformance](https://github.com/communal-software/cl-inference/issues/61) | Open — unassigned | Inventory pinned GGUF BPE profiles and select the next model family; verify aliases, defaults and exact IDs together. |
-| cl-inference | [#62 — Tokenizer: GGUF SentencePiece variants beyond pinned Llama SPM](https://github.com/communal-software/cl-inference/issues/62) | Open — unassigned | Reconcile the Gemma tokenizer working-tree coverage, then select the next uncovered SentencePiece variant with pinned parity. |
+| cl-inference | [#62 — Tokenizer: GGUF SentencePiece variants beyond pinned Llama SPM](https://github.com/communal-software/cl-inference/issues/62) | Open — unassigned | Pinned Gemma 3 and Llama SentencePiece coverage exists; select the next uncovered GGUF variant and require exact token-ID/byte parity. |
 | cl-inference | [#63 — Tokenizer: Hugging Face SentencePiece tokenizer.json pipelines](https://github.com/communal-software/cl-inference/issues/63) | Open — unassigned | Select a concrete HF SentencePiece pipeline for Gemma Safetensors; decide whether tokenizer.json is sufficient. |
 | cl-inference | [#64 — Tokenizer: HF BPE pipelines beyond shipped Llama and Qwen3](https://github.com/communal-software/cl-inference/issues/64) | Open — unassigned | Select the next model artifact needing HF BPE; implement its complete pipeline with exact IDs and decode acceptance. |
 | cl-inference | [#65 — Tokenizer: automatic EOS insertion and caller override policy](https://github.com/communal-software/cl-inference/issues/65) | Open — unassigned | Select an EOS-adding artifact; confirm metadata/caller precedence and chat-fragment behavior before changing encode. |
 | cl-inference | [#66 — Tokenizer: SentencePiece extra-whitespace normalization](https://github.com/communal-software/cl-inference/issues/66) | Open — unassigned | Select an artifact requiring whitespace normalization; pin whitespace and fragment semantics without changing existing decoding. |
 | cl-inference | [#69 — Gemma 4: local text inference and pinned model acceptance](https://github.com/communal-software/cl-inference/issues/69) | Open — unassigned | Select the initial Gemma 4 text variant and format; pin architecture/tokenizer references and full-model acceptance. |
 | cl-inference | [#71 — Gemma 3: Safetensors and MLX execution with real-model acceptance](https://github.com/communal-software/cl-inference/issues/71) | Open — unassigned | Add Gemma 3 Safetensors CPU and selected MLX routes with separate acceptance; coordinate the HF SentencePiece prerequisite. |
-| cl-tensor | [#12 — Device tensor storage backed by cl-gpu](https://github.com/communal-software/cl-tensor/issues/12) | Open — unassigned | Bulk transfers and array views exist. Settle device-storage API and dtype scope; coordinate axis/normalization and broadcast/conversion kernels. Metal f64 emulation is optional for an explicitly restricted backend. |
+| cl-inference | [#72 — Extend ONNX export, provider, cache and tool coverage](https://github.com/communal-software/cl-inference/issues/72) | Open — unassigned | Select the next ONNX export, execution provider or cache/tool capability beyond the pinned FP32 CPU baseline; require offline fixtures and real-model acceptance. |
+| cl-tensor | [#23 — Extend device tensor dispatch beyond reductions and normalization](https://github.com/communal-software/cl-tensor/issues/23) | Open — unassigned | Device storage and f32 reductions/normalization exist. Select the tensor BLAS/elementwise/conversion dispatch and upstream kernels required by a concrete GPU model route; retain explicit transfers. |
 | cl-gpu | [#6 — CUDA backend](https://github.com/communal-software/cl-gpu/issues/6) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#7 — OpenCL backend](https://github.com/communal-software/cl-gpu/issues/7) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#12 — CUDA: operators for vector types](https://github.com/communal-software/cl-gpu/issues/12) | Open — unassigned | CUDA vector printer correctness is a backend prerequisite; deliver with CUDA. |
-| cl-gpu | [#58 — Axis reductions, softmax and rmsnorm kernels](https://github.com/communal-software/cl-gpu/issues/58) | Open — unassigned | Required math, normalization, broadcast and conversion for direct GPU tensor inference. |
-| cl-gpu | [#59 — Broadcast elementwise and convert kernels](https://github.com/communal-software/cl-gpu/issues/59) | Open — unassigned | Required math, normalization, broadcast and conversion for direct GPU tensor inference. |
+| cl-gpu | [#59 — Broadcast elementwise and convert kernels](https://github.com/communal-software/cl-gpu/issues/59) | Open — unassigned | Implement broadcast elementwise and conversion kernels needed by remaining tensor GPU dispatch; preserve strides, dtypes and rounding contracts. |
 | cl-gpu | [#73 — OpenCL: sub-buffer base-address alignment for array views](https://github.com/communal-software/cl-gpu/issues/73) | Open — unassigned | OpenCL view alignment is correctness groundwork; deliver with OpenCL array views. |
 
 ### P2 — performance and reliability
@@ -99,6 +98,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-inference | [#59 — Half-weight serial dispatch: account for irregular-layout packing costs](https://github.com/communal-software/cl-inference/issues/59) | Open — unassigned | Serial irregular-layout auto dispatch is about 12–15× slower than tiled conversion in the isolated profile. Measure a layout-aware policy; preserve mapped/padded paths. |
 | cl-inference | [#68 — MLX GGUF: reuse packed weight tiles across prefill token rows](https://github.com/communal-software/cl-inference/issues/68) | Open — unassigned | Measure packed GGUF prefill tile reuse across token rows; preserve quantized-format and cached-decode acceptance. |
 | cl-inference | [#70 — Gemma sliding-window layers: bound KV storage and attention work](https://github.com/communal-software/cl-inference/issues/70) | Open — unassigned | Bound sliding-layer KV history and attention to the local window; preserve absolute positions and global layers. Verify beyond 512 tokens. |
+| cl-inference | [#73 — Client preflight failures omit the closing stream event](https://github.com/communal-software/cl-inference/issues/73) | Open — unassigned | Preflight errors omit the required closing stream event. Route validation/backend-resolution failures through common bounded closing logic; preserve errors, refs and sink handling. |
 | cl-tensor | [#4 — CI](https://github.com/communal-software/cl-tensor/issues/4) | Open — unassigned | Protects tensor correctness on the main development path. |
 | cl-tensor | [#6 — Avoid unnecessary snapshots for mixed Lisp and foreign storage](https://github.com/communal-software/cl-tensor/issues/6) | Open — unassigned | Reproduce the mapped F32 projection snapshot cost on current code, then prove disjoint mixed storage without weakening alias safety. |
 | cl-tensor | [#9 — Investigate incomplete or crashing normalization reference checks on experimental ARM64 CCL](https://github.com/communal-software/cl-tensor/issues/9) | Open — unassigned | CCL secondary support: green tests can omit assertions; require complete trial counts. |
@@ -152,6 +152,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-tensor | [#13 — Bound fusion result staging and irregular reduction-row packing](https://github.com/communal-software/cl-tensor/issues/13) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
 | cl-tensor | [#16 — Support integer and complex tensor expression fusion](https://github.com/communal-software/cl-tensor/issues/16) | Open — unassigned | Integer/complex fusion is not a demonstrated transformer requirement. |
 | cl-tensor | [#20 — Allow per-call executor overrides](https://github.com/communal-software/cl-tensor/issues/20) | Open — unassigned | Dynamic executor binding already works; keyword selection is convenience. |
+| cl-tensor | [#22 — Reduce GPU synchronization and destination staging](https://github.com/communal-software/cl-tensor/issues/22) | Open — unassigned | Synchronous device calls and full-result staging are the baseline. Profile a model before adding direct destinations, disjoint-copy proofs or queued execution; retain failure guarantees. |
 | cl-gpu | [#27 — Source locations for define-kernel compiled from an editor buffer (C-c C-c)](https://github.com/communal-software/cl-gpu/issues/27) | Open — unassigned | Editor diagnostic convenience; no execution or model-coverage change. |
 | cl-gpu | [#33 — Support ABCL on the JVM](https://github.com/communal-software/cl-gpu/issues/33) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
 | cl-gpu | [#34 — Support Clasp](https://github.com/communal-software/cl-gpu/issues/34) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
@@ -175,6 +176,8 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-gpu | [#70 — BLAS: add band and packed matrix storage with f32 Level 2 routines](https://github.com/communal-software/cl-gpu/issues/70) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
 | cl-gpu | [#71 — BLAS: f64 GEMV, GEMM and batches on capable devices](https://github.com/communal-software/cl-gpu/issues/71) | Open — unassigned | General BLAS/f64 breadth has no demonstrated requirement for the selected inference models. |
 | cl-gpu | [#72 — Metal: query the real constant-space buffer offset alignment](https://github.com/communal-software/cl-gpu/issues/72) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
+| cl-gpu | [#74 — Reductions: multi-pass kernels for very long groups](https://github.com/communal-software/cl-gpu/issues/74) | Open — unassigned | Few very long reduction groups can underuse the device. Measure a model workload and multi-pass crossover before replacing the one-group path; preserve first-tie indices and aliases. |
+| cl-gpu | [#75 — Strided views: arithmetic uniqueness proofs for irregular outputs](https://github.com/communal-software/cl-gpu/issues/75) | Open — unassigned | Irregular unique outputs use exact address enumeration. Coordinate shared arithmetic proofs or bounded validation with tensor/SIMD consumers; promote for measured workspace limits. |
 | trivial-simd | [#7 — Add x86-64 AVX-512 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/7) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
 | trivial-simd | [#8 — Add ARM64 SVE/SVE2 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/8) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
 | trivial-simd | [#9 — Support 32-bit x86 SSE2](https://github.com/communal-software/trivial-simd/issues/9) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
@@ -228,4 +231,4 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | trivial-simd | [#68 — Extend SBCL packed masks and conversion primitives](https://github.com/communal-software/trivial-simd/issues/68) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 | trivial-simd | [#77 — Specialize common native stride layouts for packed memory access](https://github.com/communal-software/trivial-simd/issues/77) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 
-[^audit]: Inventory uses `gh issue list --state open --limit 1000 --json number,title,body,labels,url,comments` for `communal-software/cl-inference`, `cl-tensor`, `cl-gpu` and `trivial-simd`. Bodies and current discussion distinguish remaining work from migrated historical context. Counts exclude pull requests and closed issues; dependency paths are planning judgments checked against ticket text and current support docs.
+[^audit]: Inventory uses `gh issue list --state open --limit 1000 --json number,title,body,labels,url` for `communal-software/cl-inference`, `cl-tensor`, `cl-gpu` and `trivial-simd`. Issue bodies, completion comments and current support docs distinguish remaining work from verified support. Counts exclude pull requests and closed issues; dependency paths are planning judgments checked against ticket text and current support docs.
