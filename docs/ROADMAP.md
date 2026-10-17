@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 17 October 2026 · GitHub · 153 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 17 October 2026 · GitHub · 154 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -21,15 +21,15 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 |---|---:|---:|---:|---:|---:|
 | cl-inference | 0 | 10 | 11 | 8 | 29 |
 | cl-tensor | 0 | 1 | 8 | 10 | 19 |
-| cl-gpu | 0 | 5 | 13 | 25 | 43 |
+| cl-gpu | 0 | 4 | 14 | 26 | 44 |
 | trivial-simd | 0 | 0 | 10 | 52 | 62 |
-| **Total** | **0** | **16** | **42** | **95** | **153** |
+| **Total** | **0** | **15** | **43** | **96** | **154** |
 
 ## Work order
 
 1. **Select the next model or format.** Gemma 3 270M IT Q8_0 GGUF CPU and SmolLM2 135M FP32 ONNX CPU have pinned acceptance. Choose Gemma 4 text or Gemma 3 Safetensors/MLX next; [support](support.md) defines the verified boundary.
 2. **Pair the model with usable artifacts.** Deliver its exact tokenizer pipeline, template and format-specific weights/norms. Do not treat every tokenizer variant as a prerequisite.
-3. **Choose an execution expansion.** Direct GPU tensors support storage, f32 reductions/normalization and f32 matmul/dot with broadcast batches; add broadcast elementwise and conversion dispatch required by the selected model route before integration. Broader ONNX exports/providers and additional MLX affine formats are separate paths; select a concrete model route first.
+3. **Choose an execution expansion.** Direct GPU tensors support storage, f32 reductions/normalization and f32 matmul/dot with broadcast batches. cl-gpu provides broadcast elementwise and conversion kernels; wire the dispatch and storage dtypes required by the selected model route into cl-tensor before inference integration. Broader ONNX exports/providers and additional MLX affine formats are separate paths; select a concrete model route first.
 4. **Remove measured inference bottlenecks.** Reproduce mapped F32 snapshots, serial half-weight layout packing, Q8 prefill, MLX packed-tile/cache traffic and long-context attention costs. Preserve complete-call benchmarks and acceptance.
 5. **Keep validation alongside each feature.** Run the existing suites first, add fixtures and a small example, and keep support/limitations docs current. Use pinned real-model acceptance for new model routes.
 
@@ -39,7 +39,7 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 |---|---|---|
 | Gemma 3 Safetensors/MLX | HF SentencePiece pipeline → format-specific weights/norms → backend acceptance | GGUF CPU coverage does not establish HF or MLX coverage |
 | More model families | Select variant/artifact → tokenizer/template → architecture → session acceptance | Confirm variant, modality scope and new dependencies before implementation |
-| Direct GPU inference | cl-gpu broadcast/conversion + cl-tensor elementwise/conversion dispatch → cl-inference integration | Device storage, f32 reductions/normalization, f32 matmul/dot with broadcast batches and s64 arg indices exist; whole-model GPU acceptance remains separate |
+| Direct GPU inference | cl-tensor elementwise/conversion dispatch and storage dtypes → cl-inference integration | cl-gpu provides broadcast operations and conversion for f16/bf16/f32 and integers. Tensor storage, f32 reductions/normalization, f32 matmul/dot with broadcast batches and s64 arg indices exist; whole-model GPU acceptance remains separate |
 | Broader ONNX inference | Select export/provider → runtime and cache policy → pinned model acceptance | Verified baseline is SmolLM2 135M FP32 on CPU, serialized requests and fresh per-request KV state |
 | CUDA/OpenCL inference | Runtime/printer + capabilities/alignment → shared conformance → tensor integration | Hardware validation is required; backend delivery alone does not establish inference support |
 | Lower validation workspace | trivial-simd uniqueness proof → cl-tensor consumers | Share the proof rather than implementing independent solvers |
@@ -77,11 +77,10 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-inference | [#69 — Gemma 4: local text inference and pinned model acceptance](https://github.com/communal-software/cl-inference/issues/69) | Open — unassigned | Select the initial Gemma 4 text variant and format; pin architecture/tokenizer references and full-model acceptance. |
 | cl-inference | [#71 — Gemma 3: Safetensors and MLX execution with real-model acceptance](https://github.com/communal-software/cl-inference/issues/71) | Open — unassigned | Add Gemma 3 Safetensors CPU and selected MLX routes with separate acceptance; coordinate the HF SentencePiece prerequisite. |
 | cl-inference | [#72 — Extend ONNX export, provider, cache and tool coverage](https://github.com/communal-software/cl-inference/issues/72) | Open — unassigned | Select the next ONNX export, execution provider or cache/tool capability beyond the pinned FP32 CPU baseline; require offline fixtures and real-model acceptance. |
-| cl-tensor | [#23 — Extend device tensor dispatch beyond reductions and normalization](https://github.com/communal-software/cl-tensor/issues/23) | Open — unassigned | Device storage, f32 reductions/normalization and f32 matmul/dot with broadcast batches are implemented; the matmul/dot child [#24](https://github.com/communal-software/cl-tensor/issues/24) is closed. Select remaining elementwise/conversion dispatch, fusion and storage dtypes required by a concrete GPU model route; retain explicit transfers and device-resident results. Elementwise/conversion depend on cl-gpu #59. |
+| cl-tensor | [#23 — Extend device tensor dispatch beyond reductions and normalization](https://github.com/communal-software/cl-tensor/issues/23) | Open — unassigned | Device storage, f32 reductions/normalization and f32 matmul/dot with broadcast batches are implemented. Wire cl-gpu/elementwise operations and conversion into device dispatch, adding storage dtypes required by a concrete GPU model route; retain explicit transfers, device-resident results and rounding contracts. Select fusion separately when the model route needs it. |
 | cl-gpu | [#6 — CUDA backend](https://github.com/communal-software/cl-gpu/issues/6) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#7 — OpenCL backend](https://github.com/communal-software/cl-gpu/issues/7) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#12 — CUDA: operators for vector types](https://github.com/communal-software/cl-gpu/issues/12) | Open — unassigned | CUDA vector printer correctness is a backend prerequisite; deliver with CUDA. |
-| cl-gpu | [#59 — Broadcast elementwise and convert kernels](https://github.com/communal-software/cl-gpu/issues/59) | Open — unassigned | Implement broadcast elementwise and conversion kernels needed by remaining tensor GPU dispatch; preserve strides, dtypes and rounding contracts. |
 | cl-gpu | [#73 — OpenCL: sub-buffer base-address alignment for array views](https://github.com/communal-software/cl-gpu/issues/73) | Open — unassigned | OpenCL view alignment is correctness groundwork; deliver with OpenCL array views. |
 
 ### P2 — performance and reliability
@@ -120,6 +119,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-gpu | [#63 — BLAS: dsdot loses finite products outside f32 range](https://github.com/communal-software/cl-gpu/issues/63) | Open — unassigned | Known mixed-dot range correctness bug; no demonstrated main inference dependency. |
 | cl-gpu | [#64 — BLAS: accept provably disjoint interleaved layouts and unique outputs](https://github.com/communal-software/cl-gpu/issues/64) | Open — unassigned | GPU rejects valid interleaved layouts; needed for reliable CPU/GPU tensor parity. |
 | cl-gpu | [#65 — BLAS tests: backend-neutral conformance and encoded bit-level coverage](https://github.com/communal-software/cl-gpu/issues/65) | Open — unassigned | Portable backend conformance and exact half-bit checks support safe GPU expansion. |
+| cl-gpu | [#77 — Reductions: destination forms accept NIL and allocate storage](https://github.com/communal-software/cl-gpu/issues/77) | Open — unassigned | Public destination forms allocate when passed NIL. Validate destinations in reduction and normalization wrappers before execution; cover empty calls and verify rejection allocates and launches nothing. No demonstrated main inference blocker. |
 | trivial-simd | [#6 — Add x86-64 AVX2 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/6) | Open — unassigned | Broad x86 throughput upgrade; benchmark real inference before committing kernel scope. |
 | trivial-simd | [#31 — Harden CI against transient Quicklisp archive download failures](https://github.com/communal-software/trivial-simd/issues/31) | Open — unassigned | Transient dependency setup failures prevent tests from running; keep retries bounded. |
 | trivial-simd | [#33 — Evaluate full IEEE consistency for kernel arithmetic](https://github.com/communal-software/trivial-simd/issues/33) | Open — unassigned | Numerical contract investigation; finite-only behavior is documented, not a universal bug claim. |
@@ -178,6 +178,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-gpu | [#72 — Metal: query the real constant-space buffer offset alignment](https://github.com/communal-software/cl-gpu/issues/72) | Open — unassigned | Targeted allocation, transfer, launch or alignment tuning; require an inference profile before promotion. |
 | cl-gpu | [#74 — Reductions: multi-pass kernels for very long groups](https://github.com/communal-software/cl-gpu/issues/74) | Open — unassigned | Few very long reduction groups can underuse the device. Measure a model workload and multi-pass crossover before replacing the one-group path; preserve first-tie indices and aliases. |
 | cl-gpu | [#75 — Strided views: arithmetic uniqueness proofs for irregular outputs](https://github.com/communal-software/cl-gpu/issues/75) | Open — unassigned | Irregular unique outputs use exact address enumeration. Coordinate shared arithmetic proofs or bounded validation with tensor/SIMD consumers; promote for measured workspace limits. |
+| cl-gpu | [#76 — Elementwise: coalesce axes and specialize contiguous indexing](https://github.com/communal-software/cl-gpu/issues/76) | Open — unassigned | Generic kernels decode every axis per element. Measure contiguous and irregular model layouts before adding axis coalescing and linear indexing; preserve broadcasting, aliases, rounding and launch bounds. |
 | trivial-simd | [#7 — Add x86-64 AVX-512 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/7) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
 | trivial-simd | [#8 — Add ARM64 SVE/SVE2 SIMD kernels](https://github.com/communal-software/trivial-simd/issues/8) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
 | trivial-simd | [#9 — Support 32-bit x86 SSE2](https://github.com/communal-software/trivial-simd/issues/9) | Open — unassigned | Peripheral ISA/platform or Lisp support. Defer until a concrete consumer and test host are selected; Windows/BSD and other Lisps remain low priority. |
