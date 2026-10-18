@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 18 October 2026 · GitHub · 162 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 18 October 2026 · GitHub · 161 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -20,16 +20,16 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 | Repository | P0 | P1 | P2 | P3 | Open |
 |---|---:|---:|---:|---:|---:|
 | cl-inference | 0 | 10 | 11 | 8 | 29 |
-| cl-tensor | 0 | 4 | 8 | 11 | 23 |
+| cl-tensor | 0 | 3 | 8 | 11 | 22 |
 | cl-gpu | 0 | 10 | 14 | 24 | 48 |
 | trivial-simd | 0 | 0 | 10 | 52 | 62 |
-| **Total** | **0** | **24** | **43** | **95** | **162** |
+| **Total** | **0** | **23** | **43** | **95** | **161** |
 
 ## Work order
 
 1. **Select the next model or format.** Gemma 3 270M IT Q8_0 GGUF CPU and SmolLM2 135M FP32 ONNX CPU have pinned acceptance. Choose Gemma 4 text or Gemma 3 Safetensors/MLX next; [support](support.md) defines the verified boundary.
 2. **Pair the model with usable artifacts.** Deliver its exact tokenizer pipeline, template and format-specific weights/norms. Do not treat every tokenizer variant as a prerequisite.
-3. **Expand direct GPU execution.** Tensor dispatch supports broadcast arithmetic, activations, masks, conversion and f32 expression fusion alongside reductions/normalization and matmul/dot. Fusion uses reusable cl-gpu plans with lazy selection, nested reductions and staged destinations. Storage supports f32, encoded f16/bf16 and all integer widths; half formats remain storage-only. GPU joins, gather and f64/complex support are P1 work. Integrate checked strided gather for tensor take/take!, review the remaining precision interfaces, then integrate a selected model route and require whole-model acceptance. Broader ONNX exports/providers and additional MLX affine formats remain separate paths.
+3. **Expand direct GPU execution.** Tensor dispatch supports broadcast arithmetic, activations, masks, conversion, checked take/take! gather and f32 expression fusion alongside reductions/normalization and matmul/dot. Fusion uses reusable cl-gpu plans with lazy selection, nested reductions and staged destinations. Storage supports f32, encoded f16/bf16 and all integer widths; half formats remain storage-only. Gather preserves raw dtype encodings, validates device indices without downloading payloads and stages aliased destinations. GPU joins and f64/complex support remain P1 work. Integrate joins using existing device copies, review the remaining precision interfaces, then integrate a selected model route and require whole-model acceptance. Broader ONNX exports/providers and additional MLX affine formats remain separate paths.
 4. **Remove measured inference bottlenecks.** Reproduce mapped F32 snapshots, serial half-weight layout packing, Q8 prefill, MLX packed-tile/cache traffic and long-context attention costs. Preserve complete-call benchmarks and acceptance.
 5. **Keep validation alongside each feature.** Run the existing suites first, add fixtures and a small example, and keep support/limitations docs current. Use pinned real-model acceptance for new model routes.
 
@@ -39,7 +39,7 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 |---|---|---|
 | Gemma 3 Safetensors/MLX | HF SentencePiece pipeline → format-specific weights/norms → backend acceptance | GGUF CPU coverage does not establish HF or MLX coverage |
 | More model families | Select variant/artifact → tokenizer/template → architecture → session acceptance | Confirm variant, modality scope and new dependencies before implementation |
-| Direct GPU inference | Checked gather → tensor gather adapter; joins and precision gaps → selected cl-inference model route → pinned acceptance | Broadcast elementwise/conversion and f32 fusion dispatch, real scalar storage, reusable strided device expressions and checked strided gather exist. Tensor fusion has SBCL/ECL protocol and real Metal coverage. Joins use existing copies; tensor gather needs adapter integration, while f64/complex extensions need upstream coordination. Native Metal lacks f64, and whole-model GPU acceptance remains separate |
+| Direct GPU inference | Joins and precision gaps → selected cl-inference model route → pinned acceptance | Broadcast elementwise/conversion, f32 fusion and checked tensor gather dispatch, real scalar storage and reusable strided device expressions exist. Tensor fusion and gather have SBCL/ECL protocol and real Metal coverage. Joins use existing copies; f64/complex extensions need upstream coordination. Native Metal lacks f64, and whole-model GPU acceptance remains separate |
 | Broader ONNX inference | Select export/provider → runtime and cache policy → pinned model acceptance | Verified baseline is SmolLM2 135M FP32 on CPU, serialized requests and fresh per-request KV state |
 | CUDA/OpenCL inference | Runtime/printer + capabilities/alignment → shared conformance → tensor integration | Hardware validation is required; backend delivery alone does not establish inference support |
 | Lower validation workspace | trivial-simd uniqueness proof → cl-tensor consumers | Share the proof rather than implementing independent solvers |
@@ -110,7 +110,6 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-tensor | [#27 — Support f64 device tensors on capable backends](https://github.com/communal-software/cl-tensor/issues/27) | Blocked — cl-gpu #81 | Review f64 capability and strided computation/conversion coverage; coordinate existing BLAS tickets. Native Metal lacks f64; software emulation is a separate optional route. |
 | cl-tensor | [#28 — Support complex device tensor storage and operations](https://github.com/communal-software/cl-tensor/issues/28) | Blocked — cl-gpu #82 | Agree on shared complex storage and non-BLAS primitives upstream; reuse the representation for tensor operations and complex BLAS. Gate c64 on f64 capability. |
 | cl-tensor | [#29 — Dispatch concatenate and stack on GPU tensors](https://github.com/communal-software/cl-tensor/issues/29) | Open — unassigned | Review device allocation/copy dispatch for concatenate and stack using existing strided copies; preserve raw half bits, layouts, explicit placement and cleanup. No new upstream primitive is required. |
-| cl-tensor | [#30 — Dispatch take and take! on GPU tensors](https://github.com/communal-software/cl-tensor/issues/30) | Open — unassigned | Integrate cl-gpu/gather:gather and gather! with take/take! using device index views, negative-index handling, raw-bit dtype preservation, status synchronization and staged destination writes. |
 | cl-gpu | [#6 — CUDA backend](https://github.com/communal-software/cl-gpu/issues/6) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#7 — OpenCL backend](https://github.com/communal-software/cl-gpu/issues/7) | Open — unassigned | Adds GPU execution hardware coverage; require backend conformance and an inference consumer. |
 | cl-gpu | [#12 — CUDA: operators for vector types](https://github.com/communal-software/cl-gpu/issues/12) | Open — unassigned | CUDA vector printer correctness is a backend prerequisite; deliver with CUDA. |
@@ -187,11 +186,11 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-tensor | [#7 — Reduce workspace for irregular axis reductions](https://github.com/communal-software/cl-tensor/issues/7) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
 | cl-tensor | [#8 — Reduce normalization workspace and portable f64 stage allocation](https://github.com/communal-software/cl-tensor/issues/8) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
 | cl-tensor | [#10 — Bound remaining accessible-storage fallback packing](https://github.com/communal-software/cl-tensor/issues/10) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
-| cl-tensor | [#11 — Bound take! scratch for disjoint destinations](https://github.com/communal-software/cl-tensor/issues/11) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
+| cl-tensor | [#11 — Bound take! scratch for disjoint destinations](https://github.com/communal-software/cl-tensor/issues/11) | Open — unassigned | Bound CPU gather scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. GPU staging work stays in cl-tensor #22. |
 | cl-tensor | [#13 — Bound fusion result staging and irregular reduction-row packing](https://github.com/communal-software/cl-tensor/issues/13) | Open — unassigned | Bound scratch/allocation while preserving aliases and failure behavior; promote for measured model OOMs. |
 | cl-tensor | [#16 — Support integer and complex tensor expression fusion](https://github.com/communal-software/cl-tensor/issues/16) | Open — unassigned | Integer/complex fusion is not a demonstrated transformer requirement. |
 | cl-tensor | [#20 — Allow per-call executor overrides](https://github.com/communal-software/cl-tensor/issues/20) | Open — unassigned | Dynamic executor binding already works; keyword selection is convenience. |
-| cl-tensor | [#22 — Reduce GPU synchronization and destination staging](https://github.com/communal-software/cl-tensor/issues/22) | Open — unassigned | Synchronous device calls and full-result staging are the baseline. Profile a model before adding direct destinations, disjoint-copy proofs or queued execution; retain failure guarantees. |
+| cl-tensor | [#22 — Reduce GPU synchronization and destination staging](https://github.com/communal-software/cl-tensor/issues/22) | Open — unassigned | Synchronous device calls and result staging are the baseline. GPU take! reuses upstream staging directly; allocating take retains an extra result buffer. Profile before adopting upstream-owned results, adding further direct destinations, proving disjoint copies or queuing execution; retain failure guarantees. |
 | cl-tensor | [#31 — Measure and reduce GPU fusion plan lookup contention](https://github.com/communal-software/cl-tensor/issues/31) | Open — unassigned | Plan lookup uses a short shared lock; execution runs outside it. Measure concurrent warmed calls across shared and independent definitions before replacing it with per-program synchronization. |
 | cl-gpu | [#27 — Source locations for define-kernel compiled from an editor buffer (C-c C-c)](https://github.com/communal-software/cl-gpu/issues/27) | Open — unassigned | Editor diagnostic convenience; no execution or model-coverage change. |
 | cl-gpu | [#33 — Support ABCL on the JVM](https://github.com/communal-software/cl-gpu/issues/33) | Open — unassigned | Lisp implementations outside SBCL/ECL/CCL are explicitly low priority. |
