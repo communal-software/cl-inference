@@ -54,7 +54,8 @@
   :license "GPL-3.0-only"
   :depends-on ("cl-inference/local")
   :serial t
-  :components ((:file "hf/package") (:file "hf/json") (:file "hf/tokenizer")))
+  :components ((:file "hf/package") (:file "hf/json") (:file "hf/tokenizer")
+               (:file "hf/sentencepiece")))
 
 (asdf:defsystem "cl-inference/safetensors"
   :description "Safetensors and Hugging Face configuration reader"
@@ -99,6 +100,7 @@
                (:file "tests/local/packed-fixtures") (:file "tests/local/packed")
                (:file "tests/local/qwen3")
                (:file "tests/local/safetensors") (:file "tests/local/hf-tokenizer")
+               (:file "tests/local/hf-sentencepiece")
                (:file "tests/local/backend") (:file "tests/local/execution")
                (:file "tests/local/chat-families-expected") (:file "tests/local/chat-families")
                (:file "tests/local/gemma-expected") (:file "tests/local/gemma"))

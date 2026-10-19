@@ -53,6 +53,7 @@
   (find-class (cond ((equal pre "llama") 'local:llama-bpe)
                     ((equal pre "qwen3") 'local:qwen2)
                     ((equal pre "smollm2") 'smollm2-bpe)
+                    ((equal pre "llama-spm-bpe") 'hf-sentencepiece-bpe)
                     (t (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF tokenizer ~S" pre)))))
 
 (defmethod local::normalize-tokenizer-text ((tokenizer local:qwen2) text)
@@ -129,6 +130,8 @@
                                 (and (equal architecture "llama") (hf-bos-postprocessor post))))))
         (reject)))))
 
+(declaim (ftype (function (t t) t) hf-sentencepiece-pipeline-p))
+
 (defmethod local:tokenizer-selector (format (weights hf-weights))
   (declare (ignore format))
   (let* ((object (hf-sidecar weights "tokenizer.json" t))
@@ -138,8 +141,11 @@
                       (hash-table-p (aref parts 0))
                       (equal "Digits" (gethash "type" (aref parts 0)))))
          (architecture (if digits "smollm2" (local:weights-architecture-name weights))))
-    (check-hf-pipeline object architecture)
-    (values "BPE" architecture)))
+    (if (hf-sentencepiece-pipeline-p object architecture)
+        (values "BPE" "llama-spm-bpe")
+        (progn
+          (check-hf-pipeline object architecture)
+          (values "BPE" architecture)))))
 
 (defun hf-vocabulary (object)
   (let* ((model (gethash "model" object)) (vocab (gethash "vocab" model))

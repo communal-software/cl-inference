@@ -1,6 +1,6 @@
 # Hugging Face tokenizers
 
-`cl-inference/hf` supplies shared metadata loading to Safetensors and [ONNX](onnx.md). `cl-inference/safetensors` loads the shipped Llama and Qwen3 tokenizer pipelines from sibling HF files. This support serves both CPU and MLX backends.
+`cl-inference/hf` supplies shared metadata loading to Safetensors and [ONNX](onnx.md). `cl-inference/safetensors` loads the pinned Llama, Qwen3 and [TinyLlama SentencePiece BPE](hf-sentencepiece.md) tokenizer pipelines from sibling HF files. This support serves both CPU and MLX backends.
 
 ```lisp
 (cl-inference/local:with-weights (weights #p"models/Qwen3-0.6B/")
@@ -12,16 +12,17 @@
 
 | Input | Behavior |
 |---|---|
-| `tokenizer.json` | Required; BPE vocabulary, merges, added tokens and supported split/byte-level pipeline |
+| `tokenizer.json` | Required; BPE vocabulary, merges, added tokens and a supported pipeline |
 | `tokenizer_config.json` | Special tokens, BOS policy and chat-template source |
 | HF model configuration | EOS fallback and architecture template fallback |
 | Llama pipeline | Llama byte-level splitting, ignore-merges behavior and optional BOS postprocessor |
 | Qwen3 pipeline | NFC normalization and Qwen byte-level splitting |
 | SmolLM2 pipeline | Individual digits, GPT-2 byte-level splitting and sparse-byte BPE; [ONNX chat setup](onnx.md) |
+| TinyLlama-1.1B-Chat-v1.0 pipeline | Character BPE, byte fallback, prepend/space replacement and one-space decoder stripping; [exact coverage](hf-sentencepiece.md) |
 
 Merges accept strings or two-element arrays. Added-token IDs must agree with vocabulary entries; gaps and conflicting IDs are rejected. Added tokens with word-boundary, trimming or normalization options are unsupported.
 
-BPE decoding preserves spaces and punctuation, including when `clean_up_tokenization_spaces` is enabled. Explicit forced BPE cleanup is unsupported.[^cleanup]
+Byte-level BPE decoding preserves spaces and punctuation, including when `clean_up_tokenization_spaces` is enabled. Explicit forced BPE cleanup is unsupported.[^cleanup] TinyLlama uses its declared decoder and rejects enabled cleanup.
 
 A Llama postprocessor adds only one BOS token to single-sequence inputs. Its name and ID must match the vocabulary and configuration. Unsupported normalizers, pre-tokenizers, decoders, padding, truncation and postprocessors signal `tokenizer-error`.
 
@@ -36,7 +37,7 @@ Token IDs, Unicode handling and rendered prompts are checked against the pinned 
 | Deferred capability | Tracker |
 |---|---|
 | Other HF BPE pipelines | [#64](https://github.com/communal-software/cl-inference/issues/64) |
-| HF SentencePiece pipelines (GGUF Llama SentencePiece is [supported separately](sentencepiece.md)) | [#63](https://github.com/communal-software/cl-inference/issues/63) |
+| HF SentencePiece pipelines outside pinned TinyLlama BPE; original `.model` files and Unigram | [#74](https://github.com/communal-software/cl-inference/issues/74) |
 | Template variants outside the pinned text coverage | [#38](https://github.com/communal-software/cl-inference/issues/38) |
 
 Paired inputs and arbitrary Jinja execution are outside this reader's coverage.

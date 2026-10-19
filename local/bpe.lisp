@@ -92,7 +92,7 @@
     n))
 
 (defun bpe-merge-piece (tokenizer work n out)
-  "Merge the N byte ids in WORK by rank and append the result to OUT."
+  "Merge the N symbol ids in WORK by rank and append the result to OUT."
   (declare (fixnum n))
   (let* ((merges (tokenizer-merges tokenizer)) (vocab (length (tokenizer-tokens tokenizer)))
          (ids (bpe-work-ids work)) (next (bpe-work-next work))
@@ -229,8 +229,10 @@ control and unknown tokens in TEXT; user-defined tokens always match."
 (defun octets-string (octets &key (start 0) (end (length octets)))
   (babel:octets-to-string octets :encoding :utf-8 :start start :end end :errorp nil))
 
-(defun decode (tokenizer ids &key special)
-  "The text of token IDS. Control and unknown tokens are left out unless SPECIAL."
+(defgeneric decode (tokenizer ids &key special)
+  (:documentation "The text of token IDS. Control and unknown tokens are left out unless SPECIAL."))
+
+(defmethod decode ((tokenizer tokenizer) ids &key special)
   (let ((out (make-array 0 :element-type '(unsigned-byte 8) :adjustable t :fill-pointer 0)))
     (map nil (lambda (id)
                (check-token-id tokenizer id)
@@ -244,8 +246,10 @@ control and unknown tokens in TEXT; user-defined tokens always match."
   tokenizer special
   (pending (make-array 8 :element-type '(unsigned-byte 8) :adjustable t :fill-pointer 0)))
 
-(defun make-detokenizer (tokenizer &key special)
-  "A stateful decoder for streaming: feed ids to DETOKENIZER-PUSH."
+(defgeneric make-detokenizer (tokenizer &key special)
+  (:documentation "A stateful decoder for streaming: feed ids to DETOKENIZER-PUSH."))
+
+(defmethod make-detokenizer ((tokenizer tokenizer) &key special)
   (%make-detokenizer tokenizer special))
 
 (defun incomplete-tail-start (octets)
@@ -263,8 +267,10 @@ control and unknown tokens in TEXT; user-defined tokens always match."
                                   n))))
           finally (return n))))
 
-(defun detokenizer-push (detokenizer id)
-  "Feed token ID; returns the text it completes, which is \"\" while a character is unfinished."
+(defgeneric detokenizer-push (detokenizer id)
+  (:documentation "Feed token ID; return completed text, or an empty string while buffering."))
+
+(defmethod detokenizer-push ((detokenizer detokenizer) id)
   (let ((tokenizer (detokenizer-tokenizer detokenizer)) (pending (detokenizer-pending detokenizer)))
     (check-token-id tokenizer id)
     (when (token-rendered-p tokenizer id (detokenizer-special detokenizer))
@@ -275,8 +281,10 @@ control and unknown tokens in TEXT; user-defined tokens always match."
         (replace pending pending :start2 cut)
         (setf (fill-pointer pending) (- (length pending) cut))))))
 
-(defun detokenizer-finish (detokenizer)
-  "The text of any unfinished character, as U+FFFD."
+(defgeneric detokenizer-finish (detokenizer)
+  (:documentation "Finish buffered decoding, replacing incomplete UTF-8 bytes with U+FFFD."))
+
+(defmethod detokenizer-finish ((detokenizer detokenizer))
   (let ((pending (detokenizer-pending detokenizer)))
     (prog1 (octets-string pending)
       (setf (fill-pointer pending) 0))))

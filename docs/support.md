@@ -25,6 +25,8 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 
 [Llama SentencePiece](sentencepiece.md) has pinned tokenizer parity coverage; additional SentencePiece model support requires architecture and chat-template acceptance.
 
+[HF TinyLlama SentencePiece BPE](hf-sentencepiece.md) has pinned tokenizer parity coverage independently of model inference and its bundled chat template.
+
 [Qwen3.5 GGUF tokenization](tokenizers.md#qwen35-gguf) has pinned split, token-ID and byte parity coverage independently of model inference.
 
 [Template coverage](chat-families.md) is independent of this architecture table. CPU inference supports [caller-owned executors](parallel-inference.md).
