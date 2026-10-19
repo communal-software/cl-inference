@@ -350,7 +350,7 @@
       "sha256": "8933f0dfee94ccb1306124977f233cee635f3d045a49300cbcb2fcdc1d5c653c",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "llama-q4_0-plain": {
     "files": {
@@ -368,7 +368,7 @@
       "sha256": "8933f0dfee94ccb1306124977f233cee635f3d045a49300cbcb2fcdc1d5c653c",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "llama-q4_k-chat": {
     "files": {
@@ -386,7 +386,7 @@
       "sha256": "7f585aaf0c2a82755ae87489a5d299b12328b297ac024bc583247fcdf2d6387b",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "llama-q4_k-plain": {
     "files": {
@@ -404,7 +404,7 @@
       "sha256": "7f585aaf0c2a82755ae87489a5d299b12328b297ac024bc583247fcdf2d6387b",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "llama-q6_k-chat": {
     "files": {
@@ -422,7 +422,7 @@
       "sha256": "377ad883dbf56404e1b69ad1c027fc2cdb70e3bde897681569760376eaaceeb6",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "llama-q6_k-plain": {
     "files": {
@@ -440,7 +440,7 @@
       "sha256": "377ad883dbf56404e1b69ad1c027fc2cdb70e3bde897681569760376eaaceeb6",
       "source_sha256": "1f33ad43d2b85b908ff06fe7002b69806a57359b9b2617ca27d7bdea428ae146"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_0-chat": {
     "files": {
@@ -458,7 +458,7 @@
       "sha256": "7db6aa51f413cb5096c33e123a5d879fbc491af9627a6c0f98afbaabaf64763a",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_0-plain": {
     "files": {
@@ -476,7 +476,7 @@
       "sha256": "7db6aa51f413cb5096c33e123a5d879fbc491af9627a6c0f98afbaabaf64763a",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_0-thinking": {
     "files": {
@@ -494,7 +494,7 @@
       "sha256": "7db6aa51f413cb5096c33e123a5d879fbc491af9627a6c0f98afbaabaf64763a",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_k-chat": {
     "files": {
@@ -512,7 +512,7 @@
       "sha256": "3a7e740a2d0a696f57f69bd27bc092ea1dbff21f60e1271fbea6e41a787d7499",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_k-plain": {
     "files": {
@@ -530,7 +530,7 @@
       "sha256": "3a7e740a2d0a696f57f69bd27bc092ea1dbff21f60e1271fbea6e41a787d7499",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q4_k-thinking": {
     "files": {
@@ -548,7 +548,7 @@
       "sha256": "3a7e740a2d0a696f57f69bd27bc092ea1dbff21f60e1271fbea6e41a787d7499",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q6_k-chat": {
     "files": {
@@ -566,7 +566,7 @@
       "sha256": "7be8ff510d4f71f51a40ab5fd4eda6e8b562be056ead52fa9b0129c416b9a9b6",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q6_k-plain": {
     "files": {
@@ -584,7 +584,7 @@
       "sha256": "7be8ff510d4f71f51a40ab5fd4eda6e8b562be056ead52fa9b0129c416b9a9b6",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   },
   "qwen-q6_k-thinking": {
     "files": {
@@ -602,6 +602,6 @@
       "sha256": "7be8ff510d4f71f51a40ab5fd4eda6e8b562be056ead52fa9b0129c416b9a9b6",
       "source_sha256": "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
     },
-    "oracle_source_sha256": "3210e673758d35c63c3295ead9053cdceb351e3cb5230e1b7a3629a09b70b923"
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
   }
 }

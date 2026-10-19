@@ -41,6 +41,9 @@ if not source.exists():
     run(["git", "clone", "--depth", "1", "--branch", "b11574", "https://github.com/ggml-org/llama.cpp.git", source], work / "clone.log")
 if subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip() != commit:
     raise RuntimeError("llama.cpp does not match the pinned commit")
+if subprocess.check_output(["git", "-C", str(source), "diff", "HEAD", "--",
+                            "src", "include", "ggml/src", "ggml/include"]):
+    raise RuntimeError("llama.cpp inference sources must be clean")
 destination = source / "examples/dump-trace"
 destination.mkdir(exist_ok=True)
 for path in (root / "tests/acceptance/oracle").iterdir():
@@ -78,7 +81,7 @@ for family in args.family or models:
                 output = reference / "oracle" / case
                 output.mkdir(parents=True, exist_ok=True)
                 env = dict(os.environ, DUMP_DIR=str(output), DUMP_N="8")
-                for variable in ("DUMP_USER", "DUMP_SYSTEM", "DUMP_THINKING"):
+                for variable in ("DUMP_MESSAGES", "DUMP_USER", "DUMP_SYSTEM", "DUMP_THINKING"):
                     env.pop(variable, None)
                 if mode != "plain":
                     env.update(DUMP_USER="What is the capital of France?", DUMP_SYSTEM="Answer in one word.", DUMP_THINKING="1" if mode == "thinking" else "0")

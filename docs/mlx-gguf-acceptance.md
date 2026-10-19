@@ -1,6 +1,6 @@
 # MLX GGUF acceptance
 
-Gemma 3 270M IT Q8_0 has five strict acceptance cases against its own weights independently dequantized to F32 by llama.cpp. The suite also contains 15 Llama/Qwen Q4/Q6 cases; their current provenance blocker is listed under [Limitations](#limitations).
+Strict MLX GGUF acceptance covers 20 pinned cases: 15 Llama 3.2 1B Instruct/Qwen3 0.6B Q4/Q6 cases and five Gemma 3 270M IT Q8_0 cases. References use each model’s own packed weights independently dequantized to F32 by llama.cpp.
 
 ## Gemma Q8_0
 
@@ -21,7 +21,12 @@ The full preparation also requires the Gemma Q8_0 download described above. Use 
 
 ```sh
 python3 tools/prepare-mlx-gguf.py
+
+# Regenerate only the 15 Llama/Qwen cases
+python3 tools/prepare-mlx-gguf.py --family llama --family qwen
 ```
+
+Repeat `--family llama|qwen|gemma` to select families. Omission selects all three; unselected manifest entries and reference dumps are preserved.
 
 The generator reuses the [CPU quantization preparation](quant-acceptance.md), records prefill and cached-decode logits in little-endian F32, and writes `tools/mlx-gguf-reference-manifest.json`. Review generated manifest changes before trusting them. It pins model provenance, the oracle source hash and every consumed output file. Models and large dumps stay in gitignored `reference/`; allow the CPU preparation's approximately 9 GB of extra disk space.[^oracle]
 
@@ -32,6 +37,8 @@ CL_INFERENCE_MLX_GGUF_ACCEPTANCE_STRICT=1 \
   sbcl --dynamic-space-size 8GB --non-interactive --eval '(require :asdf)' \
   --eval '(asdf:test-system "cl-inference/mlx-gguf/acceptance")'
 ```
+
+All 1,403 checks pass on M1/SBCL without skips.
 
 Missing required inputs fail strict mode; ordinary runs skip absent model/dump inputs. Hash and provenance mismatches fail in either mode. Skips do not establish acceptance.
 
@@ -51,8 +58,6 @@ Chunked prefill uses the batch sizes described above. The suite checks each of e
 
 ## Limitations
 
-| Boundary | Tracker |
-|---|---|
-| Existing Llama/Qwen strict cases require oracle regeneration after the committed source changed | [#76](https://github.com/communal-software/cl-inference/issues/76) |
+Acceptance covers only the pinned model artifacts and prompt cases above. Other variants and quantization formats remain unverified.
 
-[^oracle]: `DUMP_DECODE_LOGITS=1` enables the optional binary output in the development C++ oracle. Existing CPU trace and greedy files retain their formats. The last non-stop greedy token is decoded as well, yielding nine logit rows for an eight-token case. Oracle source changes require regeneration and manifest review.
+[^oracle]: `DUMP_DECODE_LOGITS=1` enables the optional binary output in the development C++ oracle. Existing CPU trace and greedy files retain their formats. The last non-stop greedy token is decoded as well, yielding nine logit rows for an eight-token case. Preparation verifies the pinned llama.cpp revision and rejects modified inference sources. Oracle source changes require regeneration and manifest review.
