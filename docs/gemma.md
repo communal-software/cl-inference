@@ -1,6 +1,6 @@
 # Gemma 3
 
-`local:gemma3` runs **Gemma 3 270M IT Q8_0 GGUF on CPU** through the standard `complete` contract. Text chat includes a leading system message, multi-turn history, streaming, sampling, stop strings, deadlines and cancellation.
+`local:gemma3` runs **Gemma 3 270M IT** from Q8_0 GGUF on CPU/MLX and [official floating Safetensors](gemma-hf.md) on CPU/MLX through the standard `complete` contract. Text chat includes a leading system message, multi-turn history, streaming, sampling, stop strings, deadlines and cancellation.
 
 ```lisp
 (asdf:load-system "cl-inference/quant")
@@ -25,7 +25,7 @@ Keep weights open while the backend is in use. Sessions use F32 KV storage by de
 | Attention | Five sliding layers then one global layer; local window 512 tokens |
 | Position encoding | NeoX RoPE; theta 10,000 locally and 1,000,000 globally |
 | Blocks | Scaled embeddings, Q/K RMSNorm, GELU-gated MLP, post-attention and post-MLP RMSNorm[^norms] |
-| Tokenizer | `llama-spm`, prefix spaces disabled; BOS 2, EOS 1 |
+| Tokenizer | GGUF `llama-spm`, prefix spaces disabled; HF [ranked character BPE](gemma-hf.md#tokenizer-pipeline); BOS 2, EOS 1 |
 | Chat | `gemma3-chat`; leading system text prefixes the first user turn; user/assistant turns alternate |
 | Reply stops | `<end_of_turn>`, `<eos>` and legacy `</s>` |
 | Context | Model metadata declares 32,768; default session capacity is 4,096 |
@@ -33,6 +33,8 @@ Keep weights open while the backend is in use. Sessions use F32 KV storage by de
 The renderer matches the pinned checkpoint template for text. It trims each turn's text, renders assistant turns as `model`, and inserts BOS once according to tokenizer metadata. The legacy `</s>` alias is treated as a control/end token, matching the pinned reference despite its user-defined metadata type. Caller text keeps the shared [control-token boundary](chat-templates.md#message-data).
 
 Tools, tool messages and image/audio content are rejected. Local layers use correct window masks over the session's full KV history; memory allocation and attention scoring still grow with context. See [Limitations](#limitations).
+
+[HF preparation and acceptance](gemma-hf.md#acceptance) use independent Transformers F32 references. [MLX GGUF acceptance](mlx-gguf-acceptance.md) uses the Q8_0 artifact below.
 
 ## Pinned acceptance
 
@@ -74,9 +76,9 @@ The generator verifies model/template hashes and the reference revision. It comp
 | Boundary | Tracker |
 |---|---|
 | Full-capacity KV storage and full-prefix scoring in local layers | [#70](https://github.com/communal-software/cl-inference/issues/70) |
-| Gemma 3 Safetensors and MLX execution | [#71](https://github.com/communal-software/cl-inference/issues/71) |
+| Gemma affine quantization and other GGUF variants | Outside the verified routes |
 | Gemma 4 family | [#69](https://github.com/communal-software/cl-inference/issues/69) |
 | Other Gemma 3 sizes, weight variants, tools and modalities | Outside the verified model and text contract |
 
-[^norms]: GGUF conversion incorporates Gemma's `1 + weight` RMSNorm convention. Runtime normalization uses the stored weights directly, including the tied LM head. The GGUF loader rejects unsupported logit softcapping and RoPE settings.
+[^norms]: GGUF conversion incorporates Gemma's `1 + weight` RMSNorm convention. GGUF runtime normalization uses stored weights directly. HF binding adds the offset once to model-owned norm vectors; the tied LM head shares embedding weights. The GGUF loader rejects unsupported logit softcapping and RoPE settings.
 [^reference]: Acceptance uses F32-dequantized weights from the same Q8_0 file to isolate architecture correctness from llama.cpp's native activation quantization. It does not establish native-Q8 llama.cpp greedy equivalence or full-context performance.

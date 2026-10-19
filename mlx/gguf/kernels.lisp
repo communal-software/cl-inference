@@ -30,7 +30,7 @@
         (- (* (* (gguf-half ,bytes ,base) (cl-gpu:convert cl-gpu:f32 scale))
               (cl-gpu:convert cl-gpu:f32 q))
            (* (gguf-half ,bytes (+ ,base 2)) (cl-gpu:convert cl-gpu:f32 minimum)))))
-     (t
+     ((= ,format 2)
       (let* ((h (/ ,e 128)) (g (/ (mod ,e 128) 32)) (lane (mod ,e 32))
              (low (logand (cl-gpu:shr (gguf-octet ,bytes (+ ,base (* h 64) (* (mod g 2) 32) lane))
                                      (* 4 (/ g 2))) 15))
@@ -38,7 +38,11 @@
              (scale (gguf-octet ,bytes (+ ,base 192 (* h 8) (* g 2) (/ lane 16)))))
         (* (* (gguf-half ,bytes (+ ,base 208))
               (cl-gpu:convert cl-gpu:f32 (if (< scale 128) scale (- scale 256))))
-           (cl-gpu:convert cl-gpu:f32 (- (logior low (cl-gpu:shl high 4)) 32)))))))
+           (cl-gpu:convert cl-gpu:f32 (- (logior low (cl-gpu:shl high 4)) 32)))))
+     (t
+      (let ((q (gguf-octet ,bytes (+ ,base 2 ,e))))
+        (* (gguf-half ,bytes ,base)
+           (cl-gpu:convert cl-gpu:f32 (if (< q 128) q (- q 256))))))))
 
 (cl-gpu:define-kernel-macro gguf-dot (out x bytes columns rows format elements block-bytes)
   `(let* ((row (cl-gpu:convert cl-gpu:i32 (cl-gpu:group-id 0)))

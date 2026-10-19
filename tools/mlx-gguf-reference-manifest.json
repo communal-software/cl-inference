@@ -1,4 +1,339 @@
 {
+  "gemma-chat": {
+    "files": {
+      "decode.f32": "73bccad7d5a7dcfd13df1fad12bc30539c77324f6c2d2cbfe0591fa49f24e54d",
+      "greedy.ids": "0f0263460e7b046a360217fbff9febea69e417907c0b0d13a1ec19564a1a1f23",
+      "prompt.ids": "1e665a00aa7366c284c35d517f133a79fd316a4683b3907bd7bb02c303522a2e",
+      "provenance.json": "f705e13cb94a30b4dff2193d2a04198264fa588f5a0136f433376eb7335d2a6c",
+      "top.txt": "2c897b543c0c6167b72939b38e4b77e540f8644348a36050b94266fcfaf16ae6",
+      "trace.txt": "3f7af76eba18a8a736e5ce36374750b8995dd5d1c1e20068c0a4e21ad48fc87a"
+    },
+    "model": {
+      "cases": {
+        "chat": {
+          "messages": [
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "multi": {
+          "messages": [
+            {
+              "content": "What is two plus two?",
+              "role": "user"
+            },
+            {
+              "content": "Four.",
+              "role": "assistant"
+            },
+            {
+              "content": "And three plus three?",
+              "role": "user"
+            }
+          ]
+        },
+        "plain": {
+          "text": "The capital of France is"
+        },
+        "system": {
+          "messages": [
+            {
+              "content": "Answer in one word.",
+              "role": "system"
+            },
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "window": {
+          "count": 110,
+          "repeat": "The sky is blue. ",
+          "suffix": "What color is the sky?"
+        }
+      },
+      "dtype": "q8_0",
+      "file": "gemma-3-270m-it-Q8_0.gguf",
+      "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc",
+      "repository": "ggml-org/gemma-3-270m-it-GGUF",
+      "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+      "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+      "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"
+    },
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
+  },
+  "gemma-multi": {
+    "files": {
+      "decode.f32": "d11fc8b5bb67cf36bed307f9fa4f00d3d5638751929656332c10ac18957af14f",
+      "greedy.ids": "852cd8b44bc1f95b0c6323631905a43dd63296399ce44b380e9cb18fad19f7b7",
+      "prompt.ids": "62d98e9bf53687f1bfa8d21f7e11e8ade1b237d759fb2167dcef2b5ebb894bd1",
+      "provenance.json": "5077043439feb19580bb2d1866ae22b0ead9938244df4e2b0f72ef3eda0daf71",
+      "top.txt": "3d5b64416a3177c43bb501e368b4adb990b76068e006019aead20dc8e55ed54a",
+      "trace.txt": "a133e7a1fba33108090f392ce9f6c8cced7139b1efee77707e79e49b75c0cf86"
+    },
+    "model": {
+      "cases": {
+        "chat": {
+          "messages": [
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "multi": {
+          "messages": [
+            {
+              "content": "What is two plus two?",
+              "role": "user"
+            },
+            {
+              "content": "Four.",
+              "role": "assistant"
+            },
+            {
+              "content": "And three plus three?",
+              "role": "user"
+            }
+          ]
+        },
+        "plain": {
+          "text": "The capital of France is"
+        },
+        "system": {
+          "messages": [
+            {
+              "content": "Answer in one word.",
+              "role": "system"
+            },
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "window": {
+          "count": 110,
+          "repeat": "The sky is blue. ",
+          "suffix": "What color is the sky?"
+        }
+      },
+      "dtype": "q8_0",
+      "file": "gemma-3-270m-it-Q8_0.gguf",
+      "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc",
+      "repository": "ggml-org/gemma-3-270m-it-GGUF",
+      "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+      "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+      "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"
+    },
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
+  },
+  "gemma-plain": {
+    "files": {
+      "decode.f32": "94397b27d40baa3774559faa74ff6d6181266d1716033d695c13c73fcce9d5ab",
+      "greedy.ids": "d7dcb5dad2cc81cac847d190dff08b8541e9a1a26aa0d6b6a2cf31d1dc07425e",
+      "prompt.ids": "4e21b98bfd3d13ba8dc28dfc1439dfc06c5823482279a835edd9e51cd9d0c446",
+      "provenance.json": "801ef833fcff878b1d8cb4b7d0b9ed5e47f5089bcf9fa99abb850742f8bc1496",
+      "top.txt": "1b78df9a111531f00246960956fd7376b147f2e19bd6727e246069d424ced75d",
+      "trace.txt": "03e9935dd13ffc4474ea437a5ab02c146f68e124b25ec19c6f20571bab7bd920"
+    },
+    "model": {
+      "cases": {
+        "chat": {
+          "messages": [
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "multi": {
+          "messages": [
+            {
+              "content": "What is two plus two?",
+              "role": "user"
+            },
+            {
+              "content": "Four.",
+              "role": "assistant"
+            },
+            {
+              "content": "And three plus three?",
+              "role": "user"
+            }
+          ]
+        },
+        "plain": {
+          "text": "The capital of France is"
+        },
+        "system": {
+          "messages": [
+            {
+              "content": "Answer in one word.",
+              "role": "system"
+            },
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "window": {
+          "count": 110,
+          "repeat": "The sky is blue. ",
+          "suffix": "What color is the sky?"
+        }
+      },
+      "dtype": "q8_0",
+      "file": "gemma-3-270m-it-Q8_0.gguf",
+      "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc",
+      "repository": "ggml-org/gemma-3-270m-it-GGUF",
+      "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+      "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+      "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"
+    },
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
+  },
+  "gemma-system": {
+    "files": {
+      "decode.f32": "385c79d43674f3ecbdaa72b11491c042c4be5cd29d39293cb0df89251c4fb6b0",
+      "greedy.ids": "d1fcef692a72e76f62e5f2d2fdf6938e226ff60945527f781faf66b9fff07f2a",
+      "prompt.ids": "7b8b98a85ef0f82959784298b303839b5c429919530b84925db880556b3f2e60",
+      "provenance.json": "20e5e3d724ae439c4748e23bf0cea0001b1543353498530c0b6e815073607a15",
+      "top.txt": "279be269a49cf2e3295237db4159cf345ffb0554d7e6334503eab260c4d7159b",
+      "trace.txt": "18f72037ef5bc68a300c6e88c1b5afb5033024bc8c02df2a0613925d478579b2"
+    },
+    "model": {
+      "cases": {
+        "chat": {
+          "messages": [
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "multi": {
+          "messages": [
+            {
+              "content": "What is two plus two?",
+              "role": "user"
+            },
+            {
+              "content": "Four.",
+              "role": "assistant"
+            },
+            {
+              "content": "And three plus three?",
+              "role": "user"
+            }
+          ]
+        },
+        "plain": {
+          "text": "The capital of France is"
+        },
+        "system": {
+          "messages": [
+            {
+              "content": "Answer in one word.",
+              "role": "system"
+            },
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "window": {
+          "count": 110,
+          "repeat": "The sky is blue. ",
+          "suffix": "What color is the sky?"
+        }
+      },
+      "dtype": "q8_0",
+      "file": "gemma-3-270m-it-Q8_0.gguf",
+      "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc",
+      "repository": "ggml-org/gemma-3-270m-it-GGUF",
+      "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+      "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+      "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"
+    },
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
+  },
+  "gemma-window": {
+    "files": {
+      "decode.f32": "dbe5bea7cdde50a1966000875b897de840e1102c7a3fbb300c07d3bcfbe6aa65",
+      "greedy.ids": "8c666052f52c7ae3b3c1e2bc6685e1a18f402f5a42a529f58e748f2a9796a1c7",
+      "prompt.ids": "25262eb17d581cf4ddcaf8e8add9a8c2821baf35e8bb1e6862b71d7dc3f388e7",
+      "provenance.json": "fff70fe715887af9330e2d8fc5085ebb946295cd7efbfff83caed347d5e67201",
+      "top.txt": "7f6a9a04c23c36ba29bdc5167c56985d0505cf3636bd3ae990ac98afbbdc1101",
+      "trace.txt": "f05c7c8365d17fadc925e5c8e0215079d9f3a00a11fa1971f9ef89edd51cc2a4"
+    },
+    "model": {
+      "cases": {
+        "chat": {
+          "messages": [
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "multi": {
+          "messages": [
+            {
+              "content": "What is two plus two?",
+              "role": "user"
+            },
+            {
+              "content": "Four.",
+              "role": "assistant"
+            },
+            {
+              "content": "And three plus three?",
+              "role": "user"
+            }
+          ]
+        },
+        "plain": {
+          "text": "The capital of France is"
+        },
+        "system": {
+          "messages": [
+            {
+              "content": "Answer in one word.",
+              "role": "system"
+            },
+            {
+              "content": "What is the capital of France?",
+              "role": "user"
+            }
+          ]
+        },
+        "window": {
+          "count": 110,
+          "repeat": "The sky is blue. ",
+          "suffix": "What color is the sky?"
+        }
+      },
+      "dtype": "q8_0",
+      "file": "gemma-3-270m-it-Q8_0.gguf",
+      "llama_cpp": "8bb3cf0d216a5ae48360179f2931daf284be4d01",
+      "reference_sha256": "0ea31103405fd1bf2e1ca430661dd2fa133c4eeef18b4ff46bea490511bc44cc",
+      "repository": "ggml-org/gemma-3-270m-it-GGUF",
+      "revision": "e7647be17ae1108f2f605ed061ca0608b171afff",
+      "sha256": "0ef57d2c838458a1952664260dcba38e5bdda37494f3af732f06e4add24068e3",
+      "template_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4"
+    },
+    "oracle_source_sha256": "ebed8ddb8b2a27125b6ffa745a0334bc6de234fe64b2b2338ec92b6b7a1256da"
+  },
   "llama-q4_0-chat": {
     "files": {
       "decode.f32": "d252124284e365aceed258c8a6684c08913442bfa7d29daf2b7bb046742d1891",

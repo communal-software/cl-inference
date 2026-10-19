@@ -73,7 +73,7 @@
                (is (eql (if (= 2 (mod layer 3)) nil 3)
                         (local::gemma3-attention-window attention))))
       (is (typep (local:model-architecture model) 'local:gemma3))
-      (is (not (local:architecture-format-option 'local:gemma3 :safetensors :arch))))))
+      (is (equal "gemma3_text" (local:architecture-format-option 'local:gemma3 :safetensors :arch))))))
 
 (test gemma3-missing-and-malformed-tensors
   (dolist (missing '("blk.0.attn_q_norm.weight" "blk.0.attn_k_norm.weight"

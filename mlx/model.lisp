@@ -247,6 +247,10 @@
     (clrhash (mlx-cache-layers cache)))
   nil)
 
+(defgeneric mlx-attention-mask (block count key-count start key-start)
+  (:method (block count key-count start key-start)
+    (declare (ignore block count key-count start key-start)) nil))
+
 (defmethod local:block-forward ((block mlx-attention) x &key (start 0) cache &allow-other-keys)
   (let* ((count (first (mx:shape x))) (heads (local::attn-n-heads block))
          (kv (local::attn-n-kv-heads block)) (head (local::attn-head-dim block))
@@ -266,9 +270,68 @@
       (setf q (rotate q) k (rotate k)))
     (multiple-value-bind (keys values)
         (if cache (local:kv-cache-update cache (local:block-layer block) k v start) (values k v))
-      (let* ((out (mx:attention q keys values (/ 1 (sqrt head)) :causal (> count 1)))
+      (let* ((mask (mlx-attention-mask block count (third (mx:shape keys)) start (if cache 0 start)))
+             (out (mx:attention q keys values (/ 1 (sqrt head)) :causal (and (null mask) (> count 1)) :mask mask))
              (flat (mx:reshape (mx:transpose out '(0 2 1 3)) (list count (* heads head)))))
         (mlx-linear flat (local::attn-output block))))))
+
+(defclass mlx-gemma-attention (mlx-attention)
+  ((post-norm :reader gemma-post-norm) (window :reader gemma-window)))
+(defclass mlx-gemma-mlp (mlx-mlp)
+  ((post-norm :reader gemma-post-norm)))
+(defclass mlx-gemma-embedding (mlx-embedding)
+  ((scale :reader gemma-embedding-scale)))
+
+(defmethod local::gemma3-effective-norm ((weights mlx-weights) tensor name)
+  (or (gethash (concatenate 'string "norm+1." name) (imported-arrays weights))
+      (setf (gethash (concatenate 'string "norm+1." name) (imported-arrays weights))
+            (mx:with-array-scope ()
+              (mx:retain (mx:add (mx:astype tensor :f32) (mx:from-data '(1f0) '(1))))))))
+
+(defmethod local:bind-block :after ((block mlx-gemma-attention) architecture weights)
+  (let* ((pattern (local:hparam architecture 'local::sliding-pattern))
+         (window (local:hparam architecture 'local::sliding-window))
+         (layer (local:block-layer block))
+         (local-p (if (vectorp pattern) (aref pattern layer) (< (mod layer pattern) (1- pattern)))))
+    (setf (slot-value block 'post-norm) (local::block-tensor block architecture weights "post-norm")
+          (slot-value block 'window) (and local-p (plusp window) window))
+    (require-shape (gemma-post-norm block) (list (local:hparam architecture 'local::dim)))
+    (when local-p
+      (setf (local::attn-rope-theta block) (local:hparam architecture 'local::local-rope-theta)))))
+
+(defmethod local:bind-block :after ((block mlx-gemma-mlp) architecture weights)
+  (setf (slot-value block 'post-norm) (local::block-tensor block architecture weights "post-norm"))
+  (require-shape (gemma-post-norm block) (list (local:hparam architecture 'local::dim))))
+
+(defmethod local:bind-block :after ((block mlx-gemma-embedding) architecture weights)
+  (declare (ignore weights))
+  (setf (slot-value block 'scale) (sqrt (float (local:hparam architecture 'local::dim) 1f0))))
+
+(defmethod local:block-forward :around ((block mlx-gemma-embedding) tokens &key &allow-other-keys)
+  (mx:multiply (call-next-method) (mx:from-data (list (gemma-embedding-scale block)) '(1))))
+
+(defmethod local:block-forward :around ((block mlx-gemma-attention) x &key &allow-other-keys)
+  (mx:rmsnorm (call-next-method) (gemma-post-norm block) (local::attn-epsilon block)))
+
+(defmethod local:block-forward ((block mlx-gemma-mlp) x &key &allow-other-keys)
+  (let* ((epsilon (local::mlp-epsilon block))
+         (h (mx:rmsnorm x (local::mlp-norm block) epsilon))
+         (delta (mlx-linear (mx:multiply (mx:gelu (mlx-linear h (local::mlp-gate block)))
+                                         (mlx-linear h (local::mlp-up block)))
+                            (local::mlp-down block))))
+    (mx:rmsnorm delta (gemma-post-norm block) epsilon)))
+
+;; TODO: full-prefix local masks grow with context; use bounded local-layer caches (#70).
+(defmethod mlx-attention-mask ((block mlx-gemma-attention) count key-count start key-start)
+  (let ((window (gemma-window block)))
+    (when (or (> count 1) (and window (> key-count window)))
+      (mx:from-data
+       (loop for i below count append
+         (loop for j below key-count
+               collect (if (and (<= (+ key-start j) (+ start i))
+                                (or (null window) (< (- (+ start i) (+ key-start j)) window)))
+                           0f0 -1f9)))
+       (list count key-count)))))
 
 (defstruct (mlx-model (:include local:model)
                       (:constructor %make-mlx-model (architecture layers model-blocks weights)))
@@ -291,7 +354,10 @@
   (destructuring-bind (class &rest arguments) spec
     (let ((class (or (cdr (assoc class '((local:attention . mlx-attention)
                                        (local:swiglu-mlp . mlx-mlp)
-                                       (local:embedding . mlx-embedding) (local:lm-head . mlx-head))))
+                                       (local:embedding . mlx-embedding) (local:lm-head . mlx-head)
+                                       (local::gemma3-attention . mlx-gemma-attention)
+                                       (local::gemma3-mlp . mlx-gemma-mlp)
+                                       (local::gemma3-embedding . mlx-gemma-embedding))))
                      (model-fail "Unsupported MLX block ~S" class))))
       (let ((block (apply #'make-instance class :slot slot :layer layer arguments)))
         (local:bind-block block architecture weights)
@@ -305,16 +371,18 @@
 
 (defgeneric validate-mlx-source (weights architecture))
 (defmethod validate-mlx-source ((weights mlx-weights) architecture)
-  (st::validate-hf-model (source-weights weights) architecture :quantized t))
+  (if (typep architecture 'local:gemma3)
+      (local::validate-model-weights (source-weights weights) architecture)
+      (st::validate-hf-model (source-weights weights) architecture :quantized t)))
 
 (defun load-mlx-model (source)
-  "Build a Llama or Qwen3 model over MLX-owned arrays; SOURCE remains borrowed."
+  "Build a Llama, Qwen3 or Gemma 3 model over MLX-owned arrays; SOURCE remains borrowed."
   (local::ensure-open source)
   (unless (mx:available-p) (model-fail "Metal device is unavailable"))
   (let* ((architecture (local:load-architecture source))
          (weights (prepare-mlx-weights source))
          (success nil))
-    (unless (typep architecture 'local:llama) (model-fail "MLX supports Llama and Qwen3"))
+    (unless (typep architecture 'local:llama) (model-fail "MLX supports Llama, Qwen3 and Gemma 3"))
     (validate-mlx-source weights architecture)
     (unwind-protect
          (let ((model

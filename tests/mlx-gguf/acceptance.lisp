@@ -2,9 +2,10 @@
 (def-suite :cl-inference/mlx-gguf/acceptance)
 (in-suite :cl-inference/mlx-gguf/acceptance)
 
-(defun run-acceptance (&key (strict (equal "1" (uiop:getenv "CL_INFERENCE_MLX_GGUF_ACCEPTANCE_STRICT"))))
+(defun run-acceptance (&key (strict (equal "1" (uiop:getenv "CL_INFERENCE_MLX_GGUF_ACCEPTANCE_STRICT")))
+                            (suite :cl-inference/mlx-gguf/acceptance))
   (let ((*strict* strict) (*hashes* (make-hash-table :test 'equal)))
-    (run! :cl-inference/mlx-gguf/acceptance)))
+    (run! suite)))
 
 (defun check-logits (label actual expected &key top-five)
   (multiple-value-bind (maximum relative)
@@ -58,7 +59,7 @@
                             (declare (ignore maximum))
                             (is (<= relative 0.02d0))
                             (is (>= (reference-cosine layer expected) 0.9999d0)))))
-               (setf session (local:make-session model :tokenizer tokenizer :chat-template template :n-ctx 512 :n-batch 7))
+               (setf session (local:make-session model :tokenizer tokenizer :chat-template template :n-ctx (max 512 (+ (length ids) 16)) :n-batch (if (eq model-kind :gemma-q8) 128 7)))
                (let ((logits (local:session-prefill session ids)))
                  (check-logits (format nil "~A chunked prefill" case) (local::logits-vector logits) (first cached) :top-five t)
                  (loop for id in greedy for step from 1
@@ -89,3 +90,18 @@
                               (if directory (compare-reference ,case directory)
                                   (skip "Missing ~A inputs; acceptance is not established" ,case)))))))))
 (define-acceptance-cases)
+
+(def-suite :cl-inference/gemma-mlx-gguf/acceptance :in :cl-inference/mlx-gguf/acceptance)
+(in-suite :cl-inference/gemma-mlx-gguf/acceptance)
+
+(defmacro define-gemma-gguf-acceptance-cases ()
+  `(progn
+     ,@(loop for name in '(plain chat system multi window)
+             for case = (intern (format nil "GEMMA-~A" name) :keyword)
+             collect `(test ,(intern (symbol-name case))
+                        (let ((directory (verify-reference ,case)))
+                          (if directory
+                              (progn (cl-inference/acceptance::verify-case-oracle :gemma ,case)
+                                     (compare-reference ,case directory))
+                              (skip "Missing Gemma GGUF reference inputs")))))))
+(define-gemma-gguf-acceptance-cases)

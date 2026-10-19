@@ -60,7 +60,7 @@ Without `:special t`, control token text such as `<s>` encodes as ordinary chara
 
 `detokenizer-finish` returns U+FFFD for bytes left dangling.
 
-[HF TinyLlama SentencePiece BPE](hf-sentencepiece.md#streaming) buffers complete byte-token runs and releases their text at a run boundary or finish. Always append the text returned by `detokenizer-finish`.
+[HF SentencePiece BPE](hf-sentencepiece.md#streaming) buffers complete byte-token runs and releases their text at a run boundary or finish. Always append the text returned by `detokenizer-finish`.
 
 ## Declaring a tokenizer
 
@@ -161,7 +161,7 @@ This coverage applies to GGUF tokenization. Qwen3.5 inference requires its own a
 
 ## HF files
 
-The optional Safetensors system reads the pinned Llama, Qwen3 and TinyLlama `tokenizer.json` pipelines and special-token configuration. See [HF tokenizers](hf-tokenizers.md) for input validation and coverage.
+The optional Safetensors system reads the pinned Llama, Qwen3, TinyLlama and Gemma `tokenizer.json` pipelines and special-token configuration. See [HF tokenizers](hf-tokenizers.md) for input validation and coverage.
 
 ## Errors
 

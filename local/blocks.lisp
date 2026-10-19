@@ -17,7 +17,9 @@
   (:documentation "Store K and V of the new positions at START for LAYER in CACHE and return
 all keys and values so far, as (values keys values). Shapes are (positions kv-heads head-dim)."))
 
-(defun block-tensor (block architecture weights suffix)
+(defgeneric block-tensor (block architecture weights suffix))
+
+(defmethod block-tensor (block architecture weights suffix)
   "The tensor for role <slot>.<SUFFIX>, or NIL when it is optional and absent."
   (architecture-tensor architecture weights
                        (intern (format nil "~A.~A" (symbol-name (block-slot block))

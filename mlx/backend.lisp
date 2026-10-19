@@ -2,6 +2,17 @@
 
 (defclass mlx-backend (local:local-backend) ())
 
+(defun mlx-tokenizer-fits-p (model tokenizer)
+  (let* ((rows (first (weight-shape
+                      (local::embedding-table (local::model-block-of-type model 'local:embedding)))))
+         (size (local:tokenizer-vocab-size tokenizer)))
+    (or (<= size rows)
+        (and (typep (local:model-architecture model) 'local:gemma3)
+             (eq :safetensors (local:architecture-format (local:model-architecture model)))
+             (= size (1+ rows))
+             (eql rows (local:token-id tokenizer "<image_soft_token>"))
+             (= local::+token-control+ (aref (local::tokenizer-types tokenizer) rows))))))
+
 (defun make-mlx-backend (weights &key (name :mlx) n-ctx (n-batch 512) (session-policy :serialized)
                                     (cache-type :f32) (reuse-prefix t))
   "A client backend borrowing open WEIGHTS."
@@ -16,8 +27,7 @@
                                        :session-policy session-policy :cache-type cache-type
                                        :reuse-prefix reuse-prefix))
                 (session (local::backend-new-session backend)))
-           (when (> (local:tokenizer-vocab-size (local::backend-tokenizer backend))
-                    (first (weight-shape (local::embedding-table (local::model-block-of-type model 'local:embedding)))))
+           (unless (mlx-tokenizer-fits-p model (local::backend-tokenizer backend))
              (local:close-session session)
              (model-fail "Tokenizer vocabulary exceeds embedding rows"))
            (if (eq session-policy :serialized)

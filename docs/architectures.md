@@ -54,7 +54,7 @@ Qwen3 normalizes each Q/K head before NeoX RoPE. Its head dimension comes from G
 
 Each format has its own section, so tensor names, metadata keys and RoPE pairing belong to the architecture and the format together.[^rope]
 
-Llama and Qwen3 provide `:gguf` and `:safetensors` mappings. HF values keep their configuration names, including `hidden_size`, `num_hidden_layers`, `head_dim` and `rope_scaling`; JSON null becomes NIL in hparams. See [Safetensors](safetensors.md#model-loading) for CPU model coverage and configuration restrictions.
+Llama, Qwen3 and Gemma 3 provide `:gguf` and `:safetensors` mappings. Gemma HF uses `model_type="gemma3_text"`; its [format-specific norms and attention](gemma-hf.md#model-behavior) follow the pinned text configuration. HF values keep their configuration names, including `hidden_size`, `num_hidden_layers`, `head_dim` and `rope_scaling`; JSON null becomes NIL in hparams. See [Safetensors](safetensors.md#model-loading) for CPU model coverage and configuration restrictions.
 
 ## Inheritance
 

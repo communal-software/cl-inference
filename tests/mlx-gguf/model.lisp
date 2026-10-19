@@ -3,7 +3,7 @@
 
 (test gguf-models-mixed-weights-rope-tied-heads-and-cache
   (dolist (arch '("llama" "qwen3"))
-    (dolist (dtype '(:q4_0 :q4_k :q6_k))
+    (dolist (dtype '(:q4_0 :q4_k :q6_k :q8_0))
       (dolist (tied '(nil t))
         (let* ((spec (f::packed-spec dtype :tied tied :qk-norm (equal arch "qwen3") :freqs t
                                    :tensor-dtypes '(("blk.0.attn_v.weight" . :f16)
@@ -44,15 +44,7 @@
                   (local:close-model model)))))
           (is (= before (mx:live-array-count))))))))
 
-(test gguf-rejects-unsupported-formats-shapes-and-cleans-up
-  (let ((before (mx:live-array-count)))
-    (dolist (overrides '((:dtype :q8_0) (:tensor-dtypes (("blk.0.attn_q.weight" . :q8_0)))
-                         (:tensor-dtypes (("output.weight" . :q8_0)))))
-      (let* ((spec (apply #'f::packed-spec :q4_0 overrides)) (table (f::weight-table spec)))
-        (f::with-gguf-file (path (f::spec-gguf "llama" spec table))
-          (signals local:unsupported-weights-type
-            (local:with-weights (weights path) (mlx:load-mlx-model weights))))))
-    (is (= before (mx:live-array-count))))
+(test gguf-rejects-malformed-packed-container
   (f::with-gguf-file (path (f::build-gguf :tensors '(("bad" (32 1) 2 #(0)))))
     (signals cl-inference/gguf:gguf-error (local:open-weights path))))
 
@@ -104,4 +96,23 @@
                   :format-type :q4_k :byte-count (local:tensor-info-byte-count info)
                   :offset (cl-inference/gguf:gguf-tensor-offset info))))
         (signals local:architecture-error (mlx:load-mlx-model source))))
+    (is (= before (mx:live-array-count)))))
+
+(test gemma-gguf-mlx-q8-window-and-cache
+  (let* ((spec (f::gemma-spec :dim 32 :head-dim 32 :rope-dims 32 :ffn 32 :vocab 32
+                             :layers 3 :pattern 2 :window 3 :dtype :q8_0))
+         (table (f::weight-table spec)) (tokens '(3 0 5 2 6)) (before (mx:live-array-count)))
+    (f::with-gguf-file (path (f::spec-gguf "gemma3" spec table))
+      (local:with-weights (weights path)
+        (let* ((model (mlx:load-mlx-model weights))
+               (session (local:make-session model :n-ctx 32 :n-batch 2)))
+          (unwind-protect
+               (progn
+                 (is (f::rows-close-p (f::tensor-rows (local:model-forward model tokens :all-logits t))
+                                      (f::ref-logits table spec :neox tokens)))
+                 (local:session-prefill session '(3 0 5))
+                 (is (f::rows-close-p (f::tensor-rows (local:session-prefill session '(2 6)))
+                                      (last (f::ref-logits table spec :neox tokens)))))
+            (local:close-session session)
+            (local:close-model model)))))
     (is (= before (mx:live-array-count)))))

@@ -10,6 +10,11 @@
             (setf (aref types id) +token-control+))))
       (setf (slot-value tokenizer 'types) types))))
 
+(defgeneric gemma3-effective-norm (weights tensor name)
+  (:method (weights tensor name)
+    (declare (ignore weights name))
+    (ct:add (as-f32 tensor) 1f0)))
+
 (defclass gemma3-embedding (embedding)
   ((scale :reader gemma3-embedding-scale)))
 
@@ -72,9 +77,29 @@
     (:tensor attn.k-norm "blk.~d.attn_k_norm.weight")
     (:tensor attn.post-norm "blk.~d.post_attention_norm.weight")
     (:tensor mlp.post-norm "blk.~d.post_ffw_norm.weight"))
-  (:format :safetensors (:arch nil)))
+  (:format :safetensors
+    (:arch "gemma3_text")
+    (:chat-template gemma3-chat)
+    (:hparam sliding-window "sliding_window")
+    (:hparam sliding-pattern "layer_types")
+    (:hparam local-rope-theta "rope_local_base_freq")
+    (:tensor attn.post-norm "model.layers.~d.post_attention_layernorm.weight")
+    (:tensor mlp.norm "model.layers.~d.pre_feedforward_layernorm.weight")
+    (:tensor mlp.post-norm "model.layers.~d.post_feedforward_layernorm.weight")
+    (:tensor attn.q-norm "model.layers.~d.self_attn.q_norm.weight")
+    (:tensor attn.k-norm "model.layers.~d.self_attn.k_norm.weight")))
 
-(defmethod validate-model-weights (weights (architecture gemma3))
+(defmethod block-tensor :around (block (architecture gemma3) weights suffix)
+  (let ((tensor (call-next-method)))
+    (if (and (eq :safetensors (weights-format weights)) (search "norm" suffix))
+        (gemma3-effective-norm weights tensor
+                              (architecture-tensor-name architecture
+                                (intern (format nil "~A.~A" (block-slot block) (string-upcase suffix))
+                                        :cl-inference/local)
+                                (block-layer block)))
+        tensor)))
+
+(defmethod validate-model-weights :before (weights (architecture gemma3))
   (flet ((fail (control &rest args) (apply #'architecture-fail 'architecture-error control args))
          (positive-integer-p (value) (and (integerp value) (plusp value))))
     (let* ((layers (hparam architecture 'n-layers))
@@ -99,12 +124,19 @@
                    (= head (weights-metadata weights "gemma3.attention.value_length" head)))
         (fail "Unsupported Gemma 3 attention, RoPE or logit settings"))
       (labels ((shape (role expected &optional layer)
-                 (let ((actual (ct:tensor-shape (architecture-tensor architecture weights role layer))))
+                 (let* ((name (architecture-tensor-name architecture role layer))
+                        (info (weights-tensor-info-ref weights name))
+                        (fallback (getf (rest (architecture-tensor-spec architecture role)) :fallback))
+                        (actual (coerce (tensor-info-shape
+                                         (or info (and fallback
+                                                       (weights-tensor-info weights
+                                                         (architecture-tensor-name architecture fallback layer)))
+                                             (weights-tensor-info weights name))) 'vector)))
                    (unless (equalp actual (coerce expected 'vector))
                      (fail "Gemma 3 tensor ~A at layer ~S has shape ~S, expected ~S"
                            role layer actual expected)))))
-        (let* ((embedding (architecture-tensor architecture weights 'token.embd))
-               (vocab (aref (ct:tensor-shape embedding) 0)))
+        (let* ((embedding (weights-tensor-info weights (architecture-tensor-name architecture 'token.embd)))
+               (vocab (first (tensor-info-shape embedding))))
           (shape 'token.embd (list vocab dim))
           (shape 'head.output (list vocab dim))
           (shape 'head.norm (list dim)))
@@ -115,8 +147,8 @@
           (shape 'attn.q (list (* heads head) dim) layer)
           (dolist (role '(attn.k attn.v)) (shape role (list (* kv head) dim) layer))
           (shape 'attn.output (list dim (* heads head)) layer)
-          (let* ((gate (architecture-tensor architecture weights 'mlp.gate layer))
-                 (ffn (aref (ct:tensor-shape gate) 0)))
+          (let* ((gate (weights-tensor-info weights (architecture-tensor-name architecture 'mlp.gate layer)))
+                 (ffn (first (tensor-info-shape gate))))
             (shape 'mlp.gate (list ffn dim) layer)
             (shape 'mlp.up (list ffn dim) layer)
             (shape 'mlp.down (list dim ffn) layer)))))))

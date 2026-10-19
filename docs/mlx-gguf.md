@@ -1,6 +1,6 @@
 # GGUF on MLX
 
-`cl-inference/mlx-gguf` runs Llama and Qwen3 GGUF models on Apple Silicon. It extends the existing MLX loader and backend; it adds no public package or loader API.
+`cl-inference/mlx-gguf` runs Llama, Qwen3 and Gemma 3 GGUF models on Apple Silicon. It extends the existing MLX loader and backend; it adds no public package or loader API.
 
 ## Run
 
@@ -25,7 +25,7 @@ sbcl --script examples/mlx-gguf.lisp models/Qwen3-0.6B-Q4_K_M.gguf "Say hello."
 
 | Tensor format | Execution |
 |---|---|
-| Q4_0, Q4_K, Q6_K matrices | Raw packed bytes; custom projection and selected-row embedding kernels |
+| Q4_0, Q4_K, Q6_K, Q8_0 matrices | Raw packed bytes; custom projection and selected-row embedding kernels |
 | F32, F16, BF16 | Ordinary MLX arrays, including mixed floating/packed models |
 | Other consumed formats | Tensor-specific load error; no conversion fallback |
 
@@ -48,13 +48,13 @@ sbcl --non-interactive --eval '(require :asdf)' \
   --eval '(asdf:test-system "cl-inference/mlx-gguf")'
 ```
 
-Offline fixtures compare independently decoded blocks, projections, gathered rows, mixed Llama/Qwen3 models, tied heads, RoPE factors, chunked prefill, cached decode, streaming and cleanup. Run on Apple Silicon with Metal access. [Real-model acceptance](mlx-gguf-acceptance.md) requires all pinned inputs. [Measurements](mlx-gguf-performance.md) describe complete-call timings and peak memory.
+Offline fixtures compare independently decoded blocks, projections, gathered rows, mixed Llama/Qwen3 models and Gemma Q8_0 local/global attention, tied heads, RoPE factors, chunked prefill, cached decode, streaming and cleanup. Run on Apple Silicon with Metal access. [Real-model acceptance](mlx-gguf-acceptance.md) requires all pinned inputs. [Measurements](mlx-gguf-performance.md) describe complete-call timings and peak memory.
 
 ## Limitations
 
 | Capability | Status |
 |---|---|
-| Q8_0 and other packed weight formats | Unsupported; select Q4_0, Q4_K_M or Q6_K artifacts |
+| Other packed weight formats | Unsupported; select Q4_0, Q4_K_M, Q6_K or Q8_0 artifacts |
 | Packed-weight reuse across prefill token rows | [#68](https://github.com/communal-software/cl-inference/issues/68) |
 | Platforms and Lisp runtimes | Verified on macOS Apple Silicon with SBCL |
 | GPU sampling and inference fusion | Outside this integration; sampling uses the existing CPU sampler |

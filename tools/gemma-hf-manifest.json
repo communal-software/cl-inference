@@ -1,0 +1,27 @@
+{
+  "repository": "google/gemma-3-270m-it",
+  "revision": "ac82b4e820549b854eebf28ce6dedaf9fdfa17b3",
+  "files": {
+    "config.json": "8983343e5bfbf8e336d222a522a1d781443491e9de2d081b8856f8fd26ab6046",
+    "tokenizer_config.json": "94b03056ec5831e9021c3e3fe9db682778c4f2d081c4188f1fcb8b90541cf1cf",
+    "tokenizer.json": "7d4046bf0505a327dd5a0abbb427ecd4fc82f99c2ceaa170bc61ecde12809b0c",
+    "special_tokens_map.json": "2f7b0adf4fb469770bb1490e3e35df87b1dc578246c5e7e6fc76ecf33213a397",
+    "generation_config.json": "f3d7bb125d6b8751b8fc57c7155c10d6716ebe5a64900a27f56ca236c1c0c241",
+    "chat_template.jinja": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+    "model.safetensors": "700b710a9a99c295ed546647aa81cacf9f81f4c573ea2be613a0e2517a44afab"
+  },
+  "packages": {
+    "torch": "2.10.0",
+    "transformers": "5.5.0",
+    "tokenizers": "0.22.2"
+  },
+  "outputs": {
+    "oracle.json": "cecd852b30320e32997877475e9ea99e828a3e65128575e21ce14b6c7c819843",
+    "plain.f32": "204aec199449c8c10f212c755ed721c64f8c96e7af966e2d2b0b055a68a7ce5f",
+    "chat.f32": "49a91d65c6898acd55e3c428511d75e87c5fd5a2daf2e4a75d7e47e3fd0ee0eb",
+    "system.f32": "f877e5769ad82987cdd603cb13612ee6b3e604b205bb2deb876392805eb6fe18",
+    "multi.f32": "ef3c02b9d289c4370f727b66b8d9c31deaf7b2487451c57b46c5d735cf4f62c9",
+    "window.f32": "88cf05ef5c65f329d34a4626579303b38ec92bc663e71fabbcf015e5c9943dea"
+  },
+  "generator_sha256": "e9615ed7c26dff4f5b634643afab5a22c638fdc790d6897555e3ed560316aa5c"
+}

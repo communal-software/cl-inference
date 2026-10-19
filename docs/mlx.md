@@ -1,10 +1,12 @@
 # MLX backend
 
-`cl-inference/mlx` runs local Llama and Qwen3 models on Apple Silicon through [cl-mlx](https://github.com/communal-software/cl-mlx). It uses the same request, reply and streaming contract as the other backends.
+`cl-inference/mlx` runs local Llama, Qwen3 and Gemma 3 models on Apple Silicon through [cl-mlx](https://github.com/communal-software/cl-mlx). It uses the same request, reply and streaming contract as the other backends.
 
 ## Setup
 
 Build cl-mlx's native libraries with its [installation instructions](https://github.com/communal-software/cl-mlx/blob/trunk/docs/install.md), then load the optional system:
+
+Gemma execution requires [cl-mlx `213e843`](https://github.com/communal-software/cl-mlx/commit/213e843)'s native `gelu` binding and a rebuilt native shim.
 
 Q8 cache support requires the [symmetric Q8 bindings and finite reconstruction](https://github.com/communal-software/cl-mlx/commit/e9d7d40) and a rebuilt native shim.
 
@@ -25,13 +27,13 @@ The model directory contains Safetensors weights, `config.json`, `tokenizer.json
 
 | Capability | Coverage |
 |---|---|
-| Architectures | Shipped Llama and Qwen3 declarations |
+| Architectures | Shipped Llama, Qwen3 and Gemma 3 declarations |
 | Float storage | F32, F16 and BF16 |
 | Quantization | MLX affine 4-bit; group sizes 32, 64 and 128 |
-| Attention | Causal GQA; Qwen3 Q/K normalization |
+| Attention | Causal GQA; Qwen3/Gemma Q/K normalization; Gemma local/global window masks |
 | RoPE | Ordinary and Llama 3 scaling; HF split-half pairing |
-| Tokenizer and chat | [Shipped HF byte-level BPE pipelines](hf-tokenizers.md) and existing renderers |
-| Real-model acceptance | Llama 3.2 1B Instruct and Qwen3 0.6B, BF16 and affine 4-bit |
+| Tokenizer and chat | [Shipped HF pipelines](hf-tokenizers.md), including Gemma character BPE, and existing renderers |
+| Real-model acceptance | Llama 3.2 1B Instruct and Qwen3 0.6B, BF16 and affine 4-bit; [Gemma 3 270M IT floating Safetensors](gemma-hf.md#acceptance) |
 
 Quantized projections and tied output heads use packed matmul. Quantized embeddings dequantize only selected rows. Computation, scales and quantization biases use F32; full packed matrices stay packed. Caches use F32 by default or optional [symmetric Q8 storage](kv-cache.md). Tiny fixtures cover both architectures, mixed weights and tied output heads.
 
@@ -48,6 +50,8 @@ Direct token-ID inference uses `load-mlx-model` with the shared `make-session`, 
 ## Execution
 
 A floating-cache forward pass constructs one lazy graph and evaluates logits and updated caches together. Each decode step has one explicit evaluation; prefill evaluates once per batch. Q8 caches also evaluate each layer to release dequantization scratch. Only final logits move to the existing CPU sampler. Temporary array handles are released after each pass; model and cache arrays remain owned by their objects.[^execution]
+
+Gemma uses tanh-approximate GELU, scaled embeddings, post-norms and HF-only norm offsets. Its affine 4-bit route is outside verified coverage.
 
 The [acceptance instructions](mlx-acceptance.md) describe the pinned reference and required checks.
 

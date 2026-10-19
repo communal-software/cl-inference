@@ -50,7 +50,7 @@ Each file is mapped once, copy-on-write. Views share its payload; writes do not 
 
 ## Model loading
 
-The shipped Llama and Qwen3 architectures map HF tensor names and configuration fields in their `:safetensors` sections. Both use split-half RoPE; Qwen3 adds Q/K normalization. `head_dim` overrides `hidden_size / num_attention_heads`, and missing output weights require `tie_word_embeddings=true`.
+The shipped Llama, Qwen3 and Gemma 3 architectures map HF tensor names and configuration fields in their `:safetensors` sections. All use split-half RoPE; Qwen3 adds Q/K normalization. `head_dim` overrides `hidden_size / num_attention_heads`, and missing Llama/Qwen3 output weights require `tie_word_embeddings=true`. Gemma uses the architecture default of tied embeddings when that field is absent.
 
 ```lisp
 (local:with-weights (w #p"models/Qwen3-0.6B/")
@@ -58,9 +58,9 @@ The shipped Llama and Qwen3 architectures map HF tensor names and configuration 
     (local:model-forward model '(1 2 3))))
 ```
 
-CPU fixtures verify F32/F16/BF16 logits and cached decoding for both architectures. Ordinary RoPE and `rope_scaling` with `rope_type="llama3"` are supported.[^rope] Unsupported scaling, bias, activation and sliding-window variants signal `architecture-error` during model loading.
+CPU fixtures verify F32/F16/BF16 logits and cached decoding for all three architectures. [Gemma 3 270M IT](gemma-hf.md) also has independent real-model F32 acceptance, local/global attention and HF-only norm offsets. Ordinary RoPE and `rope_scaling` with `rope_type="llama3"` are supported.[^rope] Unsupported architecture-specific scaling, bias, activation and sliding-window variants signal `architecture-error` during model loading.
 
-Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. The [HF tokenizer reader](hf-tokenizers.md) supplies Llama/Qwen3 chat setup. The [MLX backend](mlx.md) executes packed affine 4-bit models. Its [real-model acceptance](mlx-acceptance.md) verifies Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form.
+Packed MLX integers, scales, biases and quantization metadata remain available through the weights protocol. CPU model loading rejects quantized configurations. The [HF tokenizer reader](hf-tokenizers.md) supplies Llama/Qwen3/Gemma chat setup. The [MLX backend](mlx.md) executes packed affine 4-bit models. Its [real-model acceptance](mlx-acceptance.md) verifies Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form.
 
 ## Validation
 

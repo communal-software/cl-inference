@@ -6,9 +6,26 @@
        (every (lambda (a b) (and (not (or (float-features:float-nan-p a) (float-features:float-infinity-p a)))
                                 (<= (abs (- a b)) (+ 1d-4 (* 1d-4 (abs b)))))) actual expected)))
 
+(defun q8-golden-fixture ()
+  (let ((bytes (make-array 170 :element-type '(unsigned-byte 8)))
+        (expected (make-array 160 :element-type 'single-float))
+        (scales '(0f0 0.5f0 -2f0 0.00006103515625f0 8f0))
+        (bits '(0 #x3800 #xc000 #x0400 #x4800)))
+    (loop for scale in scales for encoding in bits for block from 0
+          do (setf (aref bytes (* block 34)) (logand encoding 255)
+                   (aref bytes (1+ (* block 34))) (ash encoding -8))
+             (dotimes (i 32)
+               (let ((code (- (mod (+ (* i 73) (* block 19)) 256) 128)))
+                 (setf (aref bytes (+ (* block 34) 2 i)) (logand code 255)
+                       (aref expected (+ (* block 32) i)) (* scale code)))))
+    (list :q8_0 bytes expected)))
+
+(defun mlx-packed-golden-fixtures ()
+  (cons (q8-golden-fixture) f::*packed-golden-blocks*))
+
 (test independent-packed-blocks-gathers-and-projections
   (let ((before (mx:live-array-count)))
-    (dolist (fixture f::*packed-golden-blocks*)
+    (dolist (fixture (mlx-packed-golden-fixtures))
       (destructuring-bind (dtype bytes expected) fixture
         (multiple-value-bind (format elements block-bytes) (mlx::gguf-block-layout dtype)
           (dolist (blocks '(1 5))
@@ -58,7 +75,7 @@
       (is (= 96 (length (mx:to-vector result)))))))
 
 (test mapped-offset-import-copy-and-malformed-scales
-  (dolist (fixture f::*packed-golden-blocks*)
+  (dolist (fixture (mlx-packed-golden-fixtures))
     (destructuring-bind (dtype bytes expected) fixture
       (multiple-value-bind (format elements block-bytes) (mlx::gguf-block-layout dtype)
         (declare (ignore format))

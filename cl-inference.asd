@@ -103,20 +103,20 @@
                (:file "tests/local/hf-sentencepiece")
                (:file "tests/local/backend") (:file "tests/local/execution")
                (:file "tests/local/chat-families-expected") (:file "tests/local/chat-families")
-               (:file "tests/local/gemma-expected") (:file "tests/local/gemma"))
+               (:file "tests/local/gemma-expected") (:file "tests/local/gemma") (:file "tests/local/gemma-hf"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/local/tests :run-tests)
                (error "cl-inference/local tests failed"))))
 
 (asdf:defsystem "cl-inference/local/acceptance"
-  :description "Llama and Qwen3 against llama.cpp; needs models and oracle in reference/"
+  :description "Llama, Qwen3 and Gemma against pinned independent references"
   :depends-on ("cl-inference/local/tests" "uiop" "fiveam")
   :serial t
   :components ((:file "tests/acceptance/package") (:file "tests/acceptance/helpers")
                (:file "tests/acceptance/llama") (:file "tests/acceptance/qwen3")
                (:file "tests/acceptance/quant") (:file "tests/acceptance/cache")
-               (:file "tests/acceptance/gemma"))
+               (:file "tests/acceptance/gemma") (:file "tests/acceptance/gemma-hf"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
@@ -151,7 +151,7 @@
 (asdf:defsystem "cl-inference/mlx/tests"
   :depends-on ("cl-inference/mlx" "cl-inference/local/tests")
   :serial t
-  :components ((:file "tests/mlx/package") (:file "tests/mlx/model") (:file "tests/mlx/backend")
+  :components ((:file "tests/mlx/package") (:file "tests/mlx/model") (:file "tests/mlx/backend") (:file "tests/mlx/gemma")
                (:file "tests/mlx/acceptance-support") (:file "tests/mlx/acceptance-harness"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
@@ -159,10 +159,10 @@
                (error "cl-inference/mlx tests failed"))))
 
 (asdf:defsystem "cl-inference/mlx/acceptance"
-  :description "Qwen3 float and 4-bit against a pinned Python MLX reference"
-  :depends-on ("cl-inference/mlx/tests")
+  :description "Llama/Qwen3 against Python MLX and Gemma against Transformers F32"
+  :depends-on ("cl-inference/mlx/tests" "cl-inference/local/acceptance")
   :serial t
-  :components ((:file "tests/mlx/acceptance") (:file "tests/mlx/cache-acceptance"))
+  :components ((:file "tests/mlx/acceptance") (:file "tests/mlx/gemma-acceptance") (:file "tests/mlx/cache-acceptance"))
   :perform (asdf:test-op (op component)
              (declare (ignore op component))
              (unless (uiop:symbol-call :cl-inference/mlx/tests :run-acceptance)

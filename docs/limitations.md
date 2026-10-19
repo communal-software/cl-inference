@@ -3,7 +3,7 @@
 | Missing | Tracker |
 |---|---|
 | ONNX exports and capabilities outside SmolLM2 FP32 CPU text chat | [ONNX limitations](onnx.md#limitations) |
-| Gemma formats, families and modalities outside Gemma 3 270M IT Q8_0 CPU | [Gemma limitations](gemma.md#limitations) |
+| Gemma formats, families and modalities outside the verified Gemma 3 270M IT text routes | [Gemma limitations](gemma.md#limitations) |
 | Broader HF pipelines and templates; additional MLX formats | [HF limitations](hf-tokenizers.md#limitations), [MLX limitations](mlx.md#limitations) |
 | Windows and BSD file mapping | [#20](https://github.com/communal-software/cl-inference/issues/20), [#21](https://github.com/communal-software/cl-inference/issues/21) |
 | Q8_0 matmul over many activation rows is slower than dequantized tiles through BLAS | [#41](https://github.com/communal-software/cl-inference/issues/41) |

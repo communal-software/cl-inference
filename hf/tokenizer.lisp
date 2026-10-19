@@ -54,6 +54,7 @@
                     ((equal pre "qwen3") 'local:qwen2)
                     ((equal pre "smollm2") 'smollm2-bpe)
                     ((equal pre "llama-spm-bpe") 'hf-sentencepiece-bpe)
+                    ((equal pre "gemma-spm-bpe") 'hf-gemma-bpe)
                     (t (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF tokenizer ~S" pre)))))
 
 (defmethod local::normalize-tokenizer-text ((tokenizer local:qwen2) text)
@@ -142,7 +143,7 @@
                       (equal "Digits" (gethash "type" (aref parts 0)))))
          (architecture (if digits "smollm2" (local:weights-architecture-name weights))))
     (if (hf-sentencepiece-pipeline-p object architecture)
-        (values "BPE" "llama-spm-bpe")
+        (values "BPE" (if (equal architecture "gemma3_text") "gemma-spm-bpe" "llama-spm-bpe"))
         (progn
           (check-hf-pipeline object architecture)
           (values "BPE" architecture)))))
@@ -236,7 +237,11 @@
 
 (defmethod local:chat-template-source (format (weights hf-weights))
   (let* ((config (hf-sidecar weights "tokenizer_config.json"))
-         (source (and config (gethash "chat_template" config))))
+         (source (or (and config (let ((value (gethash "chat_template" config)))
+                                  (unless (hf-null-p value) value)))
+                     (let ((path (merge-pathnames "chat_template.jinja"
+                                                  (uiop:pathname-directory-pathname (local:weights-path weights)))))
+                       (when (probe-file path) (uiop:read-file-string path :external-format :utf-8))))))
     (unless (hf-null-p source)
       (unless (and (stringp source) (local::detected-chat-template-class source))
         (local::chat-template-fail "Unsupported HF chat_template"))

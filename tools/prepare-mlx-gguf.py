@@ -16,6 +16,7 @@ def sha(path):
 def main():
     subprocess.run(['python3', str(ROOT / 'tests/acceptance/prepare-quant.py')],
                    env=dict(os.environ, DUMP_DECODE_LOGITS='1'), check=True)
+    subprocess.run(['python3', str(ROOT / 'tests/acceptance/prepare-gemma.py')], check=True)
     models = json.loads((ROOT / 'tests/acceptance/quant-models.json').read_text())
     manifest = {}
     source = ROOT / 'tests/acceptance/oracle/dump-trace.cpp'
@@ -26,6 +27,13 @@ def main():
             files = {file: sha(directory / file) for file in
                      ['prompt.ids', 'greedy.ids', 'trace.txt', 'top.txt', 'provenance.json', 'decode.f32']}
             manifest[case] = {'model': entry, 'oracle_source_sha256': sha(source), 'files': files}
+    gemma = json.loads((ROOT / 'tests/acceptance/gemma-model.json').read_text())
+    for mode in gemma['cases']:
+        case = f'gemma-{mode}'
+        directory = ROOT / 'reference/oracle' / case
+        files = {file: sha(directory / file) for file in
+                 ['prompt.ids', 'greedy.ids', 'trace.txt', 'top.txt', 'provenance.json', 'decode.f32']}
+        manifest[case] = {'model': gemma, 'oracle_source_sha256': sha(source), 'files': files}
     (ROOT / 'tools/mlx-gguf-reference-manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
 
 

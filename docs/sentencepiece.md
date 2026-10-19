@@ -42,7 +42,7 @@ The shared [special-token contract](tokenizers.md#special-tokens) applies: user-
 | Boundary | Tracker |
 |---|---|
 | Other GGUF SentencePiece variants | [#62](https://github.com/communal-software/cl-inference/issues/62) |
-| HF SentencePiece pipelines beyond [TinyLlama BPE](hf-sentencepiece.md) | [#74](https://github.com/communal-software/cl-inference/issues/74) |
+| HF SentencePiece pipelines beyond [TinyLlama](hf-sentencepiece.md) and [Gemma BPE](gemma-hf.md) | [#75](https://github.com/communal-software/cl-inference/issues/75) |
 | Automatic EOS insertion | [#65](https://github.com/communal-software/cl-inference/issues/65); enabled configurations signal `tokenizer-error` |
 | Extra-whitespace normalization | [#66](https://github.com/communal-software/cl-inference/issues/66); enabled configurations signal `tokenizer-error` |
 

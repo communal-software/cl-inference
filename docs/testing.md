@@ -33,6 +33,7 @@ The [client](client.md) suite loads neither the engine nor cl-tensor and passes 
 | `tests/local/sampler.lisp` | Samplers: greedy equivalence, top-k and top-p, seeds and a golden sequence, raw SplitMix64 vectors and uniform draws, argument checks, non-finite logits, `generate` with a sampler |
 | `tests/local/session.lisp` | Sessions against the reference: chunked prefill, n-ctx defaults, `generate` finish reasons, cancel and deadline, streamed text, stop strings, cache continuation |
 | `tests/local/blocks.lisp` | Blocks and `model-forward` against a double-precision reference: both RoPE pairings, frequency factors, partial RoPE, GQA, QK-norm, tied head, F16/BF16 encoded and tiled projections, SIMD tails, the 256-row boundary, offset/padded/strided views, mapped storage identity, bounded scratch, empty dimensions, missing-native fallback, per-layer traces, cache |
+| `tests/local/gemma-hf.lisp`, `data/gemma-hf-*.json` | Gemma HF BPE, exact offline/real tokenization and streaming, model mappings, norm offsets, F32/F16/BF16 fixtures and rejection cases |
 | `tests/local/gemma.lisp`, `gemma-expected.lisp` | Gemma blocks against the independent reference, local/global masks, cached decoding, client integration, 20 offline template cases and 252 optional pinned tokenizer cases |
 | `tests/local/qwen3.lisp` | Shipped Qwen3 architecture: explicit head dimension, reference logits, cached decoding, required Q/K norms, tied head and template fallback with stop handling |
 | `tests/local/packed.lisp`, `quant-golden.lisp` | Q4_0/Q4_K/Q6_K against independently decoded llama.cpp blocks, packed views, gathers, mapped storage, mixed models and cached decoding |
@@ -121,7 +122,7 @@ Packed GGUF/MLX fixtures use `asdf:test-system "cl-inference/mlx-gguf"`. [GGUF/M
 
 ## Gemma checks
 
-[Gemma 3](gemma.md#pinned-acceptance) has a strict CPU Q8_0 suite against F32-dequantized llama.cpp, including multi-turn chat, a 557-token window-crossing prompt and cached logits after chunked prefill. Its [fixture generator](gemma.md#tokenizer-and-template-fixtures) verifies tokenizer and template expectations.
+[Gemma 3](gemma.md#pinned-acceptance) has a strict CPU Q8_0 suite against F32-dequantized llama.cpp, including multi-turn chat, a 557-token window-crossing prompt and cached logits after chunked prefill. Its [fixture generator](gemma.md#tokenizer-and-template-fixtures) verifies tokenizer and template expectations. [Gemma HF acceptance](gemma-hf.md#acceptance) verifies CPU/MLX floating Safetensors against Transformers F32; [MLX GGUF acceptance](mlx-gguf-acceptance.md) includes the same five Gemma cases in Q8_0 form.
 
 ## ONNX
 

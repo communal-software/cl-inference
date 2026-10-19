@@ -21,7 +21,7 @@ HTTP-only clients load `cl-inference` without the local engine or cl-tensor. Cli
 |---|---|---|---|
 | `llama` | Llama 3.2 1B Instruct | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `llama-bpe`, `llama3-chat` |
 | `qwen3` | Qwen3 0.6B | F16, Q8_0, Q4_0, Q4_K_M, Q6_K | `qwen2`, `qwen3-chat` |
-| `gemma3` | [Gemma 3 270M IT](gemma.md) | Q8_0 (CPU) | `llama-spm`, `gemma3-chat` |
+| `gemma3` | [Gemma 3 270M IT](gemma.md) | Q8_0 (CPU/MLX) | `llama-spm`, `gemma3-chat` |
 
 [Llama SentencePiece](sentencepiece.md) has pinned tokenizer parity coverage; additional SentencePiece model support requires architecture and chat-template acceptance.
 
@@ -43,15 +43,15 @@ CPU local fixtures pass on SBCL, CCL and ECL. Real-model CPU inference is verifi
 |---|---|---|
 | ONNX decoder graph | `cl-inference/onnx` | SmolLM2 135M FP32 on CPU; [setup and export boundary](onnx.md), [pinned acceptance](onnx-acceptance.md) |
 | GGUF v3, little-endian | `cl-inference/gguf` | Model metadata and mapped tensor views |
-| Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3 fixtures, ordinary and Llama 3 RoPE; HF tokenizers and chat setup |
+| Safetensors, HF configuration and indexed shards | `cl-inference/safetensors` | Mapped tensors; CPU Llama/Qwen3/Gemma fixtures and Gemma 270M IT acceptance, ordinary and Llama 3 RoPE; HF tokenizers and chat setup |
 | F32, F16, BF16 inference weights | `cl-inference/local` and the format loader | Offline model/block fixtures; F16 also has real-model acceptance |
-| MLX packed Q4/Q6 GGUF inference | `cl-inference/mlx-gguf` | Apple Silicon; [formats, ownership and usage](mlx-gguf.md) |
+| MLX packed Q4/Q6/Q8 GGUF inference | `cl-inference/mlx-gguf` | Apple Silicon; [formats, ownership and usage](mlx-gguf.md) |
 | MLX float and affine 4-bit inference | `cl-inference/mlx` | Apple Silicon; Llama 3.2 1B Instruct and Qwen3 0.6B real-model acceptance |
 | Q8_0, Q4_0, Q4_K and Q6_K inference weights | `cl-inference/quant` | Packed dtypes and matmul; real-model acceptance, including mixed Q4_K/Q6_K files |
 
 Reading a GGUF file does not establish inference support for every tensor encoding. The reader exposes additional scalar tensor types and raw bytes for other quantized types; see [GGUF](gguf.md#tensor-types). Other quantizations and formats are [limitations](#limitations).
 
-[Safetensors](safetensors.md) exposes configuration and tensor storage independently of execution. Llama/Qwen3 CPU models accept F32/F16/BF16 weights; quantized configurations are rejected. The shipped [HF tokenizers](hf-tokenizers.md) configure Llama/Qwen3 chat for CPU and MLX backends. [MLX acceptance](mlx-acceptance.md) covers Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form; other real Safetensors variants remain unverified.
+[Safetensors](safetensors.md) exposes configuration and tensor storage independently of execution. Llama/Qwen3/Gemma CPU models accept F32/F16/BF16 weights; quantized configurations are rejected. The shipped [HF tokenizers](hf-tokenizers.md) configure Llama/Qwen3/Gemma chat for CPU and MLX backends. [MLX acceptance](mlx-acceptance.md) covers Llama 3.2 1B Instruct and Qwen3 0.6B in BF16 and affine 4-bit form; [Gemma 3 270M IT floating Safetensors](gemma-hf.md) has CPU and MLX F32 acceptance. Other real Safetensors variants remain unverified.
 
 ## Choose a backend
 

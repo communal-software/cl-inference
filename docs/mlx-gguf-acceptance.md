@@ -1,10 +1,23 @@
 # MLX GGUF acceptance
 
-Strict acceptance runs all 15 plain/chat/thinking cases across Llama 3.2 1B Instruct and Qwen3 0.6B in Q4_0, Q4_K_M and Q6_K form. The reference executes each model's own packed weights after independent F32 dequantization in llama.cpp.
+Gemma 3 270M IT Q8_0 has five strict acceptance cases against its own weights independently dequantized to F32 by llama.cpp. The suite also contains 15 Llama/Qwen Q4/Q6 cases; their current provenance blocker is listed under [Limitations](#limitations).
+
+## Gemma Q8_0
+
+Prepare the pinned GGUF using [Gemma acceptance](gemma.md#pinned-acceptance). `tools/prepare-mlx-gguf.py` generates references and manifests for every packed route, including Gemma. The committed manifest pins the input model, oracle source and consumed output hashes.
+
+```sh
+CL_INFERENCE_MLX_GGUF_ACCEPTANCE_STRICT=1 \
+sbcl --dynamic-space-size 8GB --non-interactive --eval '(require :asdf)' \
+  --eval '(asdf:load-system "cl-inference/mlx-gguf/acceptance")' \
+  --eval '(unless (cl-inference/mlx-gguf/tests:run-acceptance :strict t :suite :cl-inference/gemma-mlx-gguf/acceptance) (uiop:quit 1))'
+```
+
+The five cases cover plain text, user chat, a system prefix, multi-turn chat and a 557-token window-crossing prompt. All 311 checks pass without skips on M1/SBCL. Full/chunked prefill, every layer's last prompt position, cached decoding and greedy generation meet the requirements below. Gemma uses 128-token prefill batches; other cases use seven-token batches.
 
 ## Prepare
 
-Use the six artifact hashes in `tests/acceptance/quant-models.json` and llama.cpp revision `8bb3cf0d216a5ae48360179f2931daf284be4d01`. Preparation requires the pinned F16 source models from [CPU acceptance](acceptance.md), Python 3.11+, CMake and a C++ compiler.
+The full preparation also requires the Gemma Q8_0 download described above. Use the six Llama/Qwen artifact hashes in `tests/acceptance/quant-models.json` and llama.cpp revision `8bb3cf0d216a5ae48360179f2931daf284be4d01`. Preparation requires the pinned F16 source models from [CPU acceptance](acceptance.md), Python 3.11+, CMake and a C++ compiler.
 
 ```sh
 python3 tools/prepare-mlx-gguf.py
@@ -22,10 +35,6 @@ CL_INFERENCE_MLX_GGUF_ACCEPTANCE_STRICT=1 \
 
 Missing required inputs fail strict mode; ordinary runs skip absent model/dump inputs. Hash and provenance mismatches fail in either mode. Skips do not establish acceptance.
 
-## Verified run
-
-On Apple M1/SBCL 2.6.8, all 15 cases pass 1,092 checks without skips. Across full/chunked prefill and cached-decode logit comparisons, the maximum relative L2 error is `0.0061835`, minimum cosine is `0.999982406`, and maximum absolute error is `0.0807533`. Prefill top-five IDs and all greedy IDs match.
-
 ## Requirements
 
 | Check | Bound |
@@ -38,6 +47,12 @@ On Apple M1/SBCL 2.6.8, all 15 cases pass 1,092 checks without skips. Across ful
 | Public generation | IDs before the first stop and finish reason match |
 | Independent block/projection/embedding fixtures | Elementwise error ≤ `1e-4 + 1e-4 × abs(reference)` |
 
-Chunked prefill uses `n-batch 7`. The suite checks each of eight cached decode steps unless a stop token ends the reference earlier. Error reports include maximum absolute error, relative L2 and cosine. Cached non-greedy ranks may exchange positions when logits are closer than the numerical error bound. Native packed llama.cpp execution is not the numerical oracle because it introduces additional activation quantization.
+Chunked prefill uses the batch sizes described above. The suite checks each of eight cached decode steps unless a stop token ends the reference earlier. Error reports include maximum absolute error, relative L2 and cosine. Cached non-greedy ranks may exchange positions when logits are closer than the numerical error bound. Native packed llama.cpp execution is not the numerical oracle because it introduces additional activation quantization.
+
+## Limitations
+
+| Boundary | Tracker |
+|---|---|
+| Existing Llama/Qwen strict cases require oracle regeneration after the committed source changed | [#76](https://github.com/communal-software/cl-inference/issues/76) |
 
 [^oracle]: `DUMP_DECODE_LOGITS=1` enables the optional binary output in the development C++ oracle. Existing CPU trace and greedy files retain their formats. The last non-stop greedy token is decoded as well, yielding nine logit rows for an eight-token case. Oracle source changes require regeneration and manifest review.

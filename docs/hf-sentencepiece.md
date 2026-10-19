@@ -12,6 +12,8 @@ The HF reader loads the pinned **TinyLlama-1.1B-Chat-v1.0** `tokenizer.json` pip
 
 The directory contains ordinary Safetensors weights and the pinned HF sidecars. Tokenizer parity does not establish real-model inference acceptance. The bundled chat template is [outside the supported template coverage](#limitations); callers supply an explicit native template.
 
+[Gemma 3 270M IT](gemma-hf.md#tokenizer-pipeline) has a separate pinned character-BPE profile: no prepended space, no initial-space stripping, and different added tokens. Both profiles use the existing tokenizer API.
+
 ## Supported pipeline
 
 | Stage | Behavior |
@@ -45,7 +47,7 @@ Offline fixtures and the pinned real artifact compare exact IDs, decoding and st
 
 | Boundary | Tracker |
 |---|---|
-| Other HF SentencePiece pipelines, Unigram and original `.model` files | [#74](https://github.com/communal-software/cl-inference/issues/74) |
+| Other HF SentencePiece pipelines, Unigram and original `.model` files | [#75](https://github.com/communal-software/cl-inference/issues/75) |
 | TinyLlama's bundled chat template and other unpinned template variants | [Template limitations](chat-families.md#limitations) |
 | Automatic EOS insertion | [#65](https://github.com/communal-software/cl-inference/issues/65) |
 

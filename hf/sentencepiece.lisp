@@ -3,6 +3,9 @@
 (defclass hf-sentencepiece-bpe (local:byte-level-bpe) ()
   (:metaclass local:tokenizer-class))
 
+(defclass hf-gemma-bpe (hf-sentencepiece-bpe) ()
+  (:metaclass local:tokenizer-class))
+
 (defparameter *hf-sentencepiece-pipeline*
   (parse-json-object
    (local::utf8-octets
@@ -23,6 +26,20 @@
                  {\"Sequence\": {\"id\": \"B\", \"type_id\": 1}}],
         \"special_tokens\": {\"<s>\": {\"id\": \"<s>\", \"ids\": [1], \"tokens\": [\"<s>\"]}}}}")))
 
+(defparameter *hf-gemma-pipeline*
+  (let ((pipeline (parse-json-object
+                   (local::utf8-octets
+                    "{\"normalizer\":{\"type\":\"Replace\",\"pattern\":{\"String\":\" \"},\"content\":\"▁\"},
+                      \"pre_tokenizer\":{\"type\":\"Split\",\"pattern\":{\"String\":\" \"},\"behavior\":\"MergedWithPrevious\",\"invert\":false},
+                      \"decoder\":{\"type\":\"Sequence\",\"decoders\":[{\"type\":\"Replace\",\"pattern\":{\"String\":\"▁\"},\"content\":\" \"},{\"type\":\"ByteFallback\"},{\"type\":\"Fuse\"}]}}"))))
+    (setf (gethash "post_processor" pipeline)
+          (parse-json-object
+           (local::utf8-octets
+            "{\"type\":\"TemplateProcessing\",\"single\":[{\"SpecialToken\":{\"id\":\"<bos>\",\"type_id\":0}},{\"Sequence\":{\"id\":\"A\",\"type_id\":0}}],
+              \"pair\":[{\"SpecialToken\":{\"id\":\"<bos>\",\"type_id\":0}},{\"Sequence\":{\"id\":\"A\",\"type_id\":0}},{\"SpecialToken\":{\"id\":\"<bos>\",\"type_id\":1}},{\"Sequence\":{\"id\":\"B\",\"type_id\":1}}],
+              \"special_tokens\":{\"<bos>\":{\"id\":\"<bos>\",\"ids\":[2],\"tokens\":[\"<bos>\"]}}}")))
+    pipeline))
+
 (defun hf-json-equal-p (left right)
   (cond ((hash-table-p right)
          (and (hash-table-p left) (= (hash-table-count left) (hash-table-count right))
@@ -35,8 +52,9 @@
         (t (equal left right))))
 
 (defun hf-sentencepiece-pipeline-p (object architecture)
-  (let ((model (gethash "model" object)))
-    (unless (and (equal architecture "llama") (hash-table-p model)
+  (let ((model (gethash "model" object))
+        (pipeline (if (equal architecture "gemma3_text") *hf-gemma-pipeline* *hf-sentencepiece-pipeline*)))
+    (unless (and (member architecture '("llama" "gemma3_text") :test #'equal) (hash-table-p model)
                  (eq t (gethash "byte_fallback" model)))
       (return-from hf-sentencepiece-pipeline-p nil))
     (unless (and (equal "BPE" (gethash "type" model))
@@ -47,19 +65,21 @@
                  (eq t (gethash "fuse_unk" model))
                  (not (gethash "ignore_merges" model))
                  (every (lambda (key) (hf-null-p (gethash key object)))
-                        '("pre_tokenizer" "padding" "truncation"))
+                        '("padding" "truncation"))
                  (every (lambda (key)
-                          (hf-json-equal-p (gethash key object)
-                                           (gethash key *hf-sentencepiece-pipeline*)))
-                        '("normalizer" "decoder" "post_processor")))
+                          (if (and (equal key "pre_tokenizer") (hf-null-p (gethash key pipeline)))
+                              (hf-null-p (gethash key object))
+                              (hf-json-equal-p (gethash key object) (gethash key pipeline))))
+                        '("normalizer" "pre_tokenizer" "decoder" "post_processor")))
       (local::tokenizer-fail 'local:tokenizer-error "Unsupported HF SentencePiece BPE pipeline"))
     t))
 
 (defmethod local:tokenizer-load ((tokenizer hf-sentencepiece-bpe) format (weights hf-weights))
   (declare (ignore format))
   (let* ((object (hf-sidecar weights "tokenizer.json" t))
-         (config (or (hf-sidecar weights "tokenizer_config.json") (make-hash-table :test 'equal))))
-    (unless (hf-sentencepiece-pipeline-p object "llama")
+         (config (or (hf-sidecar weights "tokenizer_config.json") (make-hash-table :test 'equal)))
+         (gemma (typep tokenizer 'hf-gemma-bpe)))
+    (unless (hf-sentencepiece-pipeline-p object (if gemma "gemma3_text" "llama"))
       (local::tokenizer-fail 'local:tokenizer-error "Not an HF SentencePiece BPE pipeline"))
     (dolist (key '("add_bos_token" "add_eos_token" "add_prefix_space" "split_special_tokens"
                    "clean_up_tokenization_spaces"
@@ -100,12 +120,14 @@
     (local::build-merges tokenizer (hf-merges object))
     (multiple-value-bind (bos id) (hf-bos-postprocessor (gethash "post_processor" object))
       (unless (and (= id (or (local:token-id tokenizer bos) -1))
-                   (eql 0 (local:token-id tokenizer "<unk>"))
-                   (eql 2 (local:token-id tokenizer "</s>"))
+                   (eql (if gemma 3 0) (local:token-id tokenizer "<unk>"))
+                   (eql (if gemma 1 2) (local:token-id tokenizer (if gemma "<eos>" "</s>")))
                    (every (lambda (id) (= (aref (local::tokenizer-types tokenizer) id) local::+token-control+))
-                          '(0 1 2)))
+                          (if gemma '(0 1 2 3) '(0 1 2))))
         (local::tokenizer-fail 'local:tokenizer-error "HF SentencePiece special tokens disagree with the pipeline"))
-      (dolist (entry '(("bos_token" . "<s>") ("eos_token" . "</s>") ("unk_token" . "<unk>")))
+      (dolist (entry (if gemma
+                         '(("bos_token" . "<bos>") ("eos_token" . "<eos>") ("unk_token" . "<unk>") ("pad_token" . "<pad>"))
+                         '(("bos_token" . "<s>") ("eos_token" . "</s>") ("unk_token" . "<unk>"))))
         (multiple-value-bind (value present) (gethash (car entry) config)
           (when (and present (not (equal (if (hash-table-p value) (gethash "content" value) value) (cdr entry))))
             (local::tokenizer-fail 'local:tokenizer-error "HF SentencePiece special-token configuration disagrees")))
@@ -113,7 +135,7 @@
       (unless (nth-value 1 (gethash "add_bos_token" config))
         (setf (gethash "add_bos_token" config) t)))
     (hf-special-ids tokenizer weights config)
-    (setf (aref (local::tokenizer-types tokenizer) 0) local::+token-unknown+)
+    (setf (aref (local::tokenizer-types tokenizer) (if gemma 3 0)) local::+token-unknown+)
     tokenizer))
 
 (defmethod local:pre-tokenize ((tokenizer hf-sentencepiece-bpe) text)
@@ -121,7 +143,7 @@
   (local::tokenizer-fail 'local:tokenizer-error "HF SentencePiece BPE has no split-based pre-tokenizer"))
 
 (defmethod local::encode-plain ((tokenizer hf-sentencepiece-bpe) text out work)
-  (let ((text (substitute #\▁ #\Space (concatenate 'string "▁" text))) (count 0))
+  (let ((text (substitute #\▁ #\Space (if (typep tokenizer 'hf-gemma-bpe) text (concatenate 'string "▁" text)))) (count 0))
     (local::bpe-work-reserve work (* 4 (length text)))
     (loop for char across text
           for id = (local:token-id tokenizer (string char))
@@ -163,7 +185,8 @@
     text))
 
 (defun hf-spm-strip-initial (decoder text)
-  (when (and (hf-spm-detokenizer-initial decoder) (plusp (length text)))
+  (when (and (not (typep (local::detokenizer-tokenizer decoder) 'hf-gemma-bpe))
+             (hf-spm-detokenizer-initial decoder) (plusp (length text)))
     (setf (hf-spm-detokenizer-initial decoder) nil)
     (when (char= (char text 0) #\Space) (setf text (subseq text 1))))
   text)
@@ -187,3 +210,11 @@
     (with-output-to-string (out)
       (map nil (lambda (id) (write-string (local:detokenizer-push decoder id) out)) ids)
       (write-string (local:detokenizer-finish decoder) out))))
+
+(defmethod local:pre-tokenize ((tokenizer hf-gemma-bpe) text)
+  (let ((start 0) (pieces nil))
+    (loop for end from 0 below (length text)
+          when (char= (char text end) #\Space)
+            do (push (subseq text start (1+ end)) pieces) (setf start (1+ end)))
+    (when (< start (length text)) (push (subseq text start) pieces))
+    (nreverse pieces)))

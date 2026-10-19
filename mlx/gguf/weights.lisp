@@ -10,14 +10,15 @@
 
 (defmethod validate-mlx-source ((weights mlx-gguf-weights) architecture)
   ;; Container checks belong to the GGUF reader; shared block bindings check model shapes.
-  (declare (ignore weights architecture)))
+  (when (typep architecture 'local:gemma3)
+    (local::validate-model-weights (source-weights weights) architecture)))
 
 (defun gguf-block-layout (type)
-  (ecase type (:q4_0 (values 0 32 18)) (:q4_k (values 1 256 144)) (:q6_k (values 2 256 210))))
+  (ecase type (:q4_0 (values 0 32 18)) (:q4_k (values 1 256 144)) (:q6_k (values 2 256 210)) (:q8_0 (values 3 32 34))))
 
 (defun validate-gguf-scales (pointer count type block-bytes name)
   (loop for base below count by block-bytes do
-    (dolist (offset (ecase type (:q4_0 '(1)) (:q4_k '(1 3)) (:q6_k '(209))))
+    (dolist (offset (ecase type (:q4_0 '(1)) (:q4_k '(1 3)) (:q6_k '(209)) (:q8_0 '(1))))
       (when (= (logand (cffi:mem-aref pointer :uint8 (+ base offset)) #x7c) #x7c)
         (model-fail "Non-finite ~A scale in ~A at byte ~D" type name base)))))
 
@@ -26,7 +27,7 @@
          (shape (local:tensor-info-shape info)))
     (cond
       ((member type '(:f32 :f16 :bf16)) (call-next-method))
-      ((member type '(:q4_0 :q4_k :q6_k))
+      ((member type '(:q4_0 :q4_k :q6_k :q8_0))
        (or (gethash name (packed-weights weights))
            (multiple-value-bind (format elements block-bytes) (gguf-block-layout type)
              (unless (and (= (length shape) 2) (every #'plusp shape)
