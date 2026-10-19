@@ -82,7 +82,7 @@ A function `:stream` sink receives plists, never raw wire chunks:
 | `:tool-call-delta` | `:ref`, `:id`, `:name`, `:arguments` (a fragment) |
 | `:done` | `:ref`, `:reason` (finish reason, or the failed result) |
 
-A turn ends with exactly one `:done`. The sink runs on the calling thread; a sink that signals is ignored.[^sink]
+A turn ends with exactly one `:done`, including request validation and unknown-backend failures. The sink runs on the calling thread; a sink that signals is ignored.[^sink]
 
 ## Backends
 
@@ -186,7 +186,6 @@ actions when they finish, so a token can be reused across calls until cancelled.
 
 | Missing | Tracker |
 |---|---|
-| Preflight failures omit the closing stream event | [#73](https://github.com/communal-software/cl-inference/issues/73) |
 | One watcher thread per call | [#26](https://github.com/communal-software/cl-inference/issues/26) |
 | `json-get` is O(n²) on large objects | [#25](https://github.com/communal-software/cl-inference/issues/25) |
 | usocket connect-refusal workaround | [#27](https://github.com/communal-software/cl-inference/issues/27) |

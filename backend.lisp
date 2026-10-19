@@ -64,12 +64,11 @@ the names of that kind."
 (defun complete (backend &rest request)
   "Perform one turn against BACKEND, a registered keyword or a backend object.
 Answers (:ok plist) or (:error reason)."
-  ;; TODO: finalize preflight failures through the closing-event path (#73).
   (let ((backend (resolve-backend backend))
         (problem (check-request request)))
     (cond
-      ((null backend) (fail :unavailable))
-      (problem (bad-request "~a" problem))
+      ((null backend) (finish-completion request (fail :unavailable)))
+      (problem (finish-completion request (bad-request "~a" problem)))
       (t (handler-case (backend-complete backend request)
            (error (e) (fail (list :error (princ-to-string e)))))))))
 

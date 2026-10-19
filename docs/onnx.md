@@ -55,7 +55,6 @@ Loading validates this signature against the HF dimensions, tokenizer vocabulary
 | Missing | Tracker |
 |---|---|
 | Additional exports/dtypes, accelerators, cross-request cache reuse, concurrent per-call policy and tools | [#72](https://github.com/communal-software/cl-inference/issues/72) |
-| Common client preflight failures return before stream finalization | [#73](https://github.com/communal-software/cl-inference/issues/73) |
 
 [^tokenizer]: The tokenizer applies individual digit splitting followed by GPT-2 byte-level BPE. Sparse byte tokens are handled like the pinned Hugging Face tokenizer: an absent byte token is dropped and separates BPE spans. Acceptance includes control bytes, Unicode and mixed-case contractions.
 

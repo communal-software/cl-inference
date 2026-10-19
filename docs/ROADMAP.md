@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 18 October 2026 · GitHub · 161 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 18 October 2026 · GitHub · 160 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -19,11 +19,11 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 
 | Repository | P0 | P1 | P2 | P3 | Open |
 |---|---:|---:|---:|---:|---:|
-| cl-inference | 0 | 9 | 12 | 8 | 29 |
+| cl-inference | 0 | 9 | 11 | 8 | 28 |
 | cl-tensor | 0 | 3 | 8 | 11 | 22 |
 | cl-gpu | 0 | 10 | 14 | 24 | 48 |
 | trivial-simd | 0 | 0 | 10 | 52 | 62 |
-| **Total** | **0** | **22** | **44** | **95** | **161** |
+| **Total** | **0** | **22** | **43** | **95** | **160** |
 
 ## Work order
 
@@ -92,7 +92,7 @@ Completed scaffold, GGUF-reader and ECL/CCL prerequisites are not current blocke
 
 ### P0 — critical
 
-No open issue in this audit establishes a main-path SBCL inference correctness blocker. Secondary compiler issues, the GPU mixed-dot range defect and rejected-request stream closing remain P2 with their explicit scope.
+No open issue in this audit establishes a main-path SBCL inference correctness blocker. Secondary compiler issues and the GPU mixed-dot range defect remain P2 with their explicit scope.
 
 ### P1 — model and inference capability
 
@@ -136,7 +136,6 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-inference | [#59 — Half-weight serial dispatch: account for irregular-layout packing costs](https://github.com/communal-software/cl-inference/issues/59) | Open — unassigned | Serial irregular-layout auto dispatch is about 12–15× slower than tiled conversion in the isolated profile. Measure a layout-aware policy; preserve mapped/padded paths. |
 | cl-inference | [#68 — MLX GGUF: reuse packed weight tiles across prefill token rows](https://github.com/communal-software/cl-inference/issues/68) | Open — unassigned | Measure packed GGUF prefill tile reuse across token rows; preserve quantized-format and cached-decode acceptance. |
 | cl-inference | [#70 — Gemma sliding-window layers: bound KV storage and attention work](https://github.com/communal-software/cl-inference/issues/70) | Open — unassigned | Bound sliding-layer KV history and attention to the local window; preserve absolute positions and global layers. Verify beyond 512 tokens. |
-| cl-inference | [#73 — Client preflight failures omit the closing stream event](https://github.com/communal-software/cl-inference/issues/73) | Open — unassigned | Preflight errors omit the required closing stream event. Route validation/backend-resolution failures through common bounded closing logic; preserve errors, refs and sink handling. |
 | cl-tensor | [#4 — CI](https://github.com/communal-software/cl-tensor/issues/4) | Open — unassigned | Protects tensor correctness on the main development path. |
 | cl-tensor | [#6 — Avoid unnecessary snapshots for mixed Lisp and foreign storage](https://github.com/communal-software/cl-tensor/issues/6) | Open — unassigned | Reproduce the mapped F32 projection snapshot cost on current code, then prove disjoint mixed storage without weakening alias safety. |
 | cl-tensor | [#9 — Investigate incomplete or crashing normalization reference checks on experimental ARM64 CCL](https://github.com/communal-software/cl-tensor/issues/9) | Open — unassigned | CCL secondary support: green tests can omit assertions; require complete trial counts. |

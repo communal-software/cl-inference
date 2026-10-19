@@ -275,29 +275,31 @@ request with a :STREAM sink ends it with exactly one :DONE."
                            (open-connection url *exchange*
                                             (getf request :timeout +default-timeout+)))))))
 
+(defun finish-completion (request result)
+  "Deliver the bounded closing event and return RESULT unchanged."
+  (let ((sink (getf request :stream)))
+    (when sink
+      (call-bounded *sink-grace*
+                    (lambda (exchange)
+                      (declare (ignore exchange))
+                      (emit-event sink (done (getf request :ref)
+                                             (done-reason result)))))))
+  result)
+
 (defun call-with-completion-deadline (request function)
   "Run zero-argument FUNCTION under REQUEST's deadline; emit one bounded closing event."
-  (let ((sink (getf request :stream)))
-    (multiple-value-bind (result reason)
-        (call-bounded
-         (/ (getf request :timeout +default-timeout+) 1000)
-         (lambda (exchange)
-           (declare (ignore exchange))
-           (funcall function))
-         :cancel (getf request :cancel))
-      (let ((result (case reason
-                      (:timeout (fail :timeout))
-                      (:cancelled (fail :cancelled))
-                      (t result))))
-        (when sink
-          ;; Bounded on its own: the exchange's deadline has passed, and a sink
-          ;; that blocks on :done must not hold the caller.
-          (call-bounded *sink-grace*
-                        (lambda (exchange)
-                          (declare (ignore exchange))
-                          (emit-event sink (done (getf request :ref)
-                                                 (done-reason result))))))
-        result))))
+  (multiple-value-bind (result reason)
+      (call-bounded
+       (/ (getf request :timeout +default-timeout+) 1000)
+       (lambda (exchange)
+         (declare (ignore exchange))
+         (funcall function))
+       :cancel (getf request :cancel))
+    (finish-completion request
+                       (case reason
+                         (:timeout (fail :timeout))
+                         (:cancelled (fail :cancelled))
+                         (t result)))))
 
 (defun attempt-completion (request opener reader connect)
   ;; The two failure regions are kept apart: nothing read yet is a transport

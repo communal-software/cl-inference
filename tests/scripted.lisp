@@ -118,3 +118,55 @@
   (let ((backend (client:make-scripted-backend :replies '("never"))))
     (signals client:completion-bad-request (client:complete* backend))
     (is (null (client:scripted-requests backend)))))
+
+(test preflight-failures-close-the-stream-with-the-original-result
+  (dolist (unknown '(nil t))
+    (dolist (sink-mode '(:collect :signal :block :none))
+      (let* ((backend (client:make-scripted-backend :echo t))
+             (token (client:make-cancel-token))
+             (thread (bt:current-thread))
+             (client::*sink-grace* 0.05)
+             (events nil)
+             (unwound nil)
+             (started (get-internal-real-time)))
+        (client:cancel token)
+        (let ((result
+                (client:complete
+                 (if unknown :nobody backend)
+                 :messages '((:role :tool :content "x"))
+                 :ref :preflight :cancel token :timeout 0
+                 :stream (unless (eq sink-mode :none)
+                           (lambda (event)
+                             (is (eq thread (bt:current-thread)))
+                             (push event events)
+                             (case sink-mode
+                               (:signal (error "sink failure"))
+                               (:block (unwind-protect (sleep 10)
+                                         (setf unwound t)))))))))
+          (if unknown
+              (is (equal '(:error :unavailable) result))
+              (is (bad-request-p result)))
+          (unless (eq sink-mode :none)
+            (is (equal (list (client:done :preflight result)) events)))
+          (when (eq sink-mode :block)
+            (is (eq t unwound))
+            (is (< (/ (- (get-internal-real-time) started)
+                      internal-time-units-per-second) 2)))
+          (is (null (client:scripted-requests backend))))))))
+
+(test unknown-backend-with-a-valid-request-closes-the-stream
+  (let (events)
+    (let ((result (apply #'client:complete :nobody
+                         (hello :stream (lambda (event) (push event events))))))
+      (is (equal '(:error :unavailable) result))
+      (is (equal (list (client:done nil result)) events)))))
+
+(test complete*-closes-preflight-streams-before-signalling
+  (let (events)
+    (handler-case
+        (client:complete* (client:make-scripted-backend)
+                          :stream (lambda (event) (push event events)))
+      (client:completion-bad-request ()
+        (is (= 1 (length events)))
+        (is (eq :done (getf (first events) :type)))
+        (is (bad-request-p (getf (first events) :reason)))))))
