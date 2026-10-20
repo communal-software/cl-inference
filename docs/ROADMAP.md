@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 20 October 2026 · GitHub · 172 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 20 October 2026 · GitHub · 173 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -22,8 +22,8 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 | cl-inference | 0 | 9 | 10 | 8 | 27 |
 | cl-tensor | 0 | 3 | 8 | 11 | 22 |
 | cl-gpu | 0 | 11 | 17 | 34 | 62 |
-| trivial-simd | 0 | 0 | 10 | 51 | 61 |
-| **Total** | **0** | **23** | **45** | **104** | **172** |
+| trivial-simd | 0 | 0 | 11 | 51 | 62 |
+| **Total** | **0** | **23** | **46** | **104** | **173** |
 
 ## Work order
 
@@ -165,6 +165,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | trivial-simd | [#59 — CCL ARM64 typed complex-double arithmetic drops an operand](https://github.com/communal-software/trivial-simd/issues/59) | Open — unassigned | Secondary CCL compiler correctness audit; workarounds exist, wider exposure needs checking. |
 | trivial-simd | [#60 — Investigate intermittent Rosetta host assertion in CCL x86-64 (library-independent reproducer)](https://github.com/communal-software/trivial-simd/issues/60) | Open — unassigned | Secondary CCL/Rosetta validation reliability; distinguish host crashes from library failures. |
 | trivial-simd | [#74 — Tune encoded matmul for larger activation batches](https://github.com/communal-software/trivial-simd/issues/74) | Open — unassigned | Measured large-batch encoded matmul gap; retain tiled BLAS dispatch and small-batch wins. |
+| trivial-simd | [#87 — Validate native-F16 specialization across Qwen and Llama with sufficient memory](https://github.com/communal-software/trivial-simd/issues/87) | Open — unassigned | Native-F16-only candidate reduces Qwen cached-decode time by 2.1%, with nearly flat generation; validate the Llama projection regression with enough free memory before admission. |
 
 ### P3 — deferred
 

@@ -17,7 +17,7 @@ Inclusive traversal costs contain copying and child calls; they overlap other en
 
 ## Next measurements
 
-1. Attribute weight conversion and loading costs within encoded matrix kernels. The [ARM64 wider-tile experiment](https://github.com/communal-software/trivial-simd/blob/trunk/docs/encoded-decode-tiles.md) does not establish a Qwen improvement; the four-output kernel remains selected. Compare complete decode calls before selecting another kernel change.
+1. Attribute weight conversion and loading costs within encoded matrix kernels. The [ARM64 wider-tile experiment](https://github.com/communal-software/trivial-simd/blob/trunk/docs/encoded-decode-tiles.md) does not establish a Qwen improvement; the four-output kernel remains selected. The [conversion-mode experiment](https://github.com/communal-software/trivial-simd/blob/trunk/docs/encoded-format-specialization.md) measures a modest native-F16 Qwen decode gain, but the runtime remains unchanged pending cross-model validation. Compare complete decode calls before selecting another kernel change.
 2. Attribute remaining copying and allocation after the bulk-copy path. The generic-copy profile records 18–28% inclusive traversal samples; reusable scratch requires separate ownership and layout validation.
 
 The table describes the generic-copy runtime identified in the archived metadata. Bulk-copy results use a separate alternating-process comparison; the remaining candidates require further measurements.
@@ -31,6 +31,9 @@ SBCL CPU sampling requests a 2 ms interval over repeated inference calls for at 
 [Reports, environment observations, exact harnesses and revision/hash metadata](benchmark-runs/2026-10-20-inference-hotspots/) preserve all four runs. System-wide swap-in counter increases across the complete processes are 24, 12, 17 and 8 pages respectively (16 KiB pages); swap-out counters do not increase. These observations include loading and setup, rather than isolating the sampling window.
 
 ## Limitations
+
+The native-F16 specialization candidate needs a valid Llama comparison with enough free memory before admission: [cross-model validation](https://github.com/communal-software/trivial-simd/issues/87).
+
 
 This is a single Apple M1 with 8 GB RAM, macOS 15.7.5 and SBCL 2.6.8. Existing swap usage is about 5.5 GiB. Two unrelated CPU-bound jobs remain active. These are exploratory hotspot samples, not controlled throughput comparisons.
 
