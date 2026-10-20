@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-cpu
       - name: Test client in a fresh Lisp process
         shell: lispsh -eo pipefail {0}
@@ -48,7 +48,7 @@ jobs:
           python3 -m unittest discover -s tests/mlx-gguf -p 'test_*.py' 2>&1 | tee ci-logs/python.log
       - name: Upload failure logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fixture-failure
           path: ci-logs/
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-cpu
       - name: Prepare pinned model and oracle
         run: python3 tests/acceptance/prepare-qwen.py 2>&1 | tee ci-logs/preparation.log
@@ -70,7 +70,7 @@ jobs:
         run: ros -Q run --load tests/ci.lisp --quit 2>&1 | tee ci-logs/acceptance.log
       - name: Upload failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: acceptance-failure
           path: |

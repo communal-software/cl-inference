@@ -3,12 +3,12 @@ description: Install SBCL and pinned CPU dependencies without model downloads
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         repository: communal-software/cl-tensor
         ref: a7f765911268adfce9668ee8b4356f1ab238b01f
         path: .ci-deps/cl-tensor
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         repository: communal-software/trivial-simd
         ref: 19d734f8806e07d5ce5b806e90b44621f4347146
