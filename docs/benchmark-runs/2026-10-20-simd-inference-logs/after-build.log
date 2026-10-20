@@ -1,0 +1,19 @@
+-- The C compiler identification is AppleClang 17.0.0.17000604
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done (0.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: /var/folders/wq/s_ghp6b52817ynvf871j1dkh0000gn/T/simd-inference-rgzokbea/after/build
+[ 44%] Building C object CMakeFiles/trivial_simd.dir/native/blas.c.o
+[ 44%] Building C object CMakeFiles/trivial_simd.dir/native/trivial_simd.c.o
+[ 44%] Building C object CMakeFiles/trivial_simd.dir/native/complex.c.o
+[ 44%] Building C object CMakeFiles/trivial_simd.dir/native/extended.c.o
+[ 55%] Building C object CMakeFiles/trivial_simd.dir/native/q8.c.o
+[ 66%] Building C object CMakeFiles/trivial_simd.dir/native/encoded-matmul.c.o
+[ 77%] Building C object CMakeFiles/trivial_simd.dir/native/packed-matmul.c.o
+[ 88%] Building C object CMakeFiles/trivial_simd.dir/native/fma.c.o
+[100%] Linking C shared library libtrivial_simd.dylib
+[100%] Built target trivial_simd

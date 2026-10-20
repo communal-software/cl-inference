@@ -1,9 +1,11 @@
 (require :asdf)
 (unless (find-package :ql)
   (load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
-(asdf:initialize-source-registry
- `(:source-registry (:directory ,(merge-pathnames "../" (uiop:pathname-directory-pathname *load-truename*)))
-                   :inherit-configuration))
+(let ((simd (uiop:getenv "CL_INFERENCE_SIMD_SOURCE")))
+  (asdf:initialize-source-registry
+   `(:source-registry ,@(when simd `((:directory ,simd)))
+                     (:directory ,(merge-pathnames "../" (uiop:pathname-directory-pathname *load-truename*)))
+                     :inherit-configuration)))
 (asdf:load-system :cl-inference/local/acceptance)
 
 (defpackage #:cl-inference/parallel-bench
@@ -75,7 +77,7 @@
 
 (defun with-executors (function)
   (funcall function 0)
-  (dolist (workers '(2 4))
+  (dolist (workers (unless (uiop:getenv "CL_INFERENCE_PARALLEL_SERIAL_ONLY") '(2 4)))
     (multiple-value-bind (executor close) (tests::make-threaded-test-executor workers)
       (unwind-protect (let ((ct:*executor* executor)) (funcall function workers)) (funcall close)))))
 
@@ -158,6 +160,8 @@
                  (expected (tests::greedy-continuation model prompt 4)))
             (unwind-protect
                  (progn
+                   (when (uiop:getenv "CL_INFERENCE_PARALLEL_VERIFY")
+                     (format t "~&VERIFY,~A,~D,~{~D~^;~}~%" kind count expected))
                    (local:model-forward model prompt :cache cache)
                    (with-executors
                     (lambda (workers)

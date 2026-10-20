@@ -53,7 +53,7 @@ Live Ollama tests are skipped unless `CL_INFERENCE_OLLAMA_URL` (the `/v1` route)
 
 Full-model checks compare against a dev-only reference kept in the gitignored `reference/` directory, which also holds llama.cpp's `ggml-vocab-llama-bpe` and `ggml-vocab-qwen2` fixtures for the tokenizer. `reference/chat-templates.py` needs `jinja2` and the two official templates in `reference/templates/`; it regenerates the chat template expectations.
 
-[Half-precision measurements](half-linear-performance.md) benchmark complete `linear` calls, including conversion, result allocation and tensor metadata. Performance measurements run separately from test suites to avoid contention.
+[Half-precision measurements](half-linear-performance.md) benchmark complete `linear` calls, including conversion, result allocation and tensor metadata. Performance measurements run separately from test suites to avoid contention. [SIMD inference measurements](simd-inference-performance.md) compare complete CPU prefill, cached decode and generation across pinned SIMD revisions.
 
 ## Default tokenizer reference
 
