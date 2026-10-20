@@ -52,4 +52,6 @@ The workflow can be checked locally with `actionlint .github/workflows/ci.yml`. 
 
 Dependency caching is disabled, so fixture and acceptance jobs repeat the full toolchain setup. [Dependency caching](https://github.com/communal-software/cl-inference/issues/78) tracks this runtime improvement.
 
+Automated fixture coverage is Linux/SBCL. [Secondary Lisp CI](https://github.com/communal-software/cl-inference/issues/79) tracks CCL/ECL; Windows mapping validation requires a Windows runner and job.
+
 [^pins]: Update the shared action and this table together when changing dependency revisions. Other Lisp libraries come from the setup action's Quicklisp environment.
