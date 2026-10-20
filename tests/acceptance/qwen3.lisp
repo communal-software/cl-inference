@@ -5,9 +5,11 @@
 (setf *models*
       (append *models*
               '((:qwen-f16 "Qwen3-0.6B-f16.gguf"
-                 "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143" :dtype :f16)
+                 "25fb880334987a71db728fb43af8568a4682208059f754a2735781f5d0970143"
+                 :dtype :f16 :metadata-test qwen-f16-metadata)
                 (:qwen-q8 "Qwen3-0.6B-Q8_0.gguf"
-                 "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031" :dtype :q8_0))))
+                 "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
+                 :dtype :q8_0 :metadata-test qwen-q8-metadata))))
 
 (setf *cases*
       (append *cases*

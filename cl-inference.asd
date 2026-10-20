@@ -122,6 +122,15 @@
              (unless (uiop:symbol-call :cl-inference/acceptance :run-tests)
                (error "cl-inference acceptance tests failed"))))
 
+(asdf:defsystem "cl-inference/local/acceptance/tests"
+  :description "Offline acceptance runner regression tests"
+  :depends-on ("cl-inference/local/acceptance")
+  :components ((:file "tests/acceptance/runner"))
+  :perform (asdf:test-op (op component)
+             (declare (ignore op component))
+             (unless (uiop:symbol-call :fiveam :run! :cl-inference/acceptance-runner)
+               (error "Acceptance runner tests failed"))))
+
 (asdf:defsystem "cl-inference/examples"
   :description "Runnable local inference and architecture extension examples"
   :license "GPL-3.0-only"

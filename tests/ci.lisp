@@ -1,0 +1,26 @@
+(require :asdf)
+
+(handler-case
+    (let ((suite (uiop:getenv "CL_INFERENCE_CI_SUITE")))
+      (cond
+        ((equal suite "client")
+         (ql:quickload "cl-inference/tests" :silent t)
+         (asdf:test-system "cl-inference")
+         (when (or (find-package :cl-inference/local) (find-package :cl-tensor))
+           (error "Client tests loaded engine packages")))
+        ((equal suite "fixtures")
+         (ql:quickload "cl-inference/local/acceptance/tests" :silent t)
+         (asdf:test-system "cl-inference/local")
+         (asdf:test-system "cl-inference/local/acceptance/tests")
+         (ql:quickload "cl-inference/examples/tests" :silent t)
+         (asdf:test-system "cl-inference/examples"))
+        ((equal suite "acceptance")
+         (ql:quickload "cl-inference/local/acceptance" :silent t)
+         (unless (uiop:symbol-call :cl-inference/acceptance :run-tests
+                                  :cases '(:qwen-f16 :qwen-f16-thinking :qwen-f16-chat)
+                                  :strict t)
+           (error "Qwen3 acceptance failed")))
+        (t (error "Unknown CL_INFERENCE_CI_SUITE: ~S" suite))))
+  (error (condition)
+    (format *error-output* "~&~A~%" condition)
+    (uiop:quit 1)))
