@@ -1,6 +1,6 @@
 # CPU inference hotspots
 
-Encoded matrix multiplication dominates Qwen decode samples. Prefill also spends substantial time in allocation and generic tensor copying. These are the leading candidates for a measured optimization; the [SIMD comparison](simd-inference-performance.md) does not show a repeatable inference speedup.
+Encoded matrix multiplication dominates Qwen decode samples. The generic-copy profile also identifies prefill copying and allocation costs. [Bulk-copy measurements](https://github.com/communal-software/cl-tensor/blob/trunk/docs/copy-performance.md) report median paired prefill time reductions of 33.5% for F16 and 20.0% for Q8_0. The [SIMD comparison](simd-inference-performance.md) separately measures the strided primitive integration.
 
 ## Sampled costs
 
@@ -18,9 +18,9 @@ Inclusive traversal costs contain copying and child calls; they overlap other en
 ## Next measurements
 
 1. Profile encoded matrix kernels with their actual Qwen projection shapes and include conversion, scratch allocation and output allocation. Compare complete decode calls before selecting a kernel change.
-2. Attribute generic copying and allocation to individual model operations. Prefill traversal accounts for 18–28% inclusive samples; test contiguous bulk copying or reusable scratch only where layouts and ownership allow it.
+2. Attribute remaining copying and allocation after the bulk-copy path. The generic-copy profile records 18–28% inclusive traversal samples; reusable scratch requires separate ownership and layout validation.
 
-These are investigation candidates. No runtime optimization is included in this profile.
+The table describes the generic-copy runtime identified in the archived metadata. Bulk-copy results use a separate alternating-process comparison; the remaining candidates require further measurements.
 
 ## Method and evidence
 
