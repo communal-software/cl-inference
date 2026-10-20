@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 20 October 2026 · GitHub · 173 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 20 October 2026 · GitHub · 172 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -22,8 +22,8 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 | cl-inference | 0 | 9 | 10 | 8 | 27 |
 | cl-tensor | 0 | 3 | 8 | 11 | 22 |
 | cl-gpu | 0 | 11 | 17 | 34 | 62 |
-| trivial-simd | 0 | 0 | 10 | 52 | 62 |
-| **Total** | **0** | **23** | **45** | **105** | **173** |
+| trivial-simd | 0 | 0 | 10 | 51 | 61 |
+| **Total** | **0** | **23** | **45** | **104** | **172** |
 
 ## Work order
 
@@ -274,7 +274,6 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | trivial-simd | [#66 — Reduce exact GEMM validation search for difficult layouts](https://github.com/communal-software/trivial-simd/issues/66) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 | trivial-simd | [#67 — Extend packed conversion coverage beyond common integer and encoded paths](https://github.com/communal-software/trivial-simd/issues/67) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 | trivial-simd | [#68 — Extend SBCL packed masks and conversion primitives](https://github.com/communal-software/trivial-simd/issues/68) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
-| trivial-simd | [#77 — Specialize common native stride layouts for packed memory access](https://github.com/communal-software/trivial-simd/issues/77) | Open — unassigned | Specialized performance/cleanup work with no demonstrated model-coverage blocker; require complete-call evidence. |
 
 [^audit]: Inventory uses `gh issue list --state open --limit 1000 --json number,title,body,labels,url` (or equivalent bounded queries with verified complete results) for `communal-software/cl-inference`, `cl-tensor`, `cl-gpu` and `trivial-simd`. Issue bodies, completion comments and current support docs distinguish remaining work from verified support. Counts exclude pull requests and closed issues; dependency paths are planning judgments checked against ticket text and current support docs.
 
