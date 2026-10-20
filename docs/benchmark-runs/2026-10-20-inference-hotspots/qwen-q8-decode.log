@@ -1,0 +1,1377 @@
+VERIFY :QWEN-Q8 (9625 374 785 6722)
+READY QWEN-Q8 decode
+MEASURE QWEN-Q8 decode calls=164 elapsed=30.122
+
+Number of samples:   4403
+Sample interval:     0.002 seconds
+Total sampling time: 8.806001 seconds
+Graph cycles:        0
+Sampled threads:
+   #<THREAD tid=2307 "finalizer" RUNNING {8005310003}> (88/1048576 bytes, 1 hash buckets)
+   #<THREAD tid=259 "main thread" RUNNING {80053101B3}> (201048/1048576 bytes, 726 hash buckets)
+
+                               Callers
+                 Total.     Function
+ Count     %  Count     %      Callees
+------------------------------------------------------------------------
+  2584  58.7                   TRIVIAL-SIMD::%NATIVE-Q8-0-MATMUL [201]
+  2584  58.7   2584  58.7   foreign function q8_0_matmul_tile4 [1]
+------------------------------------------------------------------------
+   382   8.7                   SB-KERNEL:VECTOR-FILL [92]
+   382   8.7    382   8.7   SB-KERNEL:UB32-BASH-FILL-WITH-SINGLE-FLOAT [2]
+------------------------------------------------------------------------
+   153   3.5                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     2   0.0                   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+   147   3.3                   CL-TENSOR:MAKE-TENSOR [189]
+     7   0.2                   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+     6   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+   315   7.2    315   7.2   foreign function __bzero [3]
+------------------------------------------------------------------------
+    86   2.0                   TRIVIAL-SIMD::ND-COALESCE [38]
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::PACKED) :IN CL-TENSOR::TENSOR-NORMALIZATION) [264]
+     1   0.0                   SB-KERNEL:VECTOR-SUBSEQ [139]
+     2   0.0                   CL-TENSOR:ROW-MAJOR-STRIDES [261]
+     2   0.0                   CL-TENSOR:MAKE-TENSOR [189]
+     1   0.0                   GET-OUTPUT-STREAM-STRING [254]
+    51   1.2                   SB-KERNEL:%MAKE-ARRAY [244]
+     2   0.0                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+    91   2.1                   CL-TENSOR::INDEX-VECTOR [191]
+   233   5.3    237   5.4   ALLOCATE-VECTOR-ON-HEAP [4]
+     4   0.1                   foreign function __pthread_sigmask [44]
+------------------------------------------------------------------------
+   162   3.7                   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+   162   3.7    162   3.7   foreign function ts_blas_gemm_run_f32 [5]
+------------------------------------------------------------------------
+    55   1.2                   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+    55   1.2     55   1.2   TRIVIAL-SIMD/BLAS::%MAKE-MATRIX-VIEW [6]
+------------------------------------------------------------------------
+    19   0.4                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     1   0.0                   CL-TENSOR::NORMALIZE-TAKE-INDICES [256]
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   (SETF CL-TENSOR:TREF) [54]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [229]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:VALIDATE-STORAGE-VIEW (CL-TENSOR:DTYPE T T T T)) [195]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+    12   0.3                   CLOSURE-TRAMP [7]
+     1   0.0                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+    49   1.1     61   1.4   CLOSURE-TRAMP [7]
+    12   0.3                   CLOSURE-TRAMP [7]
+------------------------------------------------------------------------
+    35   0.8                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+    35   0.8     35   0.8   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "/private/tmp/inference-hotspots.lisp") [8]
+------------------------------------------------------------------------
+    22   0.5                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+    22   0.5     22   0.5   (SB-VM::OPTIMIZED-DATA-VECTOR-REF SINGLE-FLOAT) [9]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+    22   0.5     22   0.5   TAIL-CALL-CALLABLE-VARIABLE [10]
+------------------------------------------------------------------------
+     3   0.1                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+    21   0.5    106   2.4   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     3   0.1                   FUNCALLABLE-INSTANCE-TRAMP [49]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:STORAGE-REF (VECTOR T)) [150]
+    19   0.4                   CLOSURE-TRAMP [7]
+     3   0.1                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+    22   0.5                   (SB-VM::OPTIMIZED-DATA-VECTOR-REF SINGLE-FLOAT) [9]
+    35   0.8                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "/private/tmp/inference-hotspots.lisp") [8]
+     3   0.1                   SB-KERNEL:VECTOR-HAIRY-DATA-VECTOR-REF/CHECK-BOUNDS [30]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:ALLOCATE-STORAGE (CL-TENSOR:DTYPE T)) [190]
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     2   0.0                   CL-TENSOR::BROADCAST-SHAPE [202]
+     2   0.0                   CL-TENSOR:RESHAPE [118]
+     2   0.0                   CL-TENSOR::RESHAPE-SHAPE [236]
+     1   0.0                   CL-TENSOR::UNIQUE-OUTPUT-P [233]
+     5   0.1                   CL-TENSOR::OVERLAPPING-P [232]
+     2   0.0                   CL-TENSOR::RESHAPE-STRIDES [19]
+     1   0.0                   TRIVIAL-SIMD::ND-OPERATION [36]
+     6   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+    19   0.4     23   0.5   REDUCE [12]
+     2   0.0                   MAX [95]
+     2   0.0                   * [119]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::GATHER-SLICES [219]
+   183   4.2                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+   184   4.2                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+    17   0.4    202   4.6   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0                   SB-KERNEL:TWO-ARG-< [32]
+     1   0.0                   FUNCALLABLE-INSTANCE-TRAMP [49]
+     1   0.0                   LENGTH [35]
+     1   0.0                   (SB-VM::OPTIMIZED-DATA-VECTOR-REF FIXNUM) [47]
+     2   0.0                   (SB-VM::OPTIMIZED-DATA-VECTOR-SET SINGLE-FLOAT) [39]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1. SB-PCL::.ARG2.) :IN "/private/tmp/inference-hotspots.lisp") [17]
+     1   0.0                   CLOSURE-TRAMP [7]
+     1   0.0                   (SB-PCL::FAST-METHOD (SETF CL-TENSOR:STORAGE-REF) (T VECTOR T)) [57]
+     1   0.0                   SB-KERNEL:VECTOR-HAIRY-DATA-VECTOR-REF/CHECK-BOUNDS [30]
+     1   0.0                   TAIL-CALL-CALLABLE-VARIABLE [10]
+     1   0.0                   (LAMBDA (CL-TENSOR::OFFSET) :IN CL-TENSOR::GATHER-SLICES) [220]
+     1   0.0                   SB-KERNEL:VECTOR-HAIRY-DATA-VECTOR-SET/CHECK-BOUNDS [116]
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     1   0.0                   SB-KERNEL:TWO-ARG-+ [18]
+   183   4.2                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+------------------------------------------------------------------------
+     2   0.0                   (FLET CL-TENSOR::EXECUTE :IN CL-TENSOR::BUILTIN-TENSOR-MATMUL) [225]
+     3   0.1                   (FLET TRIVIAL-SIMD::EXECUTE :IN TRIVIAL-SIMD::ND-OPERATION) [235]
+     6   0.1                   TRIVIAL-SIMD::ND-NATIVE [45]
+     6   0.1                   TRIVIAL-SIMD::ND-OPERATION [36]
+    17   0.4     17   0.4   SB-KERNEL:VECTOR-TO-LIST [14]
+------------------------------------------------------------------------
+   192   4.4                   CL-TENSOR::DISPATCH-OPERATION [34]
+    14   0.3    204   4.6   CL-TENSOR::RUN-ND [15]
+     7   0.2                   TRIVIAL-SIMD:ND-MULTIPLY! [33]
+     4   0.1                   APPEND [66]
+     4   0.1                   TRIVIAL-SIMD:ND-SILU! [65]
+     2   0.0                   CL-TENSOR::BROADCAST-STRIDES [91]
+   173   3.9                   TRIVIAL-SIMD::ND-OPERATION [36]
+------------------------------------------------------------------------
+    28   0.6                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+    14   0.3     28   0.6   CL-TENSOR::NORMALIZATION-ROW-F32-SAME [16]
+     3   0.1                   foreign function exp [72]
+    11   0.2                   TRIVIAL-SIMD:MAXIMUM [210]
+------------------------------------------------------------------------
+     2   0.0                   (SETF CL-TENSOR:TREF) [54]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+    14   0.3     14   0.3   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1. SB-PCL::.ARG2.) :IN "/private/tmp/inference-hotspots.lisp") [17]
+------------------------------------------------------------------------
+    15   0.3                   CL-TENSOR:RESHAPE [118]
+    11   0.2     15   0.3   CL-TENSOR::RESHAPE-STRIDES [19]
+     1   0.0                   foreign function __pthread_sigmask [44]
+     1   0.0                   SB-KERNEL:TWO-ARG-= [97]
+     2   0.0                   REDUCE [12]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::REACHABLE-RANGE [43]
+     1   0.0                   (LAMBDA (CL-TENSOR::AI CL-TENSOR::BI CL-TENSOR::OI) :IN CL-TENSOR::MATMUL-RUN-MATRICES) [197]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+    11   0.2     11   0.2   SB-KERNEL:TWO-ARG-+ [18]
+------------------------------------------------------------------------
+    13   0.3                   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+    10   0.2     13   0.3   CL-TENSOR::PREPARE-ELEMENTWISE [21]
+     1   0.0                   FIND-IF [102]
+     1   0.0                   CL-TENSOR::CHECK-OPERATION [257]
+     1   0.0                   CL-TENSOR::BROADCAST-SHAPE [202]
+------------------------------------------------------------------------
+     7   0.2                   CL-TENSOR::DISPATCH-OPERATION [34]
+     2   0.0                   TRIVIAL-SIMD::ND-OPERATION [36]
+    10   0.2     10   0.2   SB-IMPL::LIST-REMOVE-DUPLICATES [20]
+------------------------------------------------------------------------
+     5   0.1                   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-BATCH-VIEW [260]
+     1   0.0                   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+     5   0.1                   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+     9   0.2     10   0.2   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+     1   0.0                   SB-KERNEL:TWO-ARG-< [32]
+     1   0.0                   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+------------------------------------------------------------------------
+     9   0.2                   CL-TENSOR::DISPATCH-OPERATION [34]
+     9   0.2      9   0.2   SB-KERNEL:%ADJOIN-EQ [22]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     1   0.0                   CFFI::MEM-SET [248]
+     4   0.1                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+     3   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     9   0.2      9   0.2   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;DLISP3.LISP") [23]
+------------------------------------------------------------------------
+     4   0.1                   CL-TENSOR::REDUCTION-ROWS [29]
+     1   0.0                   LOCAL:LINEAR [230]
+     1   0.0                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     5   0.1                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     8   0.2     11   0.2   CL-TENSOR:TRANSPOSE [26]
+     1   0.0                   CL-TENSOR::NORMALIZE-AXIS [259]
+     1   0.0                   SB-KERNEL:TWO-ARG-< [32]
+     1   0.0                   SB-IMPL::LENGTH-LIST-REMOVE-DUPLICATES [87]
+------------------------------------------------------------------------
+     8   0.2                   (LAMBDA NIL :IN SB-IMPL::FINALIZER-THREAD-START) [159]
+     8   0.2      8   0.2   foreign function __psynch_cvwait [25]
+------------------------------------------------------------------------
+   315   7.2                   CL-TENSOR::DISPATCH-OPERATION [34]
+     7   0.2    315   7.2   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     1   0.0                   CL-TENSOR::%MAKE-TENSOR [61]
+     1   0.0                   CL-TENSOR::MATMUL-BATCH-VIEW [138]
+     1   0.0                   REDUCE [12]
+     5   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     1   0.0                   CL-TENSOR::UNIQUE-OUTPUT-P [233]
+    10   0.2                   (FLET CL-TENSOR::EXECUTE :IN CL-TENSOR::BUILTIN-TENSOR-MATMUL) [225]
+    13   0.3                   CL-TENSOR::MATMUL-RUN [37]
+     5   0.1                   CL-TENSOR:MAKE-TENSOR [189]
+     3   0.1                   CL-TENSOR::REACHABLE-RANGE [43]
+     2   0.0                   CL-TENSOR::BROADCAST-SHAPE [202]
+   266   6.0                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+   139   3.2                   CL-TENSOR:CONCATENATE [206]
+    55   1.2                   (SB-PCL::FAST-METHOD LOCAL:KV-CACHE-UPDATE (LOCAL:KV-CACHE T T T T)) [108]
+     7   0.2    194   4.4   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "/private/tmp/inference-hotspots.lisp") [142]
+     1   0.0                   CLOSURE-TRAMP [7]
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+   184   4.2                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+------------------------------------------------------------------------
+    24   0.5                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     7   0.2     24   0.5   CL-TENSOR::REDUCTION-ROWS [29]
+     3   0.1                   SB-IMPL::APPEND2 [64]
+     4   0.1                   CL-TENSOR:TRANSPOSE [26]
+     5   0.1                   CL-TENSOR:RESHAPE [118]
+     5   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+------------------------------------------------------------------------
+     8   0.2                   CFFI-SYS:%FOREIGN-TYPE-SIZE [234]
+     7   0.2      8   0.2   SB-ALIEN-INTERNALS:PARSE-ALIEN-TYPE [31]
+     1   0.0                   SB-IMPL::GET-INFO-VALUE [124]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     3   0.1                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     7   0.2      7   0.2   SB-KERNEL:VECTOR-HAIRY-DATA-VECTOR-REF/CHECK-BOUNDS [30]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR:TRANSPOSE [26]
+     1   0.0                   CL-TENSOR::REACHABLE-RANGE [43]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0                   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+     7   0.2      7   0.2   SB-KERNEL:TWO-ARG-< [32]
+------------------------------------------------------------------------
+     7   0.2                   CL-TENSOR::RUN-ND [15]
+     7   0.2      7   0.2   TRIVIAL-SIMD:ND-MULTIPLY! [33]
+------------------------------------------------------------------------
+     4   0.1                   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+   252   5.7                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD :AROUND (LOCAL:ATTENTION T)) [185]
+    14   0.3                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:EMBEDDING T)) [217]
+   758  17.2                   top level form [181]
+  1062  24.1                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:SWIGLU-MLP T)) [203]
+   773  17.6                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+   642  14.6                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+    63   1.4                   LOCAL::ROTATE-PAIR [192]
+   446  10.1                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     6   0.1   4001  90.9   CL-TENSOR::DISPATCH-OPERATION [34]
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::PACKED) :IN CL-TENSOR::TENSOR-NORMALIZATION) [264]
+    10   0.2                   CL-TENSOR:RESHAPE [118]
+     1   0.0                   foreign function pthread_mutex_lock [143]
+     7   0.2                   SB-IMPL::LIST-REMOVE-DUPLICATES [20]
+     3   0.1                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1. SB-PCL::.ARG2. SB-PCL::.ARG3.) :IN "SYS:SRC;PCL;DLISP3.LISP") [74]
+     2   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     1   0.0                   REMOVE-DUPLICATES [123]
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::OPERANDS) :IN CL-TENSOR::TENSOR-TAKE) [218]
+   192   4.4                   CL-TENSOR::RUN-ND [15]
+  2857  64.9                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+   315   7.2                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+   419   9.5                   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+     9   0.2                   SB-KERNEL:%ADJOIN-EQ [22]
+     3   0.1                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+   174   4.0                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+------------------------------------------------------------------------
+   173   3.9                   CL-TENSOR::RUN-ND [15]
+     6   0.1    173   3.9   TRIVIAL-SIMD::ND-OPERATION [36]
+     6   0.1                   SB-KERNEL:VECTOR-TO-LIST [14]
+     6   0.1                   TRIVIAL-SIMD::ND-UNIQUE-OUTPUT-P [40]
+     6   0.1                   TRIVIAL-SIMD::ND-LAYOUT [90]
+     2   0.0                   SB-IMPL::LIST-REMOVE-DUPLICATES [20]
+     1   0.0                   TRIVIAL-SIMD::ND-SHAPE [237]
+     1   0.0                   TRIVIAL-SIMD::ND-INTEGER [69]
+     1   0.0                   REDUCE [12]
+   144   3.3                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+------------------------------------------------------------------------
+    97   2.2                   (FLET TRIVIAL-SIMD::EXECUTE :IN TRIVIAL-SIMD::ND-OPERATION) [235]
+     6   0.1     97   2.2   TRIVIAL-SIMD::ND-COALESCE [38]
+    86   2.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+     2   0.0                   SB-KERNEL:VECTOR-FILL [92]
+     1   0.0                   SB-KERNEL:TWO-ARG-* [85]
+     2   0.0                   REPLACE [48]
+------------------------------------------------------------------------
+    13   0.3                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     6   0.1     13   0.3   CL-TENSOR::MATMUL-RUN [37]
+     1   0.0                   CL-TENSOR::%MAKE-TENSOR [61]
+     2   0.0                   CL-TENSOR::MATMUL-BATCH-VIEW [138]
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   CL-TENSOR::BROADCAST-STRIDES [91]
+     1   0.0                   COERCE [115]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0                   CL-TENSOR:TENSOR-INDEX [81]
+     6   0.1      6   0.1   LENGTH [35]
+------------------------------------------------------------------------
+     2   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     6   0.1      6   0.1   (SB-VM::OPTIMIZED-DATA-VECTOR-SET SINGLE-FLOAT) [39]
+------------------------------------------------------------------------
+     6   0.1                   TRIVIAL-SIMD::ND-OPERATION [36]
+     6   0.1      6   0.1   TRIVIAL-SIMD::ND-UNIQUE-OUTPUT-P [40]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+     6   0.1      6   0.1   ACONS [41]
+------------------------------------------------------------------------
+   231   5.2                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     5   0.1    231   5.2   LOCAL::APPLY-ROPE [42]
+     1   0.0                   CL-TENSOR:SLICE [70]
+   162   3.7                   CL-TENSOR:CONCATENATE [206]
+    63   1.4                   LOCAL::ROTATE-PAIR [192]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+     5   0.1     36   0.8   TRIVIAL-SIMD::ND-NATIVE [45]
+     6   0.1                   SB-KERNEL:VECTOR-TO-LIST [14]
+     3   0.1                   foreign function nanov2_malloc_type [71]
+     1   0.0                   (FLET "CLEANUP-FUN-9" :IN TRIVIAL-SIMD::ND-NATIVE) [231]
+     1   0.0                   (FLET "CLEANUP-FUN-5" :IN TRIVIAL-SIMD::ND-NATIVE) [208]
+    20   0.5                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     7   0.2                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     5   0.1     10   0.2   CL-TENSOR::REACHABLE-RANGE [43]
+     2   0.0                   SB-KERNEL:TWO-ARG-+ [18]
+     1   0.0                   SB-KERNEL:TWO-ARG-< [32]
+     1   0.0                   SB-KERNEL:TWO-ARG-- [94]
+     1   0.0                   (SB-VM::OPTIMIZED-DATA-VECTOR-REF FIXNUM) [47]
+------------------------------------------------------------------------
+     3   0.1                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     5   0.1                   FUNCALLABLE-INSTANCE-TRAMP [49]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     5   0.1     10   0.2   FUNCALLABLE-INSTANCE-TRAMP [49]
+     5   0.1                   FUNCALLABLE-INSTANCE-TRAMP [49]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD::ND-COALESCE [38]
+     5   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     5   0.1      7   0.2   REPLACE [48]
+     2   0.0                   SB-KERNEL:UB64-BASH-COPY [89]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::RESHAPE-STRIDES [19]
+     4   0.1                   ALLOCATE-VECTOR-ON-HEAP [4]
+     5   0.1      5   0.1   foreign function __pthread_sigmask [44]
+------------------------------------------------------------------------
+     5   0.1                   TRIVIAL-SIMD::%NATIVE-ARGMAX-F32 [213]
+     5   0.1      5   0.1   foreign function ts_argmax_f32 [46]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0                   CL-TENSOR::REACHABLE-RANGE [43]
+     5   0.1      5   0.1   (SB-VM::OPTIMIZED-DATA-VECTOR-REF FIXNUM) [47]
+------------------------------------------------------------------------
+     5   0.1                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     5   0.1      5   0.1   CL-TENSOR::REDUCTION-LAYOUT [50]
+------------------------------------------------------------------------
+   196   4.5                   (LAMBDA (CL-TENSOR::AI CL-TENSOR::BI CL-TENSOR::OI) :IN CL-TENSOR::MATMUL-RUN-MATRICES) [197]
+     4   0.1    196   4.5   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     1   0.0                   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-OUTPUT [262]
+     5   0.1                   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-BATCH-VIEW [260]
+     1   0.0                   TRIVIAL-SIMD/BLAS::VALIDATE-LEVEL2-SCALAR [242]
+   181   4.1                   TRIVIAL-SIMD/BLAS::CALL-GEMM [84]
+     4   0.1                   TRIVIAL-SIMD/BLAS::MATRIX-ELEMENTS-OVERLAP-P [198]
+------------------------------------------------------------------------
+     8   0.2                   LOCAL::ROPE-TABLES [207]
+     9   0.2                   LOCAL::CAUSAL-MASK [110]
+     4   0.1     17   0.4   (SETF CL-TENSOR:TREF) [54]
+     1   0.0                   CL-TENSOR::COERCE-VALUE [263]
+     1   0.0                   (SB-PCL::FAST-METHOD (SETF CL-TENSOR:STORAGE-REF) (T VECTOR T)) [57]
+     2   0.0                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1. SB-PCL::.ARG2.) :IN "/private/tmp/inference-hotspots.lisp") [17]
+     1   0.0                   CLOSURE-TRAMP [7]
+     4   0.1                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   COERCE [115]
+     3   0.1                   CL-TENSOR:TENSOR-INDEX [81]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::CHECK-SHAPE [140]
+     3   0.1                   TRIVIAL-SIMD::ND-LAYOUT [90]
+     1   0.0                   TRIVIAL-SIMD::ND-SHAPE [237]
+     3   0.1                   CL-TENSOR::DISPATCH-OPERATION [34]
+     4   0.1      8   0.2   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+     2   0.0                   TRIVIAL-SIMD::ND-INTEGER [69]
+     2   0.0                   (FLET "WRAPPER29" :IN CL-TENSOR::DISPATCH-OPERATION) [193]
+------------------------------------------------------------------------
+     4   0.1                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     4   0.1                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     4   0.1      8   0.2   CL-TENSOR::TENSOR-NORMALIZATION [58]
+     4   0.1                   CL-TENSOR::NORMALIZE-AXES [62]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     4   0.1                   CL-TENSOR::TENSOR-NORMALIZATION [58]
+     4   0.1      7   0.2   CL-TENSOR::NORMALIZE-AXES [62]
+     1   0.0                   CL-TENSOR::NORMALIZE-AXIS [259]
+     2   0.0                   SB-IMPL::LENGTH-LIST-REMOVE-DUPLICATES [87]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::COMPUTATIONAL-DTYPE [258]
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:ALLOCATE-STORAGE (CL-TENSOR:DTYPE T)) [190]
+     4   0.1      4   0.1   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [51]
+------------------------------------------------------------------------
+     4   0.1                   TRIVIAL-SIMD::%NATIVE-ND-EXECUTE [205]
+     4   0.1      4   0.1   foreign function ts_nd_row_f32 [55]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:VALIDATE-STORAGE-VIEW (CL-TENSOR:DTYPE T T T T)) [195]
+     4   0.1      4   0.1   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [56]
+------------------------------------------------------------------------
+     1   0.0                   (SETF CL-TENSOR:TREF) [54]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     4   0.1      4   0.1   (SB-PCL::FAST-METHOD (SETF CL-TENSOR:STORAGE-REF) (T VECTOR T)) [57]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::NORMALIZE-AXIS [259]
+     1   0.0                   TRIVIAL-SIMD::ND-INTEGER [69]
+     1   0.0                   LOCAL::CAUSAL-MASK [110]
+     4   0.1      4   0.1   SB-KERNEL:TWO-ARG-<= [59]
+------------------------------------------------------------------------
+     2   0.0                   COS [246]
+     2   0.0                   SIN [245]
+     4   0.1      4   0.1   foreign function tan [60]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     1   0.0                   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+     1   0.0                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     1   0.0                   CL-TENSOR::MATMUL-RUN [37]
+     4   0.1      4   0.1   CL-TENSOR::%MAKE-TENSOR [61]
+------------------------------------------------------------------------
+     3   0.1                   LOCAL::ROPE-TABLES [207]
+     1   0.0                   LOCAL::CAUSAL-MASK [110]
+     4   0.1      4   0.1   foreign function listify_rest_arg [63]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::REDUCTION-ROWS [29]
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     4   0.1      4   0.1   SB-IMPL::APPEND2 [64]
+------------------------------------------------------------------------
+     4   0.1                   CL-TENSOR::RUN-ND [15]
+     4   0.1      4   0.1   TRIVIAL-SIMD:ND-SILU! [65]
+------------------------------------------------------------------------
+     4   0.1                   CL-TENSOR::RUN-ND [15]
+     4   0.1      4   0.1   APPEND [66]
+------------------------------------------------------------------------
+     1   0.0                   LOCAL::STORE-ROWS [99]
+     2   0.0                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     1   0.0                   LOCAL::CAUSAL-MASK [110]
+     2   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:KV-CACHE-UPDATE (LOCAL:KV-CACHE T T T T)) [108]
+     5   0.1                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+    79   1.8                   CL-TENSOR:CONCATENATE [206]
+     1   0.0                   LOCAL:LINEAR [230]
+     3   0.1                   (FLET CL-TENSOR::EXECUTE :IN CL-TENSOR::BUILTIN-TENSOR-MATMUL) [225]
+     4   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+    10   0.2                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     5   0.1                   CL-TENSOR::REDUCTION-ROWS [29]
+     8   0.2                   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+    19   0.4                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     3   0.1    137   3.1   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     2   0.0                   CL-TENSOR:ROW-MAJOR-STRIDES [261]
+     1   0.0                   CL-TENSOR::CHECK-SHAPE [140]
+     2   0.0                   CL-TENSOR:FIND-DTYPE [129]
+     5   0.1                   REPLACE [48]
+     6   0.1                   REDUCE [12]
+     1   0.0                   CLOSURE-TRAMP [7]
+     4   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     7   0.2                   CL-TENSOR::REACHABLE-RANGE [43]
+     3   0.1                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;DLISP3.LISP") [23]
+    10   0.2                   (SB-PCL::FAST-METHOD CL-TENSOR:VALIDATE-STORAGE-VIEW (CL-TENSOR:DTYPE T T T T)) [195]
+     6   0.1                   foreign function __bzero [3]
+    88   2.0                   CL-TENSOR::INDEX-VECTOR [191]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-LAYOUT [90]
+     2   0.0                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+     1   0.0                   TRIVIAL-SIMD::ND-OPERATION [36]
+     3   0.1      4   0.1   TRIVIAL-SIMD::ND-INTEGER [69]
+     1   0.0                   SB-KERNEL:TWO-ARG-<= [59]
+------------------------------------------------------------------------
+     3   0.1                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     1   0.0                   LOCAL::APPLY-ROPE [42]
+     3   0.1      4   0.1   CL-TENSOR:SLICE [70]
+     1   0.0                   CL-TENSOR::SLICE-RANGE [121]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::BROADCAST-SHAPE [202]
+     3   0.1      3   0.1   REMOVE-IF-NOT [68]
+------------------------------------------------------------------------
+     3   0.1                   TRIVIAL-SIMD::ND-NATIVE [45]
+     3   0.1      3   0.1   foreign function nanov2_malloc_type [71]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::NORMALIZATION-ROW-F32-SAME [16]
+     3   0.1      3   0.1   foreign function exp [72]
+------------------------------------------------------------------------
+     3   0.1                   TRIVIAL-SIMD:MAXIMUM [210]
+     3   0.1      3   0.1   TRIVIAL-SIMD::ARGEXT [73]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR::DISPATCH-OPERATION [34]
+     3   0.1      3   0.1   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1. SB-PCL::.ARG2. SB-PCL::.ARG3.) :IN "SYS:SRC;PCL;DLISP3.LISP") [74]
+------------------------------------------------------------------------
+     1   0.0                   SB-KERNEL:%MEMBER [107]
+     2   0.0                   POSITION [93]
+     3   0.1      3   0.1   EQL [75]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:SWIGLU-MLP T)) [203]
+     1   0.0                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     3   0.1      3   0.1   CL-TENSOR::ELEMENTWISE [76]
+------------------------------------------------------------------------
+     3   0.1                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     3   0.1      3   0.1   CL-TENSOR::MATMUL-RESULT-SHAPE [77]
+------------------------------------------------------------------------
+  1643  37.3                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD :AROUND (LOCAL:ATTENTION T)) [185]
+     2   0.0   1643  37.3   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     3   0.1                   CL-TENSOR:RESHAPE [118]
+     4   0.1                   CL-TENSOR::TENSOR-NORMALIZATION [58]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [56]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [51]
+     2   0.0                   LOCAL:LINEAR [230]
+    61   1.4                   CL-TENSOR:CONCATENATE [206]
+    16   0.4                   LOCAL::ROPE-TABLES [207]
+    13   0.3                   LOCAL::CAUSAL-MASK [110]
+   773  17.6                   CL-TENSOR::DISPATCH-OPERATION [34]
+    60   1.4                   (SB-PCL::FAST-METHOD LOCAL:KV-CACHE-UPDATE (LOCAL:KV-CACHE T T T T)) [108]
+   231   5.2                   LOCAL::APPLY-ROPE [42]
+   476  10.8                   LOCAL::ATTEND [186]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD::ND-COALESCE [38]
+   382   8.7                   SB-KERNEL:%MAKE-ARRAY [244]
+     2   0.0    384   8.7   SB-KERNEL:VECTOR-FILL [92]
+   382   8.7                   SB-KERNEL:UB32-BASH-FILL-WITH-SINGLE-FLOAT [2]
+------------------------------------------------------------------------
+   181   4.1                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     2   0.0    181   4.1   TRIVIAL-SIMD/BLAS::CALL-GEMM [84]
+     8   0.2                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+   171   3.9                   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+------------------------------------------------------------------------
+   174   4.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     2   0.0    174   4.0   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     1   0.0                   SB-IMPL::APPEND2 [64]
+     5   0.1                   CL-TENSOR::REDUCTION-LAYOUT [50]
+     1   0.0                   SB-IMPL::STABLE-SORT-LIST [148]
+     3   0.1                   CL-TENSOR::NORMALIZE-AXES [62]
+     2   0.0                   CL-TENSOR::NORMALIZATION-WEIGHTS [252]
+    14   0.3                   CL-TENSOR::DISPATCH-OPERATION [34]
+     5   0.1                   CL-TENSOR:TRANSPOSE [26]
+     5   0.1                   CL-TENSOR:RESHAPE [118]
+    28   0.6                   CL-TENSOR::NORMALIZATION-ROW-F32-SAME [16]
+    10   0.2                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     2   0.0                   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "SYS:SRC;PCL;DLISP3.LISP") [82]
+    24   0.5                   CL-TENSOR::REDUCTION-ROWS [29]
+    72   1.6                   CL-TENSOR:MAKE-TENSOR [189]
+------------------------------------------------------------------------
+     6   0.1                   TRIVIAL-SIMD::ND-OPERATION [36]
+     2   0.0      6   0.1   TRIVIAL-SIMD::ND-LAYOUT [90]
+     1   0.0                   TRIVIAL-SIMD::ND-INTEGER [69]
+     3   0.1                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+------------------------------------------------------------------------
+     4   0.1                   TRIVIAL-SIMD/BLAS::MATRIX-ELEMENTS-OVERLAP-P [198]
+     2   0.0      4   0.1   TRIVIAL-SIMD/BLAS::MATRIX-SPANS-OVERLAP-P [80]
+     2   0.0                   SB-KERNEL:TWO-ARG-> [86]
+------------------------------------------------------------------------
+     4   0.1                   (LAMBDA (TRIVIAL-SIMD::ADDRESSES) :IN TRIVIAL-SIMD::ND-NATIVE) [204]
+     2   0.0      4   0.1   POSITION [93]
+     2   0.0                   EQL [75]
+------------------------------------------------------------------------
+     3   0.1                   (SETF CL-TENSOR:TREF) [54]
+     2   0.0      3   0.1   CL-TENSOR:TENSOR-INDEX [81]
+     1   0.0                   LENGTH [35]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::NORMALIZE-AXES [62]
+     1   0.0                   CL-TENSOR:TRANSPOSE [26]
+     2   0.0      3   0.1   SB-IMPL::LENGTH-LIST-REMOVE-DUPLICATES [87]
+     1   0.0                   SB-KERNEL:%MEMBER-TEST [127]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::MATMUL-RUN [37]
+     2   0.0                   CL-TENSOR::RUN-ND [15]
+     2   0.0      3   0.1   CL-TENSOR::BROADCAST-STRIDES [91]
+     1   0.0                   SB-KERNEL:TWO-ARG-- [94]
+------------------------------------------------------------------------
+     3   0.1                   (SB-PCL::FAST-METHOD LOCAL:KV-CACHE-UPDATE (LOCAL:KV-CACHE T T T T)) [108]
+     2   0.0      3   0.1   LOCAL::STORE-ROWS [99]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     2   0.0      2   0.0   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "SYS:SRC;PCL;DLISP3.LISP") [82]
+------------------------------------------------------------------------
+     2   0.0                   COERCE [115]
+     2   0.0      2   0.0   SB-KERNEL:%SINGLE-FLOAT [83]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-COALESCE [38]
+     1   0.0                   * [119]
+     2   0.0      2   0.0   SB-KERNEL:TWO-ARG-* [85]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD/BLAS::MATRIX-SPANS-OVERLAP-P [80]
+     2   0.0      2   0.0   SB-KERNEL:TWO-ARG-> [86]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD::%NATIVE-ND-EXECUTE [205]
+     2   0.0      2   0.0   foreign function expf [88]
+------------------------------------------------------------------------
+     2   0.0                   REPLACE [48]
+     2   0.0      2   0.0   SB-KERNEL:UB64-BASH-COPY [89]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::BROADCAST-STRIDES [91]
+     1   0.0                   CL-TENSOR::REACHABLE-RANGE [43]
+     2   0.0      2   0.0   SB-KERNEL:TWO-ARG-- [94]
+------------------------------------------------------------------------
+     2   0.0                   REDUCE [12]
+     2   0.0      2   0.0   MAX [95]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR:FIND-DTYPE [129]
+     2   0.0      2   0.0   SB-IMPL::GETHASH/EQ-HASH/FLAT [96]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::RESHAPE-STRIDES [19]
+     1   0.0                   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+     2   0.0      2   0.0   SB-KERNEL:TWO-ARG-= [97]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::RESHAPE-SHAPE [236]
+     2   0.0      2   0.0   COPY-LIST [98]
+------------------------------------------------------------------------
+     2   0.0                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     2   0.0      2   0.0   foreign function gc_alloc_large [100]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+     2   0.0      2   0.0   CL-TENSOR:ADD [101]
+------------------------------------------------------------------------
+  3606  81.9                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD :AROUND (T T T)) [184]
+     1   0.0   3606  81.9   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+     2   0.0                   CL-TENSOR:ADD [101]
+     1   0.0                   CL-TENSOR::TENSOR-MATMUL [154]
+  1065  24.2                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:SWIGLU-MLP T)) [203]
+   642  14.6                   CL-TENSOR::DISPATCH-OPERATION [34]
+  1895  43.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD :AROUND (LOCAL:ATTENTION T)) [185]
+------------------------------------------------------------------------
+   266   6.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     1   0.0    266   6.0   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     1   0.0                   CL-TENSOR::MATMUL-BATCH-RUN [153]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   COERCE [115]
+     1   0.0                   CL-TENSOR::MATMUL-GEMM-ADAPTER [111]
+   261   5.9                   (LAMBDA (CL-TENSOR::AI CL-TENSOR::BI CL-TENSOR::OI) :IN CL-TENSOR::MATMUL-RUN-MATRICES) [197]
+------------------------------------------------------------------------
+   142   3.2                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+   144   3.3                   TRIVIAL-SIMD::ND-OPERATION [36]
+     1   0.0    144   3.3   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+     1   0.0                   ACONS [41]
+     1   0.0                   (FLET TRIVIAL-SIMD::EXECUTE :IN TRIVIAL-SIMD::ND-OPERATION) [235]
+     1   0.0                   TRIVIAL-SIMD::ND-NATIVE [45]
+   142   3.2                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+------------------------------------------------------------------------
+    64   1.5                   (LAMBDA (CL-TENSOR::AI CL-TENSOR::BI CL-TENSOR::OI) :IN CL-TENSOR::MATMUL-RUN-MATRICES) [197]
+     1   0.0     64   1.5   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+    55   1.2                   TRIVIAL-SIMD/BLAS::%MAKE-MATRIX-VIEW [6]
+     1   0.0                   SB-KERNEL:TWO-ARG-= [97]
+     5   0.1                   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+     2   0.0                   foreign function __bzero [3]
+------------------------------------------------------------------------
+    60   1.4                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     1   0.0     60   1.4   (SB-PCL::FAST-METHOD LOCAL:KV-CACHE-UPDATE (LOCAL:KV-CACHE T T T T)) [108]
+     3   0.1                   LOCAL::STORE-ROWS [99]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+    55   1.2                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+------------------------------------------------------------------------
+     3   0.1                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+    10   0.2                   CL-TENSOR::DISPATCH-OPERATION [34]
+     5   0.1                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     5   0.1                   CL-TENSOR::REDUCTION-ROWS [29]
+     1   0.0     23   0.5   CL-TENSOR:RESHAPE [118]
+     2   0.0                   REDUCE [12]
+     1   0.0                   foreign function alloc_list [132]
+     4   0.1                   CL-TENSOR::RESHAPE-SHAPE [236]
+    15   0.3                   CL-TENSOR::RESHAPE-STRIDES [19]
+------------------------------------------------------------------------
+    19   0.4                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+    20   0.5                   TRIVIAL-SIMD::ND-NATIVE [45]
+     1   0.0     20   0.5   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     1   0.0                   (FLET "CLEANUP-FUN-3" :IN TRIVIAL-SIMD::ND-WITH-POINTERS) [253]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0                   CFFI::MEM-SET [248]
+     1   0.0                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     1   0.0                   CFFI-SYS:%FOREIGN-TYPE-SIZE [234]
+     1   0.0                   (LAMBDA (TRIVIAL-SIMD::ADDRESSES) :IN TRIVIAL-SIMD::ND-NATIVE) [204]
+    19   0.4                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+------------------------------------------------------------------------
+    13   0.3                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     1   0.0     13   0.3   LOCAL::CAUSAL-MASK [110]
+     1   0.0                   foreign function listify_rest_arg [63]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     1   0.0                   SB-KERNEL:TWO-ARG-<= [59]
+     9   0.2                   (SETF CL-TENSOR:TREF) [54]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   TRIVIAL-SIMD/BLAS::VALIDATE-LEVEL2-SCALAR [242]
+     2   0.0                   FIND-IF [102]
+     1   0.0      5   0.1   TYPEP [103]
+     4   0.1                   SB-KERNEL:SPECIFIER-TYPE [104]
+------------------------------------------------------------------------
+     4   0.1                   TYPEP [103]
+     1   0.0      4   0.1   SB-KERNEL:SPECIFIER-TYPE [104]
+     3   0.1                   SB-KERNEL::BASIC-PARSE-TYPESPEC [105]
+------------------------------------------------------------------------
+     3   0.1                   SB-KERNEL:SPECIFIER-TYPE [104]
+     1   0.0      3   0.1   SB-KERNEL::BASIC-PARSE-TYPESPEC [105]
+     1   0.0                   SB-INT:LIST-ELEMENTS-EQL [133]
+     1   0.0                   SB-IMPL::GET-INFO-VALUE [124]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::PREPARE-ELEMENTWISE [21]
+     2   0.0                   LOCAL::MODEL-BLOCK-OF-TYPE [183]
+     1   0.0      3   0.1   FIND-IF [102]
+     2   0.0                   TYPEP [103]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     1   0.0                   CL-TENSOR::MATMUL-RUN [37]
+     1   0.0                   (SETF CL-TENSOR:TREF) [54]
+     1   0.0      3   0.1   COERCE [115]
+     2   0.0                   SB-KERNEL:%SINGLE-FLOAT [83]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::COERCE-VALUE [263]
+     2   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     1   0.0      3   0.1   CL-TENSOR:FIND-DTYPE [129]
+     2   0.0                   SB-IMPL::GETHASH/EQ-HASH/FLAT [96]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     2   0.0                   CL-TENSOR::MATMUL-RUN [37]
+     1   0.0      3   0.1   CL-TENSOR::MATMUL-BATCH-VIEW [138]
+     2   0.0                   SB-KERNEL:VECTOR-SUBSEQ [139]
+------------------------------------------------------------------------
+     2   0.0                   (FLET "WRAPPER29" :IN CL-TENSOR::DISPATCH-OPERATION) [193]
+     1   0.0      2   0.0   SB-KERNEL:%MEMBER [107]
+     1   0.0                   EQL [75]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR:MAKE-TENSOR [189]
+     1   0.0      2   0.0   MAKE-ARRAY [114]
+     1   0.0                   TAIL-CALL-VARIABLE [126]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-OUTPUT [262]
+     1   0.0      2   0.0   TRIVIAL-SIMD/BLAS::GEMM-LAYOUT-UNIQUE-P [117]
+     1   0.0                   (SB-VM::OPTIMIZED-DATA-VECTOR-REF T) [152]
+------------------------------------------------------------------------
+     2   0.0                   REDUCE [12]
+     1   0.0      2   0.0   * [119]
+     1   0.0                   SB-KERNEL:TWO-ARG-* [85]
+------------------------------------------------------------------------
+     1   0.0                   SB-KERNEL::BASIC-PARSE-TYPESPEC [105]
+     1   0.0                   SB-ALIEN-INTERNALS:PARSE-ALIEN-TYPE [31]
+     1   0.0      2   0.0   SB-IMPL::GET-INFO-VALUE [124]
+     1   0.0                   SB-IMPL::PACKED-INFO-VALUE-INDEX [125]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::MATMUL-BATCH-VIEW [138]
+     1   0.0      2   0.0   SB-KERNEL:VECTOR-SUBSEQ [139]
+     1   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR [189]
+     1   0.0      2   0.0   CL-TENSOR::CHECK-SHAPE [140]
+     1   0.0                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     1   0.0      1   0.0   CL-TENSOR::MATMUL-GEMM-ADAPTER [111]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     1   0.0      1   0.0   SB-KERNEL:VECTOR-HAIRY-DATA-VECTOR-SET/CHECK-BOUNDS [116]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::MAKE-STAGING [224]
+     1   0.0      1   0.0   TRIVIAL-SIMD::STAGING-ORDER [120]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR:SLICE [70]
+     1   0.0      1   0.0   CL-TENSOR::SLICE-RANGE [121]
+------------------------------------------------------------------------
+     1   0.0                   (FLET "CLEANUP-FUN-9" :IN TRIVIAL-SIMD::ND-NATIVE) [231]
+     1   0.0      1   0.0   foreign function free [122]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     1   0.0      1   0.0   REMOVE-DUPLICATES [123]
+------------------------------------------------------------------------
+     1   0.0                   SB-IMPL::GET-INFO-VALUE [124]
+     1   0.0      1   0.0   SB-IMPL::PACKED-INFO-VALUE-INDEX [125]
+------------------------------------------------------------------------
+     1   0.0                   MAKE-ARRAY [114]
+     1   0.0      1   0.0   TAIL-CALL-VARIABLE [126]
+------------------------------------------------------------------------
+     1   0.0                   SB-IMPL::LENGTH-LIST-REMOVE-DUPLICATES [87]
+     1   0.0      1   0.0   SB-KERNEL:%MEMBER-TEST [127]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::NUMERIC-TYPE [241]
+     1   0.0      1   0.0   SB-KERNEL:%ASSOC [130]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0      1   0.0   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [131]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR:RESHAPE [118]
+     1   0.0      1   0.0   foreign function alloc_list [132]
+------------------------------------------------------------------------
+     1   0.0                   SB-KERNEL::BASIC-PARSE-TYPESPEC [105]
+     1   0.0      1   0.0   SB-INT:LIST-ELEMENTS-EQL [133]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::%NATIVE-ND-EXECUTE [205]
+     1   0.0      1   0.0   foreign function ts_nd_execute [134]
+------------------------------------------------------------------------
+     1   0.0                   SB-KERNEL:EXPT-DOUBLE-FLOAT [247]
+     1   0.0      1   0.0   foreign function pow [135]
+------------------------------------------------------------------------
+     1   0.0                   SB-IMPL::%FIND-SYMBOL [250]
+     1   0.0      1   0.0   SB-IMPL::CALC-SYMBOL-NAME-HASH [136]
+------------------------------------------------------------------------
+     1   0.0                   UPGRADED-ARRAY-ELEMENT-TYPE [251]
+     1   0.0      1   0.0   SB-VM::%VECTOR-WIDETAG-AND-N-BITS-SHIFT [137]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+     1   0.0      1   0.0   foreign function _platform_memset [141]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+     1   0.0      1   0.0   (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "/private/tmp/inference-hotspots.lisp") [142]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     1   0.0      1   0.0   foreign function pthread_mutex_lock [143]
+------------------------------------------------------------------------
+     1   0.0                   (FLET "CLEANUP-FUN-3" :IN TRIVIAL-SIMD::ND-WITH-POINTERS) [253]
+     1   0.0      1   0.0   foreign function _free [144]
+------------------------------------------------------------------------
+     1   0.0                   (FLET "WRAPPER33" :IN CL-TENSOR::DISPATCH-OPERATION) [255]
+     1   0.0      1   0.0   (LABELS CL-TENSOR::FALLBACK :IN CL-TENSOR::TENSOR-MATMUL) [145]
+------------------------------------------------------------------------
+     1   0.0                   CFFI::MEM-SET [248]
+     1   0.0      1   0.0   CFFI::PARSE-TYPE [146]
+------------------------------------------------------------------------
+     1   0.0      1   0.0   TRIVIAL-SIMD::RESOLVE-SLICE [147]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     1   0.0      1   0.0   SB-IMPL::STABLE-SORT-LIST [148]
+------------------------------------------------------------------------
+     1   0.0      1   0.0   CL-TENSOR:TENSOR-SIZE [149]
+------------------------------------------------------------------------
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::SOURCE) :IN CL-TENSOR:COPY-STORAGE-BETWEEN!) [11]
+     1   0.0      1   0.0   (SB-PCL::FAST-METHOD CL-TENSOR:STORAGE-REF (VECTOR T)) [150]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+     1   0.0      1   0.0   foreign function szone_malloc_should_clear [151]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD/BLAS::GEMM-LAYOUT-UNIQUE-P [117]
+     1   0.0      1   0.0   (SB-VM::OPTIMIZED-DATA-VECTOR-REF T) [152]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     1   0.0      1   0.0   CL-TENSOR::MATMUL-BATCH-RUN [153]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+     1   0.0      1   0.0   CL-TENSOR::TENSOR-MATMUL [154]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:SWIGLU-MLP T)) [203]
+     1   0.0      1   0.0   CL-TENSOR:MULTIPLY [155]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET "G" :IN SB-C::%COMPILE-IN-LEXENV) [180]
+     0   0.0   4371  99.3   top level form [181]
+   758  17.2                   CL-TENSOR::DISPATCH-OPERATION [34]
+  3613  82.1                   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+------------------------------------------------------------------------
+  4371  99.3                   SB-C::%COMPILE-IN-LEXENV [179]
+     0   0.0   4371  99.3   (FLET "G" :IN SB-C::%COMPILE-IN-LEXENV) [180]
+  4371  99.3                   top level form [181]
+------------------------------------------------------------------------
+  4371  99.3                   SB-C:EVAL-WITH-COMPILE-IN-LEXENV [178]
+     0   0.0   4371  99.3   SB-C::%COMPILE-IN-LEXENV [179]
+  4371  99.3                   (FLET "G" :IN SB-C::%COMPILE-IN-LEXENV) [180]
+------------------------------------------------------------------------
+  4371  99.3                   SB-IMPL::%SIMPLE-EVAL [177]
+     0   0.0   4371  99.3   SB-C:EVAL-WITH-COMPILE-IN-LEXENV [178]
+  4371  99.3                   SB-C::%COMPILE-IN-LEXENV [179]
+------------------------------------------------------------------------
+  4371  99.3                   SB-INT:SIMPLE-EVAL-IN-LEXENV [176]
+     0   0.0   4371  99.3   SB-IMPL::%SIMPLE-EVAL [177]
+  4371  99.3                   SB-C:EVAL-WITH-COMPILE-IN-LEXENV [178]
+------------------------------------------------------------------------
+  4371  99.3                   SB-EXT:EVAL-TLF [175]
+     0   0.0   4371  99.3   SB-INT:SIMPLE-EVAL-IN-LEXENV [176]
+  4371  99.3                   SB-IMPL::%SIMPLE-EVAL [177]
+------------------------------------------------------------------------
+  4371  99.3                   (LABELS SB-FASL::EVAL-FORM :IN SB-INT:LOAD-AS-SOURCE) [174]
+     0   0.0   4371  99.3   SB-EXT:EVAL-TLF [175]
+  4371  99.3                   SB-INT:SIMPLE-EVAL-IN-LEXENV [176]
+------------------------------------------------------------------------
+  4371  99.3                   (LAMBDA (SB-KERNEL:FORM &KEY :CURRENT-INDEX &ALLOW-OTHER-KEYS) :IN SB-INT:LOAD-AS-SOURCE) [173]
+     0   0.0   4371  99.3   (LABELS SB-FASL::EVAL-FORM :IN SB-INT:LOAD-AS-SOURCE) [174]
+  4371  99.3                   SB-EXT:EVAL-TLF [175]
+------------------------------------------------------------------------
+  4371  99.3                   SB-C::%DO-FORMS-FROM-INFO [172]
+     0   0.0   4371  99.3   (LAMBDA (SB-KERNEL:FORM &KEY :CURRENT-INDEX &ALLOW-OTHER-KEYS) :IN SB-INT:LOAD-AS-SOURCE) [173]
+  4371  99.3                   (LABELS SB-FASL::EVAL-FORM :IN SB-INT:LOAD-AS-SOURCE) [174]
+------------------------------------------------------------------------
+  4371  99.3                   SB-INT:LOAD-AS-SOURCE [171]
+     0   0.0   4371  99.3   SB-C::%DO-FORMS-FROM-INFO [172]
+  4371  99.3                   (LAMBDA (SB-KERNEL:FORM &KEY :CURRENT-INDEX &ALLOW-OTHER-KEYS) :IN SB-INT:LOAD-AS-SOURCE) [173]
+------------------------------------------------------------------------
+  4371  99.3                   (LABELS SB-FASL::LOAD-STREAM-1 :IN LOAD) [170]
+     0   0.0   4371  99.3   SB-INT:LOAD-AS-SOURCE [171]
+  4371  99.3                   SB-C::%DO-FORMS-FROM-INFO [172]
+------------------------------------------------------------------------
+  4371  99.3                   SB-FASL::CALL-WITH-LOAD-BINDINGS [169]
+     0   0.0   4371  99.3   (LABELS SB-FASL::LOAD-STREAM-1 :IN LOAD) [170]
+  4371  99.3                   SB-INT:LOAD-AS-SOURCE [171]
+------------------------------------------------------------------------
+  4371  99.3                   LOAD [168]
+     0   0.0   4371  99.3   SB-FASL::CALL-WITH-LOAD-BINDINGS [169]
+  4371  99.3                   (LABELS SB-FASL::LOAD-STREAM-1 :IN LOAD) [170]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET SB-IMPL::LOAD-SCRIPT :IN SB-IMPL::PROCESS-SCRIPT) [167]
+     0   0.0   4371  99.3   LOAD [168]
+  4371  99.3                   SB-FASL::CALL-WITH-LOAD-BINDINGS [169]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET SB-UNIX::BODY :IN SB-IMPL::PROCESS-SCRIPT) [166]
+     0   0.0   4371  99.3   (FLET SB-IMPL::LOAD-SCRIPT :IN SB-IMPL::PROCESS-SCRIPT) [167]
+  4371  99.3                   LOAD [168]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-IMPL::PROCESS-SCRIPT) [165]
+     0   0.0   4371  99.3   (FLET SB-UNIX::BODY :IN SB-IMPL::PROCESS-SCRIPT) [166]
+  4371  99.3                   (FLET SB-IMPL::LOAD-SCRIPT :IN SB-IMPL::PROCESS-SCRIPT) [167]
+------------------------------------------------------------------------
+  4371  99.3                   SB-IMPL::PROCESS-SCRIPT [164]
+     0   0.0   4371  99.3   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-IMPL::PROCESS-SCRIPT) [165]
+  4371  99.3                   (FLET SB-UNIX::BODY :IN SB-IMPL::PROCESS-SCRIPT) [166]
+------------------------------------------------------------------------
+  4371  99.3                   SB-IMPL::TOPLEVEL-INIT [163]
+     0   0.0   4371  99.3   SB-IMPL::PROCESS-SCRIPT [164]
+  4371  99.3                   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-IMPL::PROCESS-SCRIPT) [165]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [162]
+     0   0.0   4371  99.3   SB-IMPL::TOPLEVEL-INIT [163]
+  4371  99.3                   SB-IMPL::PROCESS-SCRIPT [164]
+------------------------------------------------------------------------
+  4371  99.3                   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [161]
+     0   0.0   4371  99.3   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [162]
+  4371  99.3                   SB-IMPL::TOPLEVEL-INIT [163]
+------------------------------------------------------------------------
+  4371  99.3                   SB-IMPL::%START-LISP [160]
+     0   0.0   4371  99.3   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [161]
+  4371  99.3                   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [162]
+------------------------------------------------------------------------
+     0   0.0   4371  99.3   SB-IMPL::%START-LISP [160]
+  4371  99.3                   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [161]
+------------------------------------------------------------------------
+  3613  82.1                   top level form [181]
+     0   0.0   3613  82.1   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+     4   0.1                   CL-TENSOR::DISPATCH-OPERATION [34]
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:EMBEDDING T)) [217]
+  3606  81.9                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD :AROUND (T T T)) [184]
+     2   0.0                   LOCAL::MODEL-BLOCK-OF-TYPE [183]
+------------------------------------------------------------------------
+  3606  81.9                   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+     0   0.0   3606  81.9   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD :AROUND (T T T)) [184]
+  3606  81.9                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+------------------------------------------------------------------------
+  2857  64.9                   CL-TENSOR::DISPATCH-OPERATION [34]
+     0   0.0   2857  64.9   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     3   0.1                   CL-TENSOR::INDEX-VECTOR [191]
+     2   0.0                   foreign function gc_alloc_large [100]
+     3   0.1                   CL-TENSOR::MATMUL-RESULT-SHAPE [77]
+     2   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+   153   3.5                   foreign function __bzero [3]
+   108   2.5                   SB-KERNEL:%MAKE-ARRAY [244]
+     2   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+  2584  58.7                   TRIVIAL-SIMD:Q8-0-MATMUL! [200]
+------------------------------------------------------------------------
+  2584  58.7                   TRIVIAL-SIMD:Q8-0-MATMUL! [200]
+     0   0.0   2584  58.7   TRIVIAL-SIMD::%NATIVE-Q8-0-MATMUL [201]
+  2584  58.7                   foreign function q8_0_matmul_tile4 [1]
+------------------------------------------------------------------------
+  2584  58.7                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+     0   0.0   2584  58.7   TRIVIAL-SIMD:Q8-0-MATMUL! [200]
+  2584  58.7                   TRIVIAL-SIMD::%NATIVE-Q8-0-MATMUL [201]
+------------------------------------------------------------------------
+  1895  43.0                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+     0   0.0   1895  43.0   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD :AROUND (LOCAL:ATTENTION T)) [185]
+   252   5.7                   CL-TENSOR::DISPATCH-OPERATION [34]
+  1643  37.3                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+------------------------------------------------------------------------
+  1065  24.2                   (SB-PCL::FAST-METHOD LOCAL:LAYER-FORWARD (T T T)) [106]
+     0   0.0   1065  24.2   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:SWIGLU-MLP T)) [203]
+     2   0.0                   CL-TENSOR::ELEMENTWISE [76]
+     1   0.0                   CL-TENSOR:MULTIPLY [155]
+  1062  24.1                   CL-TENSOR::DISPATCH-OPERATION [34]
+------------------------------------------------------------------------
+     5   0.1                   CL-TENSOR:CONCATENATE [206]
+   398   9.0                   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+     5   0.1                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+    72   1.6                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     0   0.0    480  10.9   CL-TENSOR:MAKE-TENSOR [189]
+     2   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+     1   0.0                   CL-TENSOR::CHECK-SHAPE [140]
+   325   7.4                   SB-KERNEL:%MAKE-ARRAY [244]
+   147   3.3                   foreign function __bzero [3]
+     2   0.0                   MAKE-ARRAY [114]
+     3   0.1                   (SB-PCL::FAST-METHOD CL-TENSOR:ALLOCATE-STORAGE (CL-TENSOR:DTYPE T)) [190]
+------------------------------------------------------------------------
+   476  10.8                   (FLET LOCAL::WORK :IN LOCAL::CALL-WITH-HEAD-RANGES) [187]
+     0   0.0    476  10.8   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     1   0.0                   CL-TENSOR::%MAKE-TENSOR [61]
+     1   0.0                   CL-TENSOR::ELEMENTWISE [76]
+     1   0.0                   CL-TENSOR:TRANSPOSE [26]
+     3   0.1                   CL-TENSOR:SLICE [70]
+     1   0.0                   (FLET "WRAPPER33" :IN CL-TENSOR::DISPATCH-OPERATION) [255]
+     4   0.1                   CL-TENSOR::TENSOR-NORMALIZATION [58]
+    19   0.4                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+   446  10.1                   CL-TENSOR::DISPATCH-OPERATION [34]
+------------------------------------------------------------------------
+   476  10.8                   LOCAL::ATTEND [186]
+     0   0.0    476  10.8   (FLET LOCAL::WORK :IN LOCAL::CALL-WITH-HEAD-RANGES) [187]
+   476  10.8                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+------------------------------------------------------------------------
+   476  10.8                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     0   0.0    476  10.8   LOCAL::ATTEND [186]
+   476  10.8                   (FLET LOCAL::WORK :IN LOCAL::CALL-WITH-HEAD-RANGES) [187]
+------------------------------------------------------------------------
+   108   2.5                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+   325   7.4                   CL-TENSOR:MAKE-TENSOR [189]
+     0   0.0    433   9.8   SB-KERNEL:%MAKE-ARRAY [244]
+    51   1.2                   ALLOCATE-VECTOR-ON-HEAP [4]
+   382   8.7                   SB-KERNEL:VECTOR-FILL [92]
+------------------------------------------------------------------------
+   419   9.5                   CL-TENSOR::DISPATCH-OPERATION [34]
+     0   0.0    420   9.5   CL-TENSOR::BUILTIN-ELEMENTWISE [194]
+     1   0.0                   CL-TENSOR::%MAKE-TENSOR [61]
+    13   0.3                   CL-TENSOR::PREPARE-ELEMENTWISE [21]
+   398   9.0                   CL-TENSOR:MAKE-TENSOR [189]
+     8   0.2                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+------------------------------------------------------------------------
+   261   5.9                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     0   0.0    261   5.9   (LAMBDA (CL-TENSOR::AI CL-TENSOR::BI CL-TENSOR::OI) :IN CL-TENSOR::MATMUL-RUN-MATRICES) [197]
+     1   0.0                   SB-KERNEL:TWO-ARG-+ [18]
+    64   1.5                   TRIVIAL-SIMD/BLAS:MAKE-MATRIX-VIEW [128]
+   196   4.5                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+------------------------------------------------------------------------
+    61   1.4                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+   162   3.7                   LOCAL::APPLY-ROPE [42]
+     0   0.0    223   5.1   CL-TENSOR:CONCATENATE [206]
+     5   0.1                   CL-TENSOR:MAKE-TENSOR [189]
+    79   1.8                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+   139   3.2                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE-BETWEEN! (CL-TENSOR:DTYPE T T T T)) [27]
+------------------------------------------------------------------------
+   171   3.9                   TRIVIAL-SIMD/BLAS::CALL-GEMM [84]
+     0   0.0    171   3.9   TRIVIAL-SIMD::%NATIVE-BLAS-GEMM-F32 [209]
+     1   0.0                   foreign function szone_malloc_should_clear [151]
+     1   0.0                   foreign function _platform_memset [141]
+     7   0.2                   foreign function __bzero [3]
+   162   3.7                   foreign function ts_blas_gemm_run_f32 [5]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-CALL-WITH-STORAGE-ADDRESSES [112]
+     0   0.0    101   2.3   (FLET TRIVIAL-SIMD::EXECUTE :IN TRIVIAL-SIMD::ND-OPERATION) [235]
+     3   0.1                   SB-KERNEL:VECTOR-TO-LIST [14]
+     1   0.0                   TRIVIAL-SIMD::ND-ALIAS-P [238]
+    97   2.2                   TRIVIAL-SIMD::ND-COALESCE [38]
+------------------------------------------------------------------------
+     3   0.1                   (LABELS CL-TENSOR::EXECUTE :IN CL-TENSOR::DISPATCH-OPERATION) [199]
+    88   2.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     0   0.0     91   2.1   CL-TENSOR::INDEX-VECTOR [191]
+    91   2.1                   ALLOCATE-VECTOR-ON-HEAP [4]
+------------------------------------------------------------------------
+    63   1.4                   LOCAL::APPLY-ROPE [42]
+     0   0.0     63   1.4   LOCAL::ROTATE-PAIR [192]
+    63   1.4                   CL-TENSOR::DISPATCH-OPERATION [34]
+------------------------------------------------------------------------
+    16   0.4                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     0   0.0     16   0.4   LOCAL::ROPE-TABLES [207]
+     3   0.1                   foreign function listify_rest_arg [63]
+     1   0.0                   SB-KERNEL:EXPT-DOUBLE-FLOAT [247]
+     2   0.0                   COS [246]
+     2   0.0                   SIN [245]
+     8   0.2                   (SETF CL-TENSOR:TREF) [54]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     0   0.0     12   0.3   (LAMBDA (TRIVIAL-SIMD::ADDRESSES) :IN TRIVIAL-SIMD::ND-NATIVE) [204]
+     4   0.1                   POSITION [93]
+     8   0.2                   TRIVIAL-SIMD::%NATIVE-ND-EXECUTE [205]
+------------------------------------------------------------------------
+    10   0.2                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     0   0.0     11   0.2   (SB-PCL::FAST-METHOD CL-TENSOR:VALIDATE-STORAGE-VIEW (CL-TENSOR:DTYPE T T T T)) [195]
+     2   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [56]
+     1   0.0                   CLOSURE-TRAMP [7]
+     8   0.2                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+------------------------------------------------------------------------
+    11   0.2                   CL-TENSOR::NORMALIZATION-ROW-F32-SAME [16]
+     0   0.0     11   0.2   TRIVIAL-SIMD:MAXIMUM [210]
+     3   0.1                   TRIVIAL-SIMD::ARGEXT [73]
+     8   0.2                   TRIVIAL-SIMD::NATIVE-ARGMAX [211]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     8   0.2                   TRIVIAL-SIMD/BLAS::CALL-GEMM [84]
+     0   0.0     10   0.2   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;DLISP3.LISP") [23]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     7   0.2                   CFFI-SYS:%FOREIGN-TYPE-SIZE [234]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (T)) [215]
+------------------------------------------------------------------------
+    10   0.2                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     0   0.0     10   0.2   (FLET CL-TENSOR::EXECUTE :IN CL-TENSOR::BUILTIN-TENSOR-MATMUL) [225]
+     2   0.0                   SB-KERNEL:VECTOR-TO-LIST [14]
+     5   0.1                   CL-TENSOR::OVERLAPPING-P [232]
+     3   0.1                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+------------------------------------------------------------------------
+     1   0.0                   (FLET SB-UNIX::BODY :IN SB-THREAD::RUN) [158]
+     0   0.0      8   0.2   (LAMBDA NIL :IN SB-IMPL::FINALIZER-THREAD-START) [159]
+     8   0.2                   foreign function __psynch_cvwait [25]
+------------------------------------------------------------------------
+     8   0.2                   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-THREAD::RUN) [157]
+     0   0.0      8   0.2   (FLET SB-UNIX::BODY :IN SB-THREAD::RUN) [158]
+     1   0.0                   (LAMBDA NIL :IN SB-IMPL::FINALIZER-THREAD-START) [159]
+     8   0.2                   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-THREAD::RUN) [157]
+------------------------------------------------------------------------
+     8   0.2                   (FLET SB-UNIX::BODY :IN SB-THREAD::RUN) [158]
+     8   0.2                   SB-THREAD::RUN [156]
+     0   0.0      8   0.2   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-THREAD::RUN) [157]
+     8   0.2                   (FLET SB-UNIX::BODY :IN SB-THREAD::RUN) [158]
+------------------------------------------------------------------------
+     0   0.0      8   0.2   SB-THREAD::RUN [156]
+     8   0.2                   (FLET "WITHOUT-INTERRUPTS-BODY-" :IN SB-THREAD::RUN) [157]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+     8   0.2                   (SB-PCL::FAST-METHOD CL-TENSOR:VALIDATE-STORAGE-VIEW (CL-TENSOR:DTYPE T T T T)) [195]
+     0   0.0      8   0.2   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+     1   0.0                   UPGRADED-ARRAY-ELEMENT-TYPE [251]
+     2   0.0                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+     4   0.1                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;DLISP3.LISP") [23]
+     1   0.0                   CLOSURE-TRAMP [7]
+------------------------------------------------------------------------
+     8   0.2                   (LAMBDA (TRIVIAL-SIMD::ADDRESSES) :IN TRIVIAL-SIMD::ND-NATIVE) [204]
+     0   0.0      8   0.2   TRIVIAL-SIMD::%NATIVE-ND-EXECUTE [205]
+     1   0.0                   foreign function ts_nd_execute [134]
+     2   0.0                   foreign function expf [88]
+     4   0.1                   foreign function ts_nd_row_f32 [55]
+------------------------------------------------------------------------
+     8   0.2                   TRIVIAL-SIMD::NATIVE-ARGMAX [211]
+     0   0.0      8   0.2   TRIVIAL-SIMD::NATIVE-FLOAT-REDUCTION [212]
+     3   0.1                   TRIVIAL-SIMD::NATIVE-BULK-FUNCTION [226]
+     5   0.1                   TRIVIAL-SIMD::%NATIVE-ARGMAX-F32 [213]
+------------------------------------------------------------------------
+     8   0.2                   TRIVIAL-SIMD:MAXIMUM [210]
+     0   0.0      8   0.2   TRIVIAL-SIMD::NATIVE-ARGMAX [211]
+     8   0.2                   TRIVIAL-SIMD::NATIVE-FLOAT-REDUCTION [212]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     7   0.2                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     0   0.0      8   0.2   CFFI-SYS:%FOREIGN-TYPE-SIZE [234]
+     8   0.2                   SB-ALIEN-INTERNALS:PARSE-ALIEN-TYPE [31]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::MATMUL-RUN-MATRICES [109]
+     3   0.1                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     2   0.0                   CL-TENSOR::MATMUL-RUN [37]
+     4   0.1                   (SETF CL-TENSOR:TREF) [54]
+     0   0.0      8   0.2   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     1   0.0                   FUNCALLABLE-INSTANCE-TRAMP [49]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [56]
+     2   0.0                   CLOSURE-TRAMP [7]
+     3   0.1                   (SB-PCL::FAST-METHOD CL-TENSOR:COERCE-SCALAR (CL-TENSOR:DTYPE T)) [243]
+     2   0.0                   TYPEP [103]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::PREPARE-ELEMENTWISE [21]
+     2   0.0                   CL-TENSOR::NORMALIZATION-WEIGHTS [252]
+     2   0.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     0   0.0      5   0.1   CL-TENSOR::BROADCAST-SHAPE [202]
+     2   0.0                   REDUCE [12]
+     3   0.1                   REMOVE-IF-NOT [68]
+------------------------------------------------------------------------
+     5   0.1                   TRIVIAL-SIMD::NATIVE-FLOAT-REDUCTION [212]
+     0   0.0      5   0.1   TRIVIAL-SIMD::%NATIVE-ARGMAX-F32 [213]
+     5   0.1                   foreign function ts_argmax_f32 [46]
+------------------------------------------------------------------------
+     5   0.1                   (FLET CL-TENSOR::EXECUTE :IN CL-TENSOR::BUILTIN-TENSOR-MATMUL) [225]
+     0   0.0      5   0.1   CL-TENSOR::OVERLAPPING-P [232]
+     5   0.1                   REDUCE [12]
+------------------------------------------------------------------------
+     5   0.1                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     0   0.0      5   0.1   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-BATCH-VIEW [260]
+     5   0.1                   TRIVIAL-SIMD/BLAS::MATRIX-BOUNDS [24]
+------------------------------------------------------------------------
+     4   0.1                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     0   0.0      4   0.1   TRIVIAL-SIMD/BLAS::MATRIX-ELEMENTS-OVERLAP-P [198]
+     4   0.1                   TRIVIAL-SIMD/BLAS::MATRIX-SPANS-OVERLAP-P [80]
+------------------------------------------------------------------------
+     4   0.1                   CL-TENSOR:RESHAPE [118]
+     0   0.0      4   0.1   CL-TENSOR::RESHAPE-SHAPE [236]
+     2   0.0                   COPY-LIST [98]
+     2   0.0                   REDUCE [12]
+------------------------------------------------------------------------
+     3   0.1                   CL-TENSOR:MAKE-TENSOR [189]
+     0   0.0      3   0.1   (SB-PCL::FAST-METHOD CL-TENSOR:ALLOCATE-STORAGE (CL-TENSOR:DTYPE T)) [190]
+     1   0.0                   REDUCE [12]
+     2   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [51]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     1   0.0                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (T)) [215]
+     0   0.0      3   0.1   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [131]
+     1   0.0                   CLOSURE-TRAMP [7]
+------------------------------------------------------------------------
+     3   0.1                   TRIVIAL-SIMD::NATIVE-FLOAT-REDUCTION [212]
+     0   0.0      3   0.1   TRIVIAL-SIMD::NATIVE-BULK-FUNCTION [226]
+     1   0.0                   SB-INT:%INTERN [249]
+     2   0.0                   TRIVIAL-SIMD::NATIVE-BULK-SYMBOL [227]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+     0   0.0      2   0.0   LOCAL::MODEL-BLOCK-OF-TYPE [183]
+     2   0.0                   FIND-IF [102]
+------------------------------------------------------------------------
+     2   0.0                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+     0   0.0      2   0.0   (FLET "WRAPPER29" :IN CL-TENSOR::DISPATCH-OPERATION) [193]
+     2   0.0                   SB-KERNEL:%MEMBER [107]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD::NATIVE-BULK-SYMBOL [227]
+     0   0.0      2   0.0   SB-FORMAT::PRINC-MULTIPLE-TO-STRING [228]
+     1   0.0                   GET-OUTPUT-STREAM-STRING [254]
+     1   0.0                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [229]
+------------------------------------------------------------------------
+     2   0.0                   TRIVIAL-SIMD::NATIVE-BULK-FUNCTION [226]
+     0   0.0      2   0.0   TRIVIAL-SIMD::NATIVE-BULK-SYMBOL [227]
+     2   0.0                   SB-FORMAT::PRINC-MULTIPLE-TO-STRING [228]
+------------------------------------------------------------------------
+     2   0.0                   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:ATTENTION T)) [78]
+     0   0.0      2   0.0   LOCAL:LINEAR [230]
+     1   0.0                   CL-TENSOR:TRANSPOSE [26]
+     1   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+------------------------------------------------------------------------
+     2   0.0                   LOCAL::ROPE-TABLES [207]
+     0   0.0      2   0.0   SIN [245]
+     2   0.0                   foreign function tan [60]
+------------------------------------------------------------------------
+     2   0.0                   LOCAL::ROPE-TABLES [207]
+     0   0.0      2   0.0   COS [246]
+     2   0.0                   foreign function tan [60]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     0   0.0      2   0.0   CFFI::MEM-SET [248]
+     1   0.0                   CFFI::PARSE-TYPE [146]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;DLISP3.LISP") [23]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR::BUILTIN-TENSOR-NORMALIZATION [79]
+     0   0.0      2   0.0   CL-TENSOR::NORMALIZATION-WEIGHTS [252]
+     2   0.0                   CL-TENSOR::BROADCAST-SHAPE [202]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR:TRANSPOSE [26]
+     1   0.0                   CL-TENSOR::NORMALIZE-AXES [62]
+     0   0.0      2   0.0   CL-TENSOR::NORMALIZE-AXIS [259]
+     2   0.0                   SB-KERNEL:TWO-ARG-<= [59]
+------------------------------------------------------------------------
+     2   0.0                   CL-TENSOR:MAKE-TENSOR-VIEW [67]
+     0   0.0      2   0.0   CL-TENSOR:ROW-MAJOR-STRIDES [261]
+     2   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-NATIVE [45]
+     0   0.0      1   0.0   (FLET "CLEANUP-FUN-5" :IN TRIVIAL-SIMD::ND-NATIVE) [208]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ELEMENT-POINTER [214]
+     0   0.0      1   0.0   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (T)) [215]
+     1   0.0                   (SB-PCL::FAST-METHOD CFFI:FOREIGN-TYPE-SIZE (CFFI::FOREIGN-BUILT-IN-TYPE)) [216]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::RUN-STAGED [223]
+     0   0.0      1   0.0   TRIVIAL-SIMD::MAKE-STAGING [224]
+     1   0.0                   TRIVIAL-SIMD::STAGING-ORDER [120]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD:COPY! [222]
+     0   0.0      1   0.0   TRIVIAL-SIMD::RUN-STAGED [223]
+     1   0.0                   TRIVIAL-SIMD::MAKE-STAGING [224]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE! (CL-INFERENCE/QUANT:Q8-0 T T)) [221]
+     0   0.0      1   0.0   TRIVIAL-SIMD:COPY! [222]
+     1   0.0                   TRIVIAL-SIMD::RUN-STAGED [223]
+------------------------------------------------------------------------
+     1   0.0                   (LAMBDA (CL-TENSOR::OFFSET) :IN CL-TENSOR::GATHER-SLICES) [220]
+     0   0.0      1   0.0   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE! (CL-INFERENCE/QUANT:Q8-0 T T)) [221]
+     1   0.0                   TRIVIAL-SIMD:COPY! [222]
+------------------------------------------------------------------------
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+     0   0.0      1   0.0   (LAMBDA (CL-TENSOR::OFFSET) :IN CL-TENSOR::GATHER-SLICES) [220]
+     1   0.0                   (SB-PCL::FAST-METHOD CL-TENSOR:COPY-STORAGE! (CL-INFERENCE/QUANT:Q8-0 T T)) [221]
+------------------------------------------------------------------------
+     1   0.0                   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::OPERANDS) :IN CL-TENSOR::TENSOR-TAKE) [218]
+     0   0.0      1   0.0   CL-TENSOR::GATHER-SLICES [219]
+     1   0.0                   (LABELS CL-TENSOR::WALK :IN CL-TENSOR::CALL-WITH-OFFSETS) [13]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     0   0.0      1   0.0   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::OPERANDS) :IN CL-TENSOR::TENSOR-TAKE) [218]
+     1   0.0                   CL-TENSOR::GATHER-SLICES [219]
+------------------------------------------------------------------------
+     1   0.0                   SB-FORMAT::PRINC-MULTIPLE-TO-STRING [228]
+     0   0.0      1   0.0   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [229]
+     1   0.0                   CLOSURE-TRAMP [7]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-NATIVE [45]
+     0   0.0      1   0.0   (FLET "CLEANUP-FUN-9" :IN TRIVIAL-SIMD::ND-NATIVE) [231]
+     1   0.0                   foreign function free [122]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::BUILTIN-TENSOR-MATMUL [28]
+     0   0.0      1   0.0   CL-TENSOR::UNIQUE-OUTPUT-P [233]
+     1   0.0                   REDUCE [12]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-OPERATION [36]
+     0   0.0      1   0.0   TRIVIAL-SIMD::ND-SHAPE [237]
+     1   0.0                   SB-KERNEL:%MAP-FOR-EFFECT-ARITY-1 [52]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::VECTOR-ELEMENT-SIZE [240]
+     0   0.0      1   0.0   TRIVIAL-SIMD::NUMERIC-TYPE [241]
+     1   0.0                   SB-KERNEL:%ASSOC [130]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-SPAN [239]
+     0   0.0      1   0.0   TRIVIAL-SIMD::VECTOR-ELEMENT-SIZE [240]
+     1   0.0                   TRIVIAL-SIMD::NUMERIC-TYPE [241]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-ALIAS-P [238]
+     0   0.0      1   0.0   TRIVIAL-SIMD::ND-SPAN [239]
+     1   0.0                   TRIVIAL-SIMD::VECTOR-ELEMENT-SIZE [240]
+------------------------------------------------------------------------
+     1   0.0                   (FLET TRIVIAL-SIMD::EXECUTE :IN TRIVIAL-SIMD::ND-OPERATION) [235]
+     0   0.0      1   0.0   TRIVIAL-SIMD::ND-ALIAS-P [238]
+     1   0.0                   TRIVIAL-SIMD::ND-SPAN [239]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     0   0.0      1   0.0   TRIVIAL-SIMD/BLAS::VALIDATE-LEVEL2-SCALAR [242]
+     1   0.0                   TYPEP [103]
+------------------------------------------------------------------------
+     1   0.0                   (SB-PCL::FAST-METHOD LOCAL:MODEL-FORWARD (LOCAL:MODEL T)) [182]
+     0   0.0      1   0.0   (SB-PCL::FAST-METHOD LOCAL:BLOCK-FORWARD (LOCAL:EMBEDDING T)) [217]
+     1   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+------------------------------------------------------------------------
+     1   0.0                   LOCAL::ROPE-TABLES [207]
+     0   0.0      1   0.0   SB-KERNEL:EXPT-DOUBLE-FLOAT [247]
+     1   0.0                   foreign function pow [135]
+------------------------------------------------------------------------
+     1   0.0                   SB-INT:%INTERN [249]
+     0   0.0      1   0.0   SB-IMPL::%FIND-SYMBOL [250]
+     1   0.0                   SB-IMPL::CALC-SYMBOL-NAME-HASH [136]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::NATIVE-BULK-FUNCTION [226]
+     0   0.0      1   0.0   SB-INT:%INTERN [249]
+     1   0.0                   SB-IMPL::%FIND-SYMBOL [250]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::DTYPE-MATCHES-STORAGE-P [196]
+     0   0.0      1   0.0   UPGRADED-ARRAY-ELEMENT-TYPE [251]
+     1   0.0                   SB-VM::%VECTOR-WIDETAG-AND-N-BITS-SHIFT [137]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD::ND-WITH-POINTERS [113]
+     0   0.0      1   0.0   (FLET "CLEANUP-FUN-3" :IN TRIVIAL-SIMD::ND-WITH-POINTERS) [253]
+     1   0.0                   foreign function _free [144]
+------------------------------------------------------------------------
+     1   0.0                   SB-FORMAT::PRINC-MULTIPLE-TO-STRING [228]
+     0   0.0      1   0.0   GET-OUTPUT-STREAM-STRING [254]
+     1   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+------------------------------------------------------------------------
+     1   0.0                   (LAMBDA (LOCAL::START LOCAL::END) :IN LOCAL::ATTEND) [188]
+     0   0.0      1   0.0   (FLET "WRAPPER33" :IN CL-TENSOR::DISPATCH-OPERATION) [255]
+     1   0.0                   (LABELS CL-TENSOR::FALLBACK :IN CL-TENSOR::TENSOR-MATMUL) [145]
+------------------------------------------------------------------------
+     0   0.0      1   0.0   CL-TENSOR::NORMALIZE-TAKE-INDICES [256]
+     1   0.0                   CLOSURE-TRAMP [7]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::CHECK-OPERATION [257]
+     0   0.0      1   0.0   CL-TENSOR::COMPUTATIONAL-DTYPE [258]
+     1   0.0                   (LAMBDA (SB-PCL::.ARG0.) :IN "SYS:SRC;PCL;BRAID.LISP") [51]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::PREPARE-ELEMENTWISE [21]
+     0   0.0      1   0.0   CL-TENSOR::CHECK-OPERATION [257]
+     1   0.0                   CL-TENSOR::COMPUTATIONAL-DTYPE [258]
+------------------------------------------------------------------------
+     1   0.0                   TRIVIAL-SIMD/BLAS::LEVEL3-GEMM [53]
+     0   0.0      1   0.0   TRIVIAL-SIMD/BLAS::VALIDATE-GEMM-OUTPUT [262]
+     1   0.0                   TRIVIAL-SIMD/BLAS::GEMM-LAYOUT-UNIQUE-P [117]
+------------------------------------------------------------------------
+     1   0.0                   (SETF CL-TENSOR:TREF) [54]
+     0   0.0      1   0.0   CL-TENSOR::COERCE-VALUE [263]
+     1   0.0                   CL-TENSOR:FIND-DTYPE [129]
+------------------------------------------------------------------------
+     1   0.0                   CL-TENSOR::DISPATCH-OPERATION [34]
+     0   0.0      1   0.0   (LAMBDA (CL-TENSOR::TARGET CL-TENSOR::PACKED) :IN CL-TENSOR::TENSOR-NORMALIZATION) [264]
+     1   0.0                   ALLOCATE-VECTOR-ON-HEAP [4]
+------------------------------------------------------------------------
+
+
+           Self        Total        Cumul
+  Nr  Count     %  Count     %  Count     %    Calls  Function
+------------------------------------------------------------------------
+   2   2584  58.7   2584  58.7   2584  58.7        -  foreign function q8_0_matmul_tile4
+   4    382   8.7    382   8.7   2966  67.4        -  SB-KERNEL:UB32-BASH-FILL-WITH-SINGLE-FLOAT
+   6    315   7.2    315   7.2   3281  74.5        -  foreign function __bzero
+   8    233   5.3    237   5.4   3514  79.8        -  ALLOCATE-VECTOR-ON-HEAP
+  10    162   3.7    162   3.7   3676  83.5        -  foreign function ts_blas_gemm_run_f32
+  12     55   1.2     55   1.2   3731  84.7        -  TRIVIAL-SIMD/BLAS::%MAKE-MATRIX-VIEW
+  14     49   1.1     61   1.4   3780  85.9        -  CLOSURE-TRAMP
+  16     35   0.8     35   0.8   3815  86.6        -  (LAMBDA (SB-PCL::.ARG0. SB-PCL::.ARG1.) :IN "/private/tmp/inference-hotspots.lisp")
+  18     22   0.5     22   0.5   3837  87.1        -  (SB-VM::OPTIMIZED-DATA-VECTOR-REF SINGLE-FLOAT)
+  20     22   0.5     22   0.5   3859  87.6        -  TAIL-CALL-CALLABLE-VARIABLE
+------------------------------------------------------------------------
+          2   0.0                                     elsewhere

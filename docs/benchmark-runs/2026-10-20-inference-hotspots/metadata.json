@@ -1,0 +1,21 @@
+{
+  "revisions": {
+    "cl-inference": "e4d819b0bb718bfc5edd14eeee9dae54542b22b6",
+    "cl-tensor": "ad606e270c74f5ad8f7a65959c98555467d65841",
+    "trivial-simd": "26bb84d9afaeb146b5e92c1b27f594268914e159"
+  },
+  "files_sha256": {
+    "qwen-q8-prefill-environment.json": "761fc712f5fb096ca1a24b759a32692b34ef91303116f2d81c2be08d7d2db258",
+    "qwen-q8-decode.log": "06c7397d1ae343c3e3e9d8042c1f6b97b8e50273ab097bfb2fff35b182bc42b7",
+    "qwen-f16-decode.log": "3d9e058f412a498c828ee422aa6cbe0fe7f947dc6195f4e4e53811a716473d8f",
+    "qwen-f16-prefill-environment.json": "d3397e7d4026d4bff8785c73a22a51451dca565b842c696d9f8910dfcdc2a83c",
+    "run-inference-hotspots.py": "1ed1e09c1cefb58b8f374905da2405433ea6f69acd0771991ea5e7d6e7f9ff33",
+    "qwen-f16-prefill.log": "ce54f6c067e21e38494737678e920048af4cd83b78c149ed0bddae5ef9bdc243",
+    "qwen-q8-decode-environment.json": "928d68a82efc3fe4de2223fba460ce2cce44464f39d46e98d5c2027b87ff8450",
+    "qwen-q8-prefill.log": "6922609903779003959b515e4569a6aa0d0d3c6b9c55e1d5a94f73ce28e7ac25",
+    "qwen-f16-decode-environment.json": "d20eb1aa746d55636e936d5f9c21e11bc4f23d66ad7b978e7f13e2069d770e38",
+    "inference-hotspots.lisp": "8314b153ae298a5f49486f8a495b09f2e6e928649dca116c91ed2a2d3fd051db"
+  },
+  "native_sampler": "macOS sample stalled; manually terminated in each case; no native reports collected",
+  "scope": "Qwen3 0.6B F16 and Q8_0, 128 tokens, serial CPU, one native thread; SBCL CPU sampling, 2 ms requested interval; 30-second minimum loops"
+}

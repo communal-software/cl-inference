@@ -52,6 +52,6 @@ All 240 timing rows pass validation. Every measured generation returns its expec
 
 This is one Apple M1 with 8 GB RAM, macOS 15.7.5 and SBCL 2.6.8. An observation during the first baseline process records 6.66 GiB of swap use. Alternating order and the CPU guard do not remove memory pressure. All samples, including outliers, remain in the evidence.
 
-The comparison covers the complete integration, including shared pointwise dispatch changes. It does not isolate individual admitted SIMD kernels or establish GPU, executor, other-machine, native-default threading or long-context performance. Primitive-level speedups do not establish whole-model gains. Profiling inference hotspots on a machine with sufficient free memory is the next useful measurement.
+The comparison covers the complete integration, including shared pointwise dispatch changes. It does not isolate individual admitted SIMD kernels or establish GPU, executor, other-machine, native-default threading or long-context performance. Primitive-level speedups do not establish whole-model gains. The [Qwen hotspot profile](inference-hotspots.md) identifies matrix kernels and allocation/copying as investigation candidates; controlled comparisons still require sufficient free memory.
 
 [^summary]: The paired change is `100 × (1 − after/before)`. Per-version times are medians across five processes; their ratio can differ from the median paired change. Raw allocation counts cover Lisp allocation, excluding native allocation. Metadata records the exact benchmark source hashes alongside runtime revisions.
