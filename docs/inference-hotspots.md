@@ -17,7 +17,7 @@ Inclusive traversal costs contain copying and child calls; they overlap other en
 
 ## Next measurements
 
-1. Profile encoded matrix kernels with their actual Qwen projection shapes and include conversion, scratch allocation and output allocation. Compare complete decode calls before selecting a kernel change.
+1. Attribute weight conversion and loading costs within encoded matrix kernels. The [ARM64 wider-tile experiment](https://github.com/communal-software/trivial-simd/blob/trunk/docs/encoded-decode-tiles.md) does not establish a Qwen improvement; the four-output kernel remains selected. Compare complete decode calls before selecting another kernel change.
 2. Attribute remaining copying and allocation after the bulk-copy path. The generic-copy profile records 18–28% inclusive traversal samples; reusable scratch requires separate ownership and layout validation.
 
 The table describes the generic-copy runtime identified in the archived metadata. Bulk-copy results use a separate alternating-process comparison; the remaining candidates require further measurements.
