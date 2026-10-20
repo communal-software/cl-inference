@@ -24,7 +24,7 @@ The jobs use Ubuntu 24.04, SBCL 2.6.8 and native trivial-simd kernels. Both jobs
 | cl-tensor | `a7f765911268adfce9668ee8b4356f1ab238b01f` |
 | trivial-simd | `19d734f8806e07d5ce5b806e90b44621f4347146` |
 
-Dependency caching is disabled. Local development setup is described in [Getting started](getting-started.md#install).
+Local development setup is described in [Getting started](getting-started.md#install).
 
 ## Model acceptance
 
@@ -47,5 +47,9 @@ Models, builds and generated references stay under gitignored `reference/`. Each
 The fixture job has a 30-minute timeout; acceptance has 90 minutes. Failed jobs upload logs. Acceptance failures also upload the generated oracle outputs and provenance, excluding model weights. The workflow needs no secrets and uses read-only repository permissions.
 
 The workflow can be checked locally with `actionlint .github/workflows/ci.yml`. The [testing guide](testing.md) lists individual Lisp suites and offline Python commands.
+
+## Limitations
+
+Dependency caching is disabled, so fixture and acceptance jobs repeat the full toolchain setup. [Dependency caching](https://github.com/communal-software/cl-inference/issues/78) tracks this runtime improvement.
 
 [^pins]: Update the shared action and this table together when changing dependency revisions. Other Lisp libraries come from the setup action's Quicklisp environment.
