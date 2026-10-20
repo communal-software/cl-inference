@@ -11,8 +11,3 @@
 (defvar *quant-manifest* nil)
 
 (def-suite :cl-inference/acceptance)
-
-(defun run-tests ()
-  (clrhash *hashes*)
-  (clrhash *runs*)
-  (run! :cl-inference/acceptance))

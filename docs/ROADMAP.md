@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 20 October 2026 · GitHub · 174 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 20 October 2026 · GitHub · 176 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -19,11 +19,11 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 
 | Repository | P0 | P1 | P2 | P3 | Open |
 |---|---:|---:|---:|---:|---:|
-| cl-inference | 0 | 9 | 10 | 8 | 27 |
+| cl-inference | 0 | 9 | 11 | 9 | 29 |
 | cl-tensor | 0 | 3 | 8 | 11 | 22 |
 | cl-gpu | 0 | 11 | 17 | 34 | 62 |
 | trivial-simd | 0 | 0 | 12 | 51 | 63 |
-| **Total** | **0** | **23** | **47** | **104** | **174** |
+| **Total** | **0** | **23** | **48** | **105** | **176** |
 
 ## Work order
 
@@ -79,7 +79,8 @@ Partial dependencies alone do not earn `blocked`: independent portions can proce
 | Issue | Portion waiting on a prerequisite |
 |---|---|
 | [cl-tensor #5](https://github.com/communal-software/cl-tensor/issues/5) | Upstream elementwise uniqueness validation needs [trivial-simd #63](https://github.com/communal-software/trivial-simd/issues/63); local validation work can proceed. |
-| [cl-inference #20](https://github.com/communal-software/cl-inference/issues/20) | Windows validation needs the Windows CI portion of [#19](https://github.com/communal-software/cl-inference/issues/19); mapping implementation can proceed. |
+| [cl-inference #20](https://github.com/communal-software/cl-inference/issues/20) | Windows mapping validation needs the runner in [#80](https://github.com/communal-software/cl-inference/issues/80); mapping implementation can proceed. |
+| [cl-inference #80](https://github.com/communal-software/cl-inference/issues/80) | Windows CPU fixtures and mapping checks need [#20](https://github.com/communal-software/cl-inference/issues/20); client-only Windows CI can proceed independently. |
 | [cl-gpu #70](https://github.com/communal-software/cl-gpu/issues/70) | Compact triangular solves need the solve design in [#69](https://github.com/communal-software/cl-gpu/issues/69); other compact operations can proceed. |
 
 Completed scaffold, GGUF-reader, ECL/CCL and native-f64 storage/non-BLAS prerequisites are not current blockers. C64 complex primitives use native f64 capability; remaining tensor integration is not blocked on the completed storage representation. Model/artifact selection, hardware access and coordination references alone do not establish an issue dependency. Potentially superseded work still needs scope confirmation before implementation.
@@ -118,10 +119,13 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 
 ### P2 — performance and reliability
 
+[Inference CI](ci.md) runs Linux/SBCL fixtures and manual/tag Qwen3 F16 acceptance. Dependency caching and secondary Lisp automation remain separate work.
+
 | Repository | Ticket | State / owner | Priority reason / next action |
 |---|---|---|---|
 | cl-inference | [#1 — cl-inference roadmap: general-purpose inference on cl-tensor](https://github.com/communal-software/cl-inference/issues/1) | Open — unassigned | Coordination umbrella; reconcile completed children and link this roadmap. Do not count it as another deliverable. |
-| cl-inference | [#19 — CI](https://github.com/communal-software/cl-inference/issues/19) | Open — unassigned | Automate SBCL fixtures and secondary ECL/CCL checks; keep real-model runs opt-in. |
+| cl-inference | [#78 — Cache Linux CI toolchain and pinned CPU dependencies](https://github.com/communal-software/cl-inference/issues/78) | Open — unassigned | Reduce the measured 3m50s setup repeated in fixture and acceptance jobs; preserve cold-run correctness and dependency pins. |
+| cl-inference | [#79 — Extend Linux CI to CCL and ECL](https://github.com/communal-software/cl-inference/issues/79) | Open — unassigned | Automate secondary Lisp fixtures and examples; keep real-model acceptance on the selected SBCL manual/tag path. |
 | cl-inference | [#41 — Q8_0 prefill: dequantize tiles and use BLAS for many activation rows](https://github.com/communal-software/cl-inference/issues/41) | Open — unassigned | Measured long-prompt prefill bottleneck; preserve the fast single-row path. |
 | cl-inference | [#49 — MLX KV cache: avoid full-capacity slice updates](https://github.com/communal-software/cl-inference/issues/49) | Open — unassigned | Context-sized cache traffic can limit long-context decode; measure donation/chunking. |
 | cl-inference | [#56 — Function tool wrappers: disambiguate untyped and nullable scalar values](https://github.com/communal-software/cl-inference/issues/56) | Open — unassigned | Choose explicit scalar codecs or an ambiguity policy; cover nullable/untyped values and delimiter collisions. |
@@ -173,6 +177,7 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | Repository | Ticket | State / owner | Priority reason / next action |
 |---|---|---|---|
 | cl-inference | [#20 — GGUF reader: Windows file mapping](https://github.com/communal-software/cl-inference/issues/20) | Open — unassigned | Windows/BSD are explicitly low priority, including their CI requirements. |
+| cl-inference | [#80 — Add Windows/SBCL CI runner](https://github.com/communal-software/cl-inference/issues/80) | Open — unassigned | Set up hosted Windows/SBCL client CI independently; enable CPU fixtures and mapping validation when Windows mappings are available. |
 | cl-inference | [#21 — GGUF reader: verify BSD file mapping](https://github.com/communal-software/cl-inference/issues/21) | Open — unassigned | Windows/BSD are explicitly low priority, including their CI requirements. |
 | cl-inference | [#22 — GGUF reader: faster string decoding](https://github.com/communal-software/cl-inference/issues/22) | Open — unassigned | Load-time string-copy optimization; no added model capability. |
 | cl-inference | [#25 — client: json-get is O(n^2) when building large JSON objects](https://github.com/communal-software/cl-inference/issues/25) | Open — unassigned | Existing implementation is adequate at human request rates; scale only with evidence. |

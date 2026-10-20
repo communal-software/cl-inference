@@ -4,6 +4,7 @@
 
 (defvar *cases* nil)
 (defvar *models* nil)
+(defvar *reference-directory* nil)
 
 (defun case-option (case key) (getf (rest (assoc case *cases*)) key))
 
@@ -18,14 +19,49 @@
       (rest (assoc (model-option (case-option case :model) :dtype) *tolerances*))))
 
 (defun reference-path (&rest parts)
-  (asdf:system-relative-pathname
-   "cl-inference"
-   (format nil "reference/~{~a~^/~}~:[/~;~]" parts (find #\. (car (last parts))))))
+  (merge-pathnames
+   (format nil "~{~a~^/~}~:[/~;~]" parts (find #\. (car (last parts))))
+   (or *reference-directory* (asdf:system-relative-pathname "cl-inference" "reference/"))))
 
 (defun model-path (kind) (reference-path "models" (second (assoc kind *models*))))
 (defun model-sha (kind) (third (assoc kind *models*)))
 (defun model-option (kind key) (getf (cdddr (assoc kind *models*)) key))
 (defun case-horizon (case) (or (case-option case :horizon) *greedy-horizon*))
+
+(defun acceptance-test-names (cases)
+  (unless cases (error "Acceptance case selection is empty"))
+  (let ((names (remove-duplicates
+                (loop for case in cases
+                      unless (assoc case *cases*) do (error "Unknown acceptance case: ~S" case)
+                      append (append
+                              (let ((metadata (model-option (case-option case :model) :metadata-test)))
+                                (when metadata (list metadata)))
+                              (loop for suffix in '(prompt-ids layer-traces logits greedy)
+                                    collect (intern (format nil "~A-~A" case suffix)
+                                                    :cl-inference/acceptance))))
+                :from-end t)))
+    (dolist (name names)
+      (unless (get-test name) (error "Missing acceptance test: ~S" name)))
+    names))
+
+(defun run-tests (&key (cases nil cases-p) strict)
+  (clrhash *hashes*)
+  (clrhash *runs*)
+  (let ((selection (if cases-p (acceptance-test-names cases) :cl-inference/acceptance)))
+    (when strict
+      (dolist (case (if cases-p cases (mapcar #'first *cases*)))
+        (unless (verified-model-p (case-option case :model))
+          (error "~A: model missing or SHA256 differs" case))
+        (unless (oracle case) (error "~A: oracle dump missing" case))
+        (verify-case-oracle (case-option case :family) case)))
+    (let ((results (run selection)))
+      (explain! results)
+      (acceptance-results-ok-p results strict))))
+
+(defun acceptance-results-ok-p (results strict)
+  (multiple-value-bind (passed failures skipped) (results-status results)
+    (declare (ignore failures))
+    (and passed (or (not strict) (and results (null skipped))))))
 
 (defun sha256 (path)
   (let ((output (handler-case (uiop:run-program (list "shasum" "-a" "256" (namestring path))

@@ -1,6 +1,6 @@
 # Testing
 
-The suite uses FiveAM. [Runnable examples](examples.md#run-without-downloads) have an offline smoke-test system.
+The suite uses FiveAM. [Runnable examples](examples.md#run-without-downloads) have an offline smoke-test system. [Continuous integration](ci.md) describes automated coverage, triggers and diagnostics.
 
 ```sh
 sbcl --non-interactive --eval '(require :asdf)' --eval '(asdf:test-system :cl-inference)'        # client
@@ -143,6 +143,14 @@ Packed GGUF/MLX fixtures use `asdf:test-system "cl-inference/mlx-gguf"`. [GGUF/M
 Models and oracle dumps stay in gitignored `reference/`. Missing inputs skip individual cases; skips do not establish acceptance. See [Model acceptance](acceptance.md) for downloads, commands and numerical bounds.
 
 Q4_0, Q4_K_M and Q6_K real-model cases use a F32-dequantized reference. See [Q4/Q6 acceptance](quant-acceptance.md) for reproducible preparation and strict verification.
+
+Acceptance-runner regression tests and CPU reference-preparation tests run offline:
+
+```sh
+sbcl --non-interactive --eval '(ql:quickload "cl-inference/local/acceptance/tests")' \
+  --eval '(asdf:test-system "cl-inference/local/acceptance/tests")'
+python3 -m unittest discover -s tests/acceptance -p 'test_*.py'
+```
 
 [^template-data]: Template and golden-fixture whitespace is literal data. Git preserves LF and excludes those files from whitespace-error checks.
 

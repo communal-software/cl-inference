@@ -66,20 +66,34 @@ Qwen3 uses the standard [per-format bounds](#llama-reference-checks) with two ca
 
 F16 and Q8_0 thinking chat retain their standard bounds. Prompt and greedy ids match exactly in every case.[^drift]
 
-Set `DUMP_THINKING=0` for non-thinking chat or `1` for thinking chat when generating reference dumps.[^qwen-oracle]
+Prepare all three F16 references from a clean checkout with Python 3.11 or later, Git, CMake and a C++17 compiler:
 
 ```sh
-for kind in f16 q8; do
-  case "$kind" in
-    f16) model=reference/models/Qwen3-0.6B-f16.gguf ;;
-    q8) model=reference/models/Qwen3-0.6B-Q8_0.gguf ;;
-  esac
-  reference/llama-oracle.sh "$model" "qwen-$kind" "The capital of France is"
-  DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
-    DUMP_THINKING=1 reference/llama-oracle.sh "$model" "qwen-$kind-thinking" ""
-  DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
-    DUMP_THINKING=0 reference/llama-oracle.sh "$model" "qwen-$kind-chat" ""
-done
+python3 tests/acceptance/prepare-qwen.py
+```
+
+The script downloads the pinned model, verifies its SHA256 and builds the tracked oracle against the pinned llama.cpp revision. It stores all generated files under gitignored `reference/` and writes provenance alongside each dump. [CI](ci.md#model-acceptance) runs this preparation on manual dispatch and tag pushes.
+
+Select the three F16 cases in a Lisp image with Quicklisp loaded:
+
+```lisp
+(ql:quickload "cl-inference/local/acceptance")
+(cl-inference/acceptance:run-tests
+ :cases '(:qwen-f16 :qwen-f16-thinking :qwen-f16-chat)
+ :strict t)
+```
+
+`:cases` selects the four checks for each case and registered model metadata checks. Unknown or empty selections signal an error. `:strict t` rejects missing or mismatched inputs and returns false for skipped or failed checks. Calling `run-tests` without arguments retains the full suite and its missing-input skips.
+
+For Q8_0 references, set `DUMP_THINKING=0` for non-thinking chat or `1` for thinking chat when using the development oracle.[^qwen-oracle]
+
+```sh
+model=reference/models/Qwen3-0.6B-Q8_0.gguf
+reference/llama-oracle.sh "$model" qwen-q8 "The capital of France is"
+DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
+  DUMP_THINKING=1 reference/llama-oracle.sh "$model" qwen-q8-thinking ""
+DUMP_SYSTEM="Answer in one word." DUMP_USER="What is the capital of France?" \
+  DUMP_THINKING=0 reference/llama-oracle.sh "$model" qwen-q8-chat ""
 sbcl --dynamic-space-size 16GB --non-interactive --eval '(require :asdf)' \
   --eval '(asdf:test-system :cl-inference/local/acceptance)'
 ```
