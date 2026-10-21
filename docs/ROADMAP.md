@@ -2,7 +2,7 @@
 
 Expand cl-inference model coverage and inference features first. Child-library work ranks by the parent capability it enables.
 
-**Audit: 20 October 2026 · GitHub · 176 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
+**Audit: 20 October 2026 · GitHub · 175 open issues across four repositories.** GitHub is authoritative for ticket state; this document records work order and next actions.[^audit]
 
 ## Priorities
 
@@ -20,10 +20,10 @@ SBCL is primary; ECL and CCL are secondary. Windows/BSD stay low priority even f
 | Repository | P0 | P1 | P2 | P3 | Open |
 |---|---:|---:|---:|---:|---:|
 | cl-inference | 0 | 9 | 11 | 9 | 29 |
-| cl-tensor | 0 | 3 | 8 | 11 | 22 |
+| cl-tensor | 0 | 3 | 7 | 11 | 21 |
 | cl-gpu | 0 | 11 | 17 | 34 | 62 |
 | trivial-simd | 0 | 0 | 12 | 51 | 63 |
-| **Total** | **0** | **23** | **48** | **105** | **176** |
+| **Total** | **0** | **23** | **47** | **105** | **175** |
 
 ## Work order
 
@@ -134,7 +134,6 @@ No open issue in this audit establishes a main-path SBCL inference correctness b
 | cl-inference | [#59 — Half-weight serial dispatch: account for irregular-layout packing costs](https://github.com/communal-software/cl-inference/issues/59) | Open — unassigned | Serial irregular-layout auto dispatch is about 12–15× slower than tiled conversion in the isolated profile. Measure a layout-aware policy; preserve mapped/padded paths. |
 | cl-inference | [#68 — MLX GGUF: reuse packed weight tiles across prefill token rows](https://github.com/communal-software/cl-inference/issues/68) | Open — unassigned | Measure packed GGUF prefill tile reuse across token rows; preserve quantized-format and cached-decode acceptance. |
 | cl-inference | [#70 — Gemma sliding-window layers: bound KV storage and attention work](https://github.com/communal-software/cl-inference/issues/70) | Open — unassigned | Bound sliding-layer KV history and attention to the local window; preserve absolute positions and global layers. Verify beyond 512 tokens. |
-| cl-tensor | [#4 — CI](https://github.com/communal-software/cl-tensor/issues/4) | Open — unassigned | Protects tensor correctness on the main development path. |
 | cl-tensor | [#6 — Avoid unnecessary snapshots for mixed Lisp and foreign storage](https://github.com/communal-software/cl-tensor/issues/6) | Open — unassigned | Reproduce the mapped F32 projection snapshot cost on current code, then prove disjoint mixed storage without weakening alias safety. |
 | cl-tensor | [#9 — Investigate incomplete or crashing normalization reference checks on experimental ARM64 CCL](https://github.com/communal-software/cl-tensor/issues/9) | Open — unassigned | CCL secondary support: green tests can omit assertions; require complete trial counts. |
 | cl-tensor | [#14 — Execute fused expressions through upstream strided N-D kernels](https://github.com/communal-software/cl-tensor/issues/14) | Blocked — upstream CPU interface | Measured reversed-layout fusion regression; integrate after [trivial-simd #88](https://github.com/communal-software/trivial-simd/issues/88) supplies the reviewed CPU interface. |
